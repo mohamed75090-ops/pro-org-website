@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROFESSIONAL ESPORTS | PRO ORG</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#090909;--panel:#151515;--gold:#d6ad54;--muted:#aaa;--line:#34302a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f1e8;font-family:Arial,Tahoma,sans-serif}
+header{padding:26px 5%;border-bottom:1px solid var(--line);background:linear-gradient(120deg,#17130b,#080808)}
+h1{margin:0;color:var(--gold);letter-spacing:1px;font-size:clamp(22px,4vw,34px)}header p{color:var(--muted);margin:8px 0 0}
+main{max-width:1100px;margin:28px auto;padding:0 16px}.tabs,.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{background:var(--gold);color:#17120a;border:0;border-radius:8px;padding:11px 16px;font-weight:bold;cursor:pointer}
+button.secondary{background:#292929;color:#eee;border:1px solid var(--line)}button.danger{background:#6c2929;color:white}
+input,select,textarea{background:#0d0d0d;border:1px solid var(--line);color:white;border-radius:8px;padding:12px;width:100%;margin:6px 0 12px}
+label{color:#d9c28e;font-size:14px} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px;margin:14px 0}
+h2{color:var(--gold);font-size:20px;margin-top:0}.muted{color:var(--muted)}.hidden{display:none}
+table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:right;padding:10px;border-bottom:1px solid var(--line)}th{color:var(--gold)}
+.notice{padding:12px;border-radius:8px;background:#242016;color:#e8d7ad;margin:12px 0}.ok{color:#8cdb9b}.err{color:#ff9292}
+.small{font-size:12px;color:var(--muted)}footer{text-align:center;padding:30px;color:#777}
+</style>
+</head>
+<body>
+<header><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</p></header>
+<main>
+<section class="card">
+ <div class="row" style="justify-content:space-between"><div><h2>بوابة المنظمة</h2><div class="muted">النتائج والبطولات الرسمية</div></div><button class="secondary" id="loginToggle">دخول المشرفين</button></div>
+ <div id="status" class="notice">جاري الاتصال بقاعدة البيانات...</div>
+</section>
+<section id="public">
+ <div class="grid">
+  <div class="card"><h2>البطولات</h2><div id="tournaments" class="muted">جاري التحميل...</div></div>
+  <div class="card"><h2>الفرق</h2><div id="teams" class="muted">جاري التحميل...</div></div>
+ </div>
+ <div class="card"><h2>آخر النتائج المعتمدة</h2><div id="results" class="muted">جاري التحميل...</div></div>
+</section>
+<section id="login" class="card hidden">
+ <h2>دخول المشرفين</h2>
+ <label>البريد الإلكتروني</label><input id="email" type="email" autocomplete="username">
+ <label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password">
+ <div class="row"><button id="signIn">تسجيل الدخول</button><button class="secondary" id="closeLogin">إغلاق</button></div>
+ <p class="small">الحسابات تُنشأ وتُدار من Supabase Authentication.</p>
+</section>
+<section id="admin" class="hidden">
+ <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
+ <div id="teamForm" class="card hidden"><h2>إضافة فريق</h2><label>اسم الفريق</label><input id="teamName"><label>اختصار الفريق (TAG)</label><input id="teamTag"><button id="addTeam">حفظ الفريق</button></div>
+ <div id="tournamentForm" class="card hidden"><h2>إنشاء بطولة</h2><label>اسم البطولة</label><input id="tournamentName"><label>الوصف</label><textarea id="tournamentDesc"></textarea><button id="addTournament">إنشاء مسودة بطولة</button></div>
+ <div id="matchForm" class="card hidden"><h2>إنشاء روم / مباراة</h2><label>البطولة</label><select id="matchTournament"></select><label>اسم المباراة</label><input id="matchName" placeholder="مثال: Room 1"><label>رقم المباراة</label><input id="matchNumber" type="number" min="1"><button id="addMatch">إنشاء المباراة</button></div>
+ <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1"><label>Kills</label><input id="kills" type="number" min="0"><label>نقاط الترتيب</label><input id="placementPoints" type="number" min="0"><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
+ <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
+</section>
+</main>
+<footer>© PROFESSIONAL ESPORTS · PRO ORG</footer>
+<script>
+const SUPABASE_URL = "https://pjirnjvkatkyrjpbiutd.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_";
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const $ = id => document.getElementById(id);
+let currentRole = null, teamsCache = [], tournamentsCache = [], matchesCache = [];
+function msg(text, type=""){ $("status").innerHTML = `<span class="${type}">${text}</span>`; }
+function show(id, yes=true){$(id).classList.toggle("hidden",!yes)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+async function loadPublic(){
+ const [t,tm,r] = await Promise.all([
+  client.from("tournaments").select("id,name,status,start_date").in("status",["published","completed"]).order("created_at",{ascending:false}),
+  client.from("teams").select("id,name,tag").eq("status","active").order("name"),
+  client.from("match_results").select("placement,kills,placement_points,total_points,teams(name,tag),matches(name)").eq("status","approved").order("total_points",{ascending:false}).limit(30)
+ ]);
+ if(t.error||tm.error||r.error){msg("تعذر تحميل بعض البيانات. تأكد من إعدادات الجداول وسياسات RLS.","err");}
+ tournamentsCache=t.data||[];teamsCache=tm.data||[];
+ $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>`<p>🏆 ${esc(x.name)}</p>`).join(""):"لا توجد بطولات منشورة حالياً.";
+ $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>`<p><b>${esc(x.tag)}</b> — ${esc(x.name)}</p>`).join(""):"لا توجد فرق مسجلة حالياً.";
+ $("results").innerHTML=(r.data||[]).length?`<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>${r.data.map(x=>`<tr><td>${esc(x.teams?.name||"-")}</td><td>${esc(x.matches?.name||"-")}</td><td>${x.placement}</td><td>${x.kills}</td><td>${x.total_points}</td></tr>`).join("")}</table>`:"لا توجد نتائج معتمدة بعد.";
+}
+async function refreshAdmin(){
+ const {data:{user}}=await client.auth.getUser();
+ if(!user){show("admin",false);return;}
+ const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
+ if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
+ currentRole=profile.role;show("admin",true);show("login",false);
+ $("who").textContent=`${profile.display_name||user.email} · ${currentRole}`;
+ $("roleNote").textContent=`الصلاحية الحالية: ${currentRole}`;
+ show("teamForm",["founder","admin"].includes(currentRole));
+ show("tournamentForm",["founder","admin","tournament_manager"].includes(currentRole));
+ show("matchForm",["founder","admin","tournament_manager"].includes(currentRole));
+ show("resultForm",["founder","admin","results_manager"].includes(currentRole));
+ const [ts,ms,tm,rs]=await Promise.all([
+  client.from("tournaments").select("id,name").order("created_at",{ascending:false}),
+  client.from("matches").select("id,name,tournament_id").order("created_at",{ascending:false}),
+  client.from("teams").select("id,name,tag").order("name"),
+  client.from("match_results").select("id,placement,kills,placement_points,total_points,status,teams(name,tag),matches(name)").eq("status","pending").order("created_at",{ascending:false})
+ ]);
+ tournamentsCache=ts.data||[];matchesCache=ms.data||[];teamsCache=tm.data||[];
+ $("matchTournament").innerHTML=tournamentsCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
+ $("resultMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
+ $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join("");
+ const canReview=["founder","admin","results_manager"].includes(currentRole);
+ $("pendingResults").innerHTML=(rs.data||[]).length?(rs.data||[]).map(x=>`<div class="card"><b>${esc(x.teams?.name||"-")}</b> · ${esc(x.matches?.name||"-")}<p>المركز ${x.placement} | Kills ${x.kills} | النقاط ${x.total_points}</p>${canReview?`<button onclick="approveResult('${x.id}')">اعتماد</button> <button class="danger" onclick="rejectResult('${x.id}')">رفض</button>`:""}</div>`).join(""):"لا توجد نتائج معلّقة.";
+}
+async function approveResult(id){const {error}=await client.from("match_results").update({status:"approved"}).eq("id",id);if(error)alert(error.message);else{await refreshAdmin();await loadPublic();}}
+async function rejectResult(id){const {error}=await client.from("match_results").update({status:"rejected"}).eq("id",id);if(error)alert(error.message);else await refreshAdmin();}
+window.approveResult=approveResult;window.rejectResult=rejectResult;
+$("loginToggle").onclick=()=>show("login");
+$("closeLogin").onclick=()=>show("login",false);
+$("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
+$("signOut").onclick=async()=>{await client.auth.signOut();show("admin",false);msg("تم تسجيل الخروج.");};
+$("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
+$("addTournament").onclick=async()=>{const {error}=await client.from("tournaments").insert({name:$("tournamentName").value.trim(),description:$("tournamentDesc").value.trim(),status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء البطولة كمسودة. يلزم نشرها من قاعدة البيانات حالياً.");await refreshAdmin();}};
+$("addMatch").onclick=async()=>{const {error}=await client.from("matches").insert({tournament_id:$("matchTournament").value,name:$("matchName").value.trim(),match_number:Number($("matchNumber").value)||null,status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء المباراة كمسودة.");await refreshAdmin();}};
+$("addResult").onclick=async()=>{const {error}=await client.from("match_results").insert({match_id:$("resultMatch").value,team_id:$("resultTeam").value,placement:Number($("placement").value),kills:Number($("kills").value),placement_points:Number($("placementPoints").value),status:"pending"});if(error)alert(error.message);else{alert("تم حفظ النتيجة للمراجعة.");await refreshAdmin();}};
+client.auth.onAuthStateChange(()=>setTimeout(refreshAdmin,0));
+(async()=>{await loadPublic();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
+</script>
+</body></html>
