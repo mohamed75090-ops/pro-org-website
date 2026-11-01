@@ -46,6 +46,7 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:right
  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
  <div id="teamForm" class="card hidden"><h2>إضافة فريق</h2><label>اسم الفريق</label><input id="teamName"><label>اختصار الفريق (TAG)</label><input id="teamTag"><button id="addTeam">حفظ الفريق</button></div>
  <div id="tournamentForm" class="card hidden"><h2>إنشاء بطولة</h2><label>اسم البطولة</label><input id="tournamentName"><label>الوصف</label><textarea id="tournamentDesc"></textarea><button id="addTournament">إنشاء مسودة بطولة</button></div>
+ <div id="managementPanel" class="card hidden"><h2>إدارة البطولات والرومات</h2><p class="small">انشر البطولة، أوقفها مؤقتاً، أو أعد فتحها. ويمكنك التحكم في حالة كل روم من هنا.</p><div id="tournamentManagement"></div><div id="matchManagement"></div></div>
  <div id="matchForm" class="card hidden"><h2>إنشاء روم / مباراة</h2><label>البطولة</label><select id="matchTournament"></select><label>اسم المباراة</label><input id="matchName" placeholder="مثال: Room 1"><label>رقم المباراة</label><input id="matchNumber" type="number" min="1"><button id="addMatch">إنشاء المباراة</button></div>
 
  <div id="aiScanner" class="card hidden">
@@ -106,11 +107,12 @@ async function refreshAdmin(){
  show("teamForm",["founder","admin"].includes(currentRole));
  show("tournamentForm",["founder","admin","tournament_manager"].includes(currentRole));
  show("matchForm",["founder","admin","tournament_manager"].includes(currentRole));
+ show("managementPanel",["founder","admin","tournament_manager"].includes(currentRole));
  show("resultForm",["founder","admin","results_manager"].includes(currentRole));
  show("aiScanner",["founder","admin","results_manager"].includes(currentRole));
  const [ts,ms,tm,rs]=await Promise.all([
-  client.from("tournaments").select("id,name").order("created_at",{ascending:false}),
-  client.from("matches").select("id,name,tournament_id").order("created_at",{ascending:false}),
+  client.from("tournaments").select("id,name,status").order("created_at",{ascending:false}),
+  client.from("matches").select("id,name,tournament_id,status").order("created_at",{ascending:false}),
   client.from("teams").select("id,name,tag").order("name"),
   client.from("match_results").select("id,placement,kills,placement_points,total_points,status,teams(name,tag),matches(name)").eq("status","pending").order("created_at",{ascending:false})
  ]);
@@ -118,10 +120,24 @@ async function refreshAdmin(){
  $("matchTournament").innerHTML=tournamentsCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("resultMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("aiMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
- $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join("");
+ $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join(""); 
+ $("tournamentManagement").innerHTML="<h3>البطولات</h3>"+(tournamentsCache.length?tournamentsCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setTournamentStatus('${x.id}','published')">نشر</button><button class="secondary" onclick="setTournamentStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setTournamentStatus('${x.id}','draft')">إرجاع لمسودة</button><button class="danger" onclick="setTournamentStatus('${x.id}','completed')">إنهاء البطولة</button></div></div>`).join(""):"لا توجد بطولات.");
+ $("matchManagement").innerHTML="<h3>الرومات والمباريات</h3>"+(matchesCache.length?matchesCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setMatchStatus('${x.id}','published')">فتح الروم</button><button class="secondary" onclick="setMatchStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setMatchStatus('${x.id}','draft')">مسودة</button><button class="danger" onclick="setMatchStatus('${x.id}','completed')">إنهاء</button></div></div>`).join(""):"لا توجد مباريات.");
+
  const canReview=["founder","admin","results_manager"].includes(currentRole);
  $("pendingResults").innerHTML=(rs.data||[]).length?(rs.data||[]).map(x=>`<div class="card"><b>${esc(x.teams?.name||"-")}</b> · ${esc(x.matches?.name||"-")}<p>المركز ${x.placement} | Kills ${x.kills} | النقاط ${x.total_points}</p>${canReview?`<button onclick="approveResult('${x.id}')">اعتماد</button> <button class="danger" onclick="rejectResult('${x.id}')">رفض</button>`:""}</div>`).join(""):"لا توجد نتائج معلّقة.";
 }
+async function setTournamentStatus(id,status){
+ const {error}=await client.from("tournaments").update({status}).eq("id",id);
+ if(error){alert("تعذر تغيير حالة البطولة: "+error.message);return;}
+ await refreshAdmin();await loadPublic();
+}
+async function setMatchStatus(id,status){
+ const {error}=await client.from("matches").update({status}).eq("id",id);
+ if(error){alert("تعذر تغيير حالة المباراة: "+error.message);return;}
+ await refreshAdmin();
+}
+window.setTournamentStatus=setTournamentStatus;window.setMatchStatus=setMatchStatus;
 async function approveResult(id){const {error}=await client.from("match_results").update({status:"approved"}).eq("id",id);if(error)alert(error.message);else{await refreshAdmin();await loadPublic();}}
 async function rejectResult(id){const {error}=await client.from("match_results").update({status:"rejected"}).eq("id",id);if(error)alert(error.message);else await refreshAdmin();}
 window.approveResult=approveResult;window.rejectResult=rejectResult;
@@ -130,8 +146,8 @@ $("closeLogin").onclick=()=>show("login",false);
 $("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
 $("signOut").onclick=async()=>{await client.auth.signOut();show("admin",false);msg("تم تسجيل الخروج.");};
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
-$("addTournament").onclick=async()=>{const {error}=await client.from("tournaments").insert({name:$("tournamentName").value.trim(),description:$("tournamentDesc").value.trim(),status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء البطولة كمسودة. يلزم نشرها من قاعدة البيانات حالياً.");await refreshAdmin();}};
-$("addMatch").onclick=async()=>{const {error}=await client.from("matches").insert({tournament_id:$("matchTournament").value,name:$("matchName").value.trim(),match_number:Number($("matchNumber").value)||null,status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء المباراة كمسودة.");await refreshAdmin();}};
+$("addTournament").onclick=async()=>{const {error}=await client.from("tournaments").insert({name:$("tournamentName").value.trim(),description:$("tournamentDesc").value.trim(),status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء البطولة كمسودة. يمكنك نشرها أو إيقافها من قسم إدارة البطولات والرومات داخل الموقع.");await refreshAdmin();}};
+$("addMatch").onclick=async()=>{const {error}=await client.from("matches").insert({tournament_id:$("matchTournament").value,name:$("matchName").value.trim(),match_number:Number($("matchNumber").value)||null,status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء المباراة كمسودة. يمكنك فتحها أو إيقافها من قسم إدارة البطولات والرومات داخل الموقع.");await refreshAdmin();}};
 $("placement").addEventListener("input",updateScorePreview);
 $("kills").addEventListener("input",updateScorePreview);
 $("addResult").onclick=async()=>{
