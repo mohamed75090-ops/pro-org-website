@@ -47,7 +47,7 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:right
  <div id="teamForm" class="card hidden"><h2>إضافة فريق</h2><label>اسم الفريق</label><input id="teamName"><label>اختصار الفريق (TAG)</label><input id="teamTag"><button id="addTeam">حفظ الفريق</button></div>
  <div id="tournamentForm" class="card hidden"><h2>إنشاء بطولة</h2><label>اسم البطولة</label><input id="tournamentName"><label>الوصف</label><textarea id="tournamentDesc"></textarea><button id="addTournament">إنشاء مسودة بطولة</button></div>
  <div id="matchForm" class="card hidden"><h2>إنشاء روم / مباراة</h2><label>البطولة</label><select id="matchTournament"></select><label>اسم المباراة</label><input id="matchName" placeholder="مثال: Room 1"><label>رقم المباراة</label><input id="matchNumber" type="number" min="1"><button id="addMatch">إنشاء المباراة</button></div>
- <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1"><label>Kills</label><input id="kills" type="number" min="0"><label>نقاط الترتيب</label><input id="placementPoints" type="number" min="0"><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
+ <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
  <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
 </section>
 </main>
@@ -58,6 +58,17 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const $ = id => document.getElementById(id);
 let currentRole = null, teamsCache = [], tournamentsCache = [], matchesCache = [];
+const PLACEMENT_POINTS = {1:10,2:6,3:5,4:4,5:3,6:2,7:1};
+function pointsForPlacement(place){return PLACEMENT_POINTS[Number(place)]||0;}
+function updateScorePreview(){
+ const place = Number($("placement").value), kills = Number($("kills").value);
+ const validPlace = Number.isInteger(place) && place >= 1;
+ const validKills = Number.isInteger(kills) && kills >= 0;
+ const placementPoints = validPlace ? pointsForPlacement(place) : 0;
+ const total = placementPoints + (validKills ? kills : 0);
+ $("placementPoints").value = validPlace ? placementPoints : "";
+ $("scorePreview").textContent = `نقاط الترتيب: ${validPlace?placementPoints:0} + نقاط Kills: ${validKills?kills:0} = المجموع النهائي: ${total} نقطة`;
+}
 function msg(text, type=""){ $("status").innerHTML = `<span class="${type}">${text}</span>`; }
 function show(id, yes=true){$(id).classList.toggle("hidden",!yes)}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -71,7 +82,7 @@ async function loadPublic(){
  tournamentsCache=t.data||[];teamsCache=tm.data||[];
  $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>`<p>🏆 ${esc(x.name)}</p>`).join(""):"لا توجد بطولات منشورة حالياً.";
  $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>`<p><b>${esc(x.tag)}</b> — ${esc(x.name)}</p>`).join(""):"لا توجد فرق مسجلة حالياً.";
- $("results").innerHTML=(r.data||[]).length?`<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>${r.data.map(x=>`<tr><td>${esc(x.teams?.name||"-")}</td><td>${esc(x.matches?.name||"-")}</td><td>${x.placement}</td><td>${x.kills}</td><td>${x.total_points}</td></tr>`).join("")}</table>`:"لا توجد نتائج معتمدة بعد.";
+ $("results").innerHTML=(r.data||[]).length?`<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>${r.data.map(x=>`<tr><td>${esc(x.teams?.name||"-")}</td><td>${esc(x.matches?.name||"-")}</td><td>${x.placement}</td><td>${x.kills}</td><td>${x.total_points ?? ((x.placement_points||0)+(x.kills||0))}</td></tr>`).join("")}</table>`:"لا توجد نتائج معتمدة بعد.";
 }
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
@@ -108,7 +119,25 @@ $("signOut").onclick=async()=>{await client.auth.signOut();show("admin",false);m
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
 $("addTournament").onclick=async()=>{const {error}=await client.from("tournaments").insert({name:$("tournamentName").value.trim(),description:$("tournamentDesc").value.trim(),status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء البطولة كمسودة. يلزم نشرها من قاعدة البيانات حالياً.");await refreshAdmin();}};
 $("addMatch").onclick=async()=>{const {error}=await client.from("matches").insert({tournament_id:$("matchTournament").value,name:$("matchName").value.trim(),match_number:Number($("matchNumber").value)||null,status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء المباراة كمسودة.");await refreshAdmin();}};
-$("addResult").onclick=async()=>{const {error}=await client.from("match_results").insert({match_id:$("resultMatch").value,team_id:$("resultTeam").value,placement:Number($("placement").value),kills:Number($("kills").value),placement_points:Number($("placementPoints").value),status:"pending"});if(error)alert(error.message);else{alert("تم حفظ النتيجة للمراجعة.");await refreshAdmin();}};
+$("placement").addEventListener("input",updateScorePreview);
+$("kills").addEventListener("input",updateScorePreview);
+$("addResult").onclick=async()=>{
+ const placement=Number($("placement").value), kills=Number($("kills").value);
+ if(!$("resultMatch").value||!$("resultTeam").value){alert("اختار المباراة والفريق أولاً.");return;}
+ if(!Number.isInteger(placement)||placement<1){alert("أدخل مركزاً صحيحاً يبدأ من 1.");return;}
+ if(!Number.isInteger(kills)||kills<0){alert("أدخل عدد Kills صحيحاً.");return;}
+ const placementPoints=pointsForPlacement(placement), totalPoints=placementPoints+kills;
+ const {error}=await client.from("match_results").insert({
+  match_id:$("resultMatch").value,team_id:$("resultTeam").value,
+  placement,kills,placement_points:placementPoints,total_points:totalPoints,status:"pending"
+ });
+ if(error)alert(error.message);
+ else{
+  alert(`تم حفظ النتيجة للمراجعة. المجموع: ${totalPoints} نقطة.`);
+  $("placement").value="";$("kills").value="";updateScorePreview();
+  await refreshAdmin();
+ }
+};
 client.auth.onAuthStateChange(()=>setTimeout(refreshAdmin,0));
 (async()=>{await loadPublic();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
 </script>
