@@ -47,6 +47,17 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:right
  <div id="teamForm" class="card hidden"><h2>إضافة فريق</h2><label>اسم الفريق</label><input id="teamName"><label>اختصار الفريق (TAG)</label><input id="teamTag"><button id="addTeam">حفظ الفريق</button></div>
  <div id="tournamentForm" class="card hidden"><h2>إنشاء بطولة</h2><label>اسم البطولة</label><input id="tournamentName"><label>الوصف</label><textarea id="tournamentDesc"></textarea><button id="addTournament">إنشاء مسودة بطولة</button></div>
  <div id="matchForm" class="card hidden"><h2>إنشاء روم / مباراة</h2><label>البطولة</label><select id="matchTournament"></select><label>اسم المباراة</label><input id="matchName" placeholder="مثال: Room 1"><label>رقم المباراة</label><input id="matchNumber" type="number" min="1"><button id="addMatch">إنشاء المباراة</button></div>
+
+ <div id="aiScanner" class="card hidden">
+  <h2>AI ROOM SCANNER</h2>
+  <p class="muted">ارفع صور نتائج الروم، وسيقرأ الذكاء الاصطناعي المراكز وأسماء اللاعبين وKills كل لاعب.</p>
+  <label>المباراة</label><select id="aiMatch"></select>
+  <label>صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
+  <div class="small">كل صورة يفترض أن تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع كل صور المباراة معاً.</div>
+  <button id="scanImages">تحليل الصور بالذكاء الاصطناعي</button>
+  <div id="aiStatus" class="notice">النتائج المستخرجة ستظهر هنا للمراجعة.</div>
+  <div id="aiOutput"></div>
+ </div>
  <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
  <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
 </section>
@@ -96,6 +107,7 @@ async function refreshAdmin(){
  show("tournamentForm",["founder","admin","tournament_manager"].includes(currentRole));
  show("matchForm",["founder","admin","tournament_manager"].includes(currentRole));
  show("resultForm",["founder","admin","results_manager"].includes(currentRole));
+ show("aiScanner",["founder","admin","results_manager"].includes(currentRole));
  const [ts,ms,tm,rs]=await Promise.all([
   client.from("tournaments").select("id,name").order("created_at",{ascending:false}),
   client.from("matches").select("id,name,tournament_id").order("created_at",{ascending:false}),
@@ -105,6 +117,7 @@ async function refreshAdmin(){
  tournamentsCache=ts.data||[];matchesCache=ms.data||[];teamsCache=tm.data||[];
  $("matchTournament").innerHTML=tournamentsCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("resultMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
+ $("aiMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join("");
  const canReview=["founder","admin","results_manager"].includes(currentRole);
  $("pendingResults").innerHTML=(rs.data||[]).length?(rs.data||[]).map(x=>`<div class="card"><b>${esc(x.teams?.name||"-")}</b> · ${esc(x.matches?.name||"-")}<p>المركز ${x.placement} | Kills ${x.kills} | النقاط ${x.total_points}</p>${canReview?`<button onclick="approveResult('${x.id}')">اعتماد</button> <button class="danger" onclick="rejectResult('${x.id}')">رفض</button>`:""}</div>`).join(""):"لا توجد نتائج معلّقة.";
@@ -138,6 +151,41 @@ $("addResult").onclick=async()=>{
   await refreshAdmin();
  }
 };
+
+$("scanImages").onclick=async()=>{
+ const files=[...($("aiImages").files||[])];
+ const matchId=$("aiMatch").value;
+ if(!matchId){alert("اختار المباراة أولاً.");return;}
+ if(!files.length){alert("اختار صورة واحدة على الأقل.");return;}
+ if(files.some(f=>!f.type.startsWith("image/"))){alert("ارفع ملفات صور فقط.");return;}
+ $("scanImages").disabled=true;
+ $("aiStatus").textContent="جاري رفع الصور وتحليلها... انتظر.";
+ $("aiOutput").innerHTML="";
+ try{
+  const uploaded=[];
+  for(let i=0;i<files.length;i++){
+   const f=files[i], safe=f.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+   const path=`${matchId}/${Date.now()}_${i}_${safe}`;
+   const {error}=await client.storage.from("room-screenshots").upload(path,f,{upsert:false,contentType:f.type});
+   if(error)throw error;
+   uploaded.push({path,name:f.name});
+  }
+  const {data,error}=await client.functions.invoke("scan-room-results",{body:{match_id:matchId,files:uploaded}});
+  if(error)throw error;
+  const rows=data?.groups||[];
+  if(!rows.length)throw new Error("لم يتم استخراج مجموعات واضحة من الصور.");
+  let out=`<div class="notice ok">تم استخراج ${rows.length} مجموعة. راجع كل مجموعة قبل إدخالها واعتمادها.</div>`;
+  rows.forEach((g,i)=>{
+   const players=(g.players||[]).map(p=>`<tr><td>${esc(p.player_name)}</td><td>${Number(p.kills)||0}</td></tr>`).join("");
+   out+=`<div class="card"><h3>المركز ${Number(g.placement)||"؟"} · المجموعة ${i+1}</h3><p>إجمالي Kills المقروء: <b>${Number(g.total_kills)||0}</b></p><table><tr><th>اسم اللاعب</th><th>Kills</th></tr>${players}</table><p class="small">ملاحظة الذكاء الاصطناعي: ${esc(g.note||"لا توجد")}</p></div>`;
+  });
+  $("aiOutput").innerHTML=out;
+  $("aiStatus").textContent="اكتمل التحليل. هذه بيانات مقترحة وليست نتائج معتمدة. اربط كل مجموعة بالفريق الصحيح وراجع الأرقام قبل الحفظ.";
+ }catch(e){
+  $("aiStatus").innerHTML=`<span class="err">فشل التحليل: ${esc(e.message||e)}. تأكد من إعداد Storage وEdge Function ومفتاح OpenAI.</span>`;
+ }finally{$("scanImages").disabled=false;}
+};
+
 client.auth.onAuthStateChange(()=>setTimeout(refreshAdmin,0));
 (async()=>{await loadPublic();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
 </script>
