@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090909">
+<title>PROFESSIONAL ESPORTS | PRO ORG</title>
+<style>
+:root{--bg:#08090b;--panel:#121316;--panel2:#191a1f;--gold:#d7ad55;--gold2:#f0d18a;--muted:#a7a7ad;--line:#292a30}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#342816 0%,#111 38%,var(--bg) 75%);color:#f4f1e9;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+header{padding:24px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff18;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:48px;height:48px;border:2px solid var(--gold);transform:rotate(45deg);display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:20px}.mark span{transform:rotate(-45deg)}.brand b{letter-spacing:1px}.brand small{display:block;color:var(--gold);font-size:11px;letter-spacing:3px}
+nav{display:flex;gap:10px;flex-wrap:wrap}button,.btn{border:1px solid var(--gold);background:transparent;color:var(--gold2);padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer}button.primary,.btn.primary{background:linear-gradient(135deg,#e5c477,#a97828);color:#111;border:0}
+main{max-width:1120px;margin:auto;padding:38px 18px 70px}.hero{text-align:center;padding:48px 12px 38px}.eyebrow{color:var(--gold);letter-spacing:4px;font-size:12px;font-weight:800}.hero h1{font-size:clamp(30px,6vw,58px);margin:12px 0}.hero p{color:var(--muted);max-width:650px;margin:0 auto 24px;line-height:1.9}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 34px}.stat,.panel{background:linear-gradient(145deg,#18191d,#101114);border:1px solid var(--line);border-radius:14px;padding:18px}.stat strong{display:block;color:var(--gold2);font-size:26px}.stat span{color:var(--muted);font-size:13px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:28px 0 14px}.section-head h2{margin:0;font-size:22px}.section-head h2:before{content:"";display:inline-block;width:4px;height:22px;background:var(--gold);margin-left:10px;vertical-align:middle}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input,.filters select,input,select,textarea{background:#0b0c0f;border:1px solid var(--line);border-radius:8px;color:#eee;padding:11px;min-width:0}
+table{width:100%;border-collapse:collapse;min-width:560px}th,td{padding:14px 12px;text-align:center;border-bottom:1px solid var(--line)}th{color:var(--gold2);font-size:13px;background:#ffffff06}td{font-weight:650}.table-wrap{overflow-x:auto}.rank{color:var(--gold);font-weight:900}.empty{text-align:center;color:var(--muted);padding:30px}
+footer{text-align:center;padding:25px;color:#777;border-top:1px solid var(--line);font-size:12px}
+.modal{display:none;position:fixed;inset:0;background:#000b;z-index:5;overflow:auto;padding:20px}.modal.show{display:grid;place-items:center}.dialog{width:min(720px,100%);background:#15161a;border:1px solid #80632d;border-radius:16px;padding:22px;max-height:92vh;overflow:auto}.dialog h2{margin-top:0;color:var(--gold2)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid label{display:grid;gap:6px;color:var(--muted);font-size:13px}.wide{grid-column:1/-1}.hint{color:var(--muted);font-size:12px;line-height:1.8}.admin-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.hidden{display:none!important}
+@media(max-width:600px){header{padding:18px}.stats{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.wide{grid-column:auto}.hero{padding-top:30px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><div class="mark"><span>P</span></div><div><b>PROFESSIONAL ESPORTS</b><small>PRO ORGANIZATION</small></div></div>
+ <nav><button onclick="scrollToResults()">النتائج</button><button onclick="openAdmin()">دخول الإدارة</button></nav>
+</header>
+<main>
+ <section class="hero"><div class="eyebrow">SUDANESE ESPORTS ORGANIZATION</div><h1>PRO <span style="color:var(--gold)">ORG</span></h1><p>منصة PROFESSIONAL ESPORTS الرسمية لمتابعة نتائج سكريمات PUBG MOBILE، ترتيب الفرق، النقاط والإنجازات.</p><button class="primary" onclick="scrollToResults()">عرض النتائج</button></section>
+ <section class="stats">
+  <div class="stat"><strong id="teamsCount">0</strong><span>الفرق في لوحة النتائج</span></div>
+  <div class="stat"><strong id="matchesCount">0</strong><span>المباريات المسجلة</span></div>
+  <div class="stat"><strong id="mvpName">—</strong><span>أفضل لاعب MVP</span></div>
+ </section>
+ <section id="results">
+  <div class="section-head"><h2>LEADERBOARD | الترتيب العام</h2><div class="filters"><input id="search" placeholder="ابحث عن فريق..." oninput="render()"><select id="matchFilter" onchange="render()"><option value="all">كل النتائج</option></select></div></div>
+  <div class="panel table-wrap"><table><thead><tr><th>#</th><th>الفريق</th><th>عدد المباريات</th><th>الإقصاءات</th><th>نقاط الترتيب</th><th>الإجمالي</th></tr></thead><tbody id="rows"></tbody></table><div id="empty" class="empty">لا توجد نتائج منشورة حالياً.</div></div>
+ </section>
+ <section class="section-head"><h2>ABOUT PRO ORG</h2><span class="hint">COMPETE • RESPECT • EXCEL</span></section>
+ <div class="panel"><p style="line-height:1.9;color:var(--muted);margin:0">منظمة تنافسية تهدف إلى تطوير بيئة بطولات وسكريمات PUBG MOBILE، وتنظيم النتائج وفق لوائح واضحة ومراجعة إدارية قبل اعتمادها ونشرها.</p></div>
+</main>
+<footer>© 2026 PROFESSIONAL ESPORTS — PRO ORG. All rights reserved.</footer>
+
+<div class="modal" id="adminModal"><div class="dialog">
+ <div class="section-head"><h2>لوحة إدارة PRO ORG</h2><button onclick="closeAdmin()">إغلاق</button></div>
+ <div id="loginView"><p class="hint">هذه واجهة تجريبية فقط. تسجيل الدخول الحقيقي وتأمين الحسابات سيتم ربطهما بالخادم قبل النشر.</p><div class="formgrid"><label class="wide">رمز العرض التجريبي<input id="demoPass" type="password" placeholder="اكتب DEMO"></label></div><p><button class="primary" onclick="demoLogin()">دخول تجريبي</button></p></div>
+ <div id="adminView" class="hidden">
+  <div class="admin-tools"><button class="primary" onclick="showAdd()">إضافة نتيجة</button><button onclick="exportCSV()">تصدير CSV</button><button onclick="resetDemo()">مسح بيانات التجربة</button></div>
+  <div id="addForm" class="panel hidden"><h3>إضافة نتيجة فريق</h3><div class="formgrid">
+   <label>اسم الفريق<input id="team" placeholder="TEAM TAG"></label>
+   <label>المباراة<input id="match" placeholder="Match 1"></label>
+   <label>المركز<input id="place" type="number" min="1" max="25" value="1"></label>
+   <label>عدد الإقصاءات<input id="kills" type="number" min="0" value="0"></label>
+   <label class="wide">ملاحظة / اسم اللاعب MVP<input id="mvp" placeholder="اختياري"></label>
+  </div><p class="hint">نقاط الترتيب المستخدمة هنا: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7–8=1، 9+=0. كل إقصاء = نقطة واحدة. راجع لائحة البطولة قبل اعتمادها.</p><button class="primary" onclick="addResult()">حفظ النتيجة التجريبية</button> <button onclick="hideAdd()">إلغاء</button></div>
+  <p class="hint">مهم: رفع الصور واستخراج بياناتها بالذكاء الاصطناعي غير موصول في هذه النسخة. لا تستخدمها كسجل رسمي قبل ربط قاعدة البيانات والمراجعة والصلاحيات.</p>
+ </div>
+</div></div>
+<script>
+const KEY='proorg_demo_results_v1';let data=JSON.parse(localStorage.getItem(KEY)||'[]');
+function scrollToResults(){document.getElementById('results').scrollIntoView({behavior:'smooth'})}
+function openAdmin(){document.getElementById('adminModal').classList.add('show')}
+function closeAdmin(){document.getElementById('adminModal').classList.remove('show')}
+function demoLogin(){if(document.getElementById('demoPass').value==='DEMO'){document.getElementById('loginView').classList.add('hidden');document.getElementById('adminView').classList.remove('hidden')}else alert('رمز التجربة هو DEMO')}
+function showAdd(){document.getElementById('addForm').classList.remove('hidden')}
+function hideAdd(){document.getElementById('addForm').classList.add('hidden')}
+function placement(p){return ({1:10,2:6,3:5,4:4,5:3,6:2,7:1,8:1})[p]||0}
+function addResult(){let team=document.getElementById('team').value.trim().toUpperCase(),match=document.getElementById('match').value.trim()||'Match 1',place=+document.getElementById('place').value,kills=+document.getElementById('kills').value,mvp=document.getElementById('mvp').value.trim();if(!team||place<1||kills<0)return alert('أدخل اسم الفريق والمركز والقتلات بشكل صحيح');data.push({team,match,place,kills,placement:placement(place),mvp});localStorage.setItem(KEY,JSON.stringify(data));['team','mvp'].forEach(id=>document.getElementById(id).value='');document.getElementById('kills').value=0;render();hideAdd();alert('تم حفظ سجل تجريبي على هذا الجهاز فقط')}
+function render(){let q=document.getElementById('search').value.toUpperCase(),f=document.getElementById('matchFilter').value;let matches=[...new Set(data.map(x=>x.match))];let sel=document.getElementById('matchFilter'),old=sel.value;sel.innerHTML='<option value="all">كل النتائج</option>'+matches.map(x=>`<option>${esc(x)}</option>`).join('');sel.value=matches.includes(old)?old:'all';let filtered=data.filter(x=>(f==='all'||x.match===f)&&x.team.includes(q));let map={};filtered.forEach(x=>{map[x.team]??={team:x.team,matches:new Set(),kills:0,placement:0,total:0};let a=map[x.team];a.matches.add(x.match);a.kills+=x.kills;a.placement+=x.placement;a.total+=x.kills+x.placement});let arr=Object.values(map).sort((a,b)=>b.total-a.total||b.kills-a.kills);document.getElementById('rows').innerHTML=arr.map((x,i)=>`<tr><td class="rank">${i+1}</td><td>${esc(x.team)}</td><td>${x.matches.size}</td><td>${x.kills}</td><td>${x.placement}</td><td style="color:var(--gold2)">${x.total}</td></tr>`).join('');document.getElementById('empty').style.display=arr.length?'none':'block';document.getElementById('teamsCount').textContent=arr.length;document.getElementById('matchesCount').textContent=new Set(data.map(x=>x.match)).size;let best=data.filter(x=>x.mvp).slice(-1)[0];document.getElementById('mvpName').textContent=best?best.mvp:'—'}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function exportCSV(){let lines=['Team,Match,Place,Kills,Placement Points,Total Points,MVP',...data.map(x=>[x.team,x.match,x.place,x.kills,x.placement,x.kills+x.placement,x.mvp].map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))];let blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='PRO_ORG_results_demo.csv';a.click();URL.revokeObjectURL(a.href)}
+function resetDemo(){if(confirm('مسح كل بيانات التجربة من هذا المتصفح؟')){data=[];localStorage.removeItem(KEY);render()}}
+render();
+</script>
+</body></html>
