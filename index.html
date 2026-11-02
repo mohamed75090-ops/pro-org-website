@@ -5,36 +5,104 @@
 <title>PROFESSIONAL ESPORTS | PRO ORG</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#090909;--panel:#151515;--gold:#d6ad54;--muted:#aaa;--line:#34302a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f1e8;font-family:Arial,Tahoma,sans-serif}
-header{padding:26px 5%;border-bottom:1px solid var(--line);background:linear-gradient(120deg,#17130b,#080808)}
-h1{margin:0;color:var(--gold);letter-spacing:1px;font-size:clamp(22px,4vw,34px)}header p{color:var(--muted);margin:8px 0 0}
-main{max-width:1100px;margin:28px auto;padding:0 16px}.tabs,.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-button{background:var(--gold);color:#17120a;border:0;border-radius:8px;padding:11px 16px;font-weight:bold;cursor:pointer}
-button.secondary{background:#292929;color:#eee;border:1px solid var(--line)}button.danger{background:#6c2929;color:white}
-input,select,textarea{background:#0d0d0d;border:1px solid var(--line);color:white;border-radius:8px;padding:12px;width:100%;margin:6px 0 12px}
-label{color:#d9c28e;font-size:14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px;margin:14px 0}
-h2{color:var(--gold);font-size:20px;margin-top:0}.muted{color:var(--muted)}.hidden{display:none}
-table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:right;padding:10px;border-bottom:1px solid var(--line)}th{color:var(--gold)}
-.notice{padding:12px;border-radius:8px;background:#242016;color:#e8d7ad;margin:12px 0}.ok{color:#8cdb9b}.err{color:#ff9292}
-.small{font-size:12px;color:var(--muted)}footer{text-align:center;padding:30px;color:#777}
+
+:root{--bg:#08090c;--panel:#111318;--panel2:#171a20;--gold:#d8b15b;--gold2:#f0d58d;--muted:#a7a9b0;--line:#2b2d34;--green:#63d49a}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#29200e 0%,#0b0c10 42%,var(--bg) 75%);color:#f5f1e8;font-family:Arial,Tahoma,sans-serif;line-height:1.6}
+a{color:inherit;text-decoration:none}
+.site-header{position:sticky;top:0;z-index:20;padding:14px max(5%,calc((100% - 1180px)/2));border-bottom:1px solid #383020;background:rgba(8,9,12,.94);backdrop-filter:blur(14px)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:46px;height:46px;border:1px solid var(--gold);border-radius:12px;display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:19px;background:linear-gradient(145deg,#2b2416,#101114);box-shadow:0 0 24px #d8b15b20}
+.brand h1{margin:0;color:var(--gold2);font-size:clamp(17px,3vw,23px);letter-spacing:1px}
+.brand p{margin:0;color:var(--muted);font-size:10px;letter-spacing:2px}
+.nav-links{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.nav-links a,.nav-links button{padding:9px 12px;border-radius:8px;color:#d8d9de;background:transparent;border:1px solid transparent;font-size:13px}
+.nav-links a:hover{border-color:#55472a;color:var(--gold2);background:#d8b15b0d}
+button{background:linear-gradient(135deg,#f0d58d,#c69b42);color:#17120a;border:0;border-radius:9px;padding:11px 16px;font-weight:bold;cursor:pointer;transition:.2s}
+button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+button.secondary{background:#20232a;color:#eee;border:1px solid #3a3d45}
+button.danger{background:#6c2929;color:white}
+input,select,textarea{background:#0d0f13;border:1px solid var(--line);color:white;border-radius:8px;padding:12px;width:100%;margin:6px 0 12px}
+label{color:#d9c28e;font-size:14px}
+main{max-width:1180px;margin:28px auto;padding:0 18px}
+.hero{position:relative;overflow:hidden;min-height:300px;padding:clamp(26px,6vw,58px);border:1px solid #66532d;border-radius:22px;background:linear-gradient(105deg,rgba(8,9,12,.98),rgba(12,12,13,.88) 55%,rgba(73,52,19,.48)),radial-gradient(circle at 85% 30%,#b88b353d,transparent 35%);box-shadow:0 20px 60px #0008;margin:22px 0 28px}
+.hero:after{content:"PRO";position:absolute;right:5%;top:50%;transform:translateY(-50%);font-size:clamp(100px,23vw,260px);font-weight:1000;letter-spacing:-15px;color:#d8b15b0b;pointer-events:none}
+.hero-content{position:relative;z-index:1;max-width:670px}
+.eyebrow{color:var(--gold);font-weight:bold;letter-spacing:3px;font-size:12px}
+.hero h2{font-size:clamp(30px,6vw,54px);line-height:1.12;margin:12px 0;color:#fff}
+.hero h2 span{color:var(--gold2)}
+.hero p{color:#b9bbc2;max-width:560px;margin:0 0 22px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+.section-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:30px 2px 10px}
+.section-heading h2{margin:0;color:var(--gold2);font-size:22px}
+.section-heading p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px}
+.card{background:linear-gradient(145deg,#171a20,#101216);border:1px solid var(--line);border-radius:15px;padding:19px;margin:14px 0;box-shadow:0 10px 30px #0003}
+.card h2{color:var(--gold2);font-size:19px;margin-top:0}
+#public .card{margin:0}
+#public .card h2{display:flex;align-items:center;gap:9px}
+#public .card h2:before{content:"";width:4px;height:19px;border-radius:4px;background:var(--gold)}
+#status{border:1px solid #55472a;background:#211c12}
+.tabs,.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hidden{display:none!important}
+table{width:100%;border-collapse:collapse;margin-top:10px;overflow:hidden;border-radius:9px}
+th,td{text-align:right;padding:11px;border-bottom:1px solid var(--line)}
+th{color:var(--gold2);background:#201b12}
+td{color:#e2e3e7}
+.notice{padding:12px;border-radius:8px;background:#242016;color:#e8d7ad;margin:12px 0}
+.ok{color:#8cdb9b}.err{color:#ff9292}
+.small{font-size:12px;color:var(--muted)}
+footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid var(--line);margin-top:45px;background:#090a0d}
+.footer-brand{color:var(--gold);font-weight:bold;letter-spacing:2px}
+.pill{display:inline-block;padding:5px 10px;border:1px solid #66532d;border-radius:30px;color:var(--gold2);font-size:11px}
+@media(max-width:650px){.site-header{padding:12px 4%}.header-inner{align-items:flex-start}.nav-links{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nav-links a{white-space:nowrap;padding:8px 10px}.hero{min-height:280px}.hero:after{right:-3%;top:70%;font-size:120px}.section-heading{align-items:flex-start;flex-direction:column}main{padding:0 13px;margin-top:15px}th,td{padding:8px;font-size:12px}}
+
 </style>
 </head>
 <body>
-<header><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</p></header>
+
+<header class="site-header">
+ <div class="header-inner">
+  <a class="brand" href="#">
+   <div class="brand-mark">PRO</div>
+   <div><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE</p></div>
+  </a>
+  <nav class="nav-links" aria-label="القائمة الرئيسية">
+   <a href="#home">الرئيسية</a><a href="#scrims">السكريمات</a><a href="#teamsSection">الفرق</a><a href="#resultsSection">النتائج</a>
+   <button class="secondary" id="loginToggle">دخول المشرفين</button>
+  </nav>
+ </div>
+</header>
+
 <main>
 <section class="card">
  <div class="row" style="justify-content:space-between"><div><h2>بوابة المنظمة</h2><div class="muted">النتائج والبطولات الرسمية</div></div><button class="secondary" id="loginToggle">دخول المشرفين</button></div>
  <div id="status" class="notice">جاري الاتصال بقاعدة البيانات...</div>
 </section>
+
 <section id="public">
+ <section class="hero" id="home">
+  <div class="hero-content">
+   <div class="eyebrow">WELCOME TO THE ARENA</div>
+   <h2>YOUR ARENA.<br><span>YOUR GLORY.</span></h2>
+   <p>منصة PROFESSIONAL ESPORTS لتنظيم سكريمات وبطولات PUBG MOBILE. تابع الفعاليات، اكتشف الفرق، وكن جزءاً من المنافسة.</p>
+   <div class="hero-actions">
+    <a href="#scrims"><button>استكشف السكريمات</button></a>
+    <a href="#teamsSection"><button class="secondary">استعرض الفرق</button></a>
+   </div>
+  </div>
+ </section>
+ <div class="section-heading" id="scrims"><div><span class="pill">COMPETITIVE EVENTS</span><h2>السكريمات والبطولات</h2><p>تابع الفعاليات المنشورة وحالة كل بطولة.</p></div></div>
  <div class="grid">
-  <div class="card"><h2>البطولات</h2><div id="tournaments" class="muted">جاري التحميل...</div></div>
-  <div class="card"><h2>الفرق</h2><div id="teams" class="muted">جاري التحميل...</div></div>
+  <div class="card"><h2>البطولات والسكريمات</h2><div id="tournaments" class="muted">جاري التحميل...</div></div>
+  <div class="card" id="teamsSection"><h2>الفرق المشاركة</h2><div id="teams" class="muted">جاري التحميل...</div></div>
  </div>
+ <div class="section-heading" id="resultsSection"><div><span class="pill">OFFICIAL LEADERBOARD</span><h2>النتائج المعتمدة</h2><p>آخر النتائج التي تمت مراجعتها واعتمادها.</p></div></div>
  <div class="card"><h2>آخر النتائج المعتمدة</h2><div id="results" class="muted">جاري التحميل...</div></div>
 </section>
+
 <section id="login" class="card hidden">
  <h2>دخول المشرفين</h2>
  <label>البريد الإلكتروني</label><input id="email" type="email" autocomplete="username">
@@ -61,7 +129,7 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:right
  <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
 </section>
 </main>
-<footer>© PROFESSIONAL ESPORTS · PRO ORG</footer>
+<footer><div class="footer-brand">PROFESSIONAL ESPORTS</div><div>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</div><p class="small">© PROFESSIONAL ESPORTS. جميع الحقوق محفوظة.</p></footer>
 <script>
 const SUPABASE_URL = "https://pjirnjvkatkyrjpbiutd.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_";
