@@ -184,7 +184,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <label>بداية التسجيل</label><input id="scrimOpensAt" type="datetime-local">
   <label>نهاية التسجيل</label><input id="scrimClosesAt" type="datetime-local">
   <label>القوانين</label><textarea id="scrimRules"></textarea>
-  <button id="createScrim">إنشاء السكريم كمسودة</button><p id="scrimCreateMsg" class="small"></p>
+  <button id="createScrim">إنشاء الإعلان كمسودة</button><p id="scrimCreateMsg" class="small"></p>
  </div>
  <div class="card"><h3>ربط قائد الفريق بحسابه</h3><label>الفريق</label><select id="scrimAccessTeam"></select><label>UUID حساب القائد</label><input id="scrimAccessUser"><button id="grantScrimAccess" class="secondary">ربط الحساب</button></div>
  <div class="card"><h3>دعوة فريق</h3><label>السكريم</label><select id="scrimInviteSelect"></select><label>الفريق</label><select id="scrimInviteTeam"></select><button id="sendScrimInvite" class="secondary">إرسال الدعوة</button></div>
@@ -334,7 +334,7 @@ async function loadPublicScrims(){
   return `<article class="scrim-public-card">
    <div class="scrim-public-layout">
     <div>
-     <div class="scrim-control-head"><h3>${esc(s.title)}</h3><span class="scrim-state ${state.cls}">${state.label}</span></div>
+     <div class="scrim-control-head"><div><span class="small">إعلان سكريم</span><h3>${esc(s.title)}</h3></div><span class="scrim-state ${state.cls}">${state.label}</span></div>
      <p>${esc(s.description||"")}</p>
      <div class="scrim-meta-grid">
       <div class="scrim-meta-item"><span>موعد السكريم</span><b>${formatScrimDate(s.scheduled_at)}</b></div>
@@ -342,7 +342,7 @@ async function loadPublicScrims(){
       <div class="scrim-meta-item"><span>بداية التسجيل</span><b>${formatScrimDate(s.registration_opens_at)}</b></div>
       <div class="scrim-meta-item"><span>نهاية التسجيل</span><b>${formatScrimDate(s.registration_closes_at)}</b></div>
      </div>
-     <div class="scrim-countdown"><span>الوقت المتبقي</span><strong>${state.label}</strong></div>
+     <div class="scrim-countdown"><span>العد التنازلي للفتح / الإغلاق</span><strong ${countdownAttrs(s)}>${state.label}</strong></div>
     </div>
     <aside class="scrim-public-details">
      <h4>الفرق المقبولة</h4>
@@ -427,11 +427,31 @@ window.registerTeamForScrim=registerTeamForScrim;
 function scrimCountdownLabel(scrim){
  const now=Date.now(),close=scrim.registration_closes_at?new Date(scrim.registration_closes_at).getTime():null;
  const open=scrim.registration_opens_at?new Date(scrim.registration_opens_at).getTime():null;
- if(scrim.status!=="registration_open")return {label:scrim.status==="completed"?"انتهى السكريم":scrim.status==="cancelled"?"تم إلغاء السكريم":"التسجيل غير مفتوح",cls:"closed"};
+ if(scrim.status==="completed")return {label:"انتهى السكريم",cls:"closed"};
+ if(scrim.status==="cancelled")return {label:"تم إلغاء السكريم",cls:"closed"};
  if(open&&now<open)return {label:"يفتح التسجيل خلال "+countdownParts(open-now),cls:"soon"};
- if(close&&now>close)return {label:"انتهى وقت التسجيل",cls:"closed"};
+ if(scrim.status!=="registration_open")return {label:scrim.status==="draft"?"الإعلان غير منشور":"التسجيل مغلق",cls:"closed"};
+ if(close&&now>=close)return {label:"انتهى وقت التسجيل",cls:"closed"};
  if(close)return {label:"ينتهي التسجيل خلال "+countdownParts(close-now),cls:""};
  return {label:"التسجيل مفتوح",cls:""};
+}
+function countdownAttrs(scrim){
+ return `data-countdown="true" data-status="${esc(scrim.status||"")}" data-opens="${esc(scrim.registration_opens_at||"")}" data-closes="${esc(scrim.registration_closes_at||"")}"`;
+}
+function refreshScrimCountdowns(){
+ document.querySelectorAll('[data-countdown="true"]').forEach(el=>{
+  const status=el.dataset.status,open=el.dataset.opens?new Date(el.dataset.opens).getTime():null,close=el.dataset.closes?new Date(el.dataset.closes).getTime():null,now=Date.now();
+  let label="",cls="";
+  if(status==="completed")label="انتهى السكريم";
+  else if(status==="cancelled")label="تم إلغاء السكريم";
+  else if(open&&now<open){label="يفتح التسجيل خلال "+countdownParts(open-now);cls="soon";}
+  else if(status!=="registration_open")label=status==="draft"?"الإعلان غير منشور":"التسجيل مغلق";
+  else if(close&&now>=close)label="انتهى وقت التسجيل";
+  else if(close)label="ينتهي التسجيل خلال "+countdownParts(close-now);
+  else label="التسجيل مفتوح";
+  el.textContent=label;
+  el.className=el.className.replace(/\bsoon\b/g,"").trim()+(cls?" "+cls:"");
+ });
 }
 function countdownParts(ms){
  if(!Number.isFinite(ms)||ms<=0)return "الآن";
@@ -462,11 +482,11 @@ async function loadScrimAdmin(){
     <div class="scrim-meta-item"><span>المنطقة الزمنية</span><b>Africa/Cairo</b></div>
     <div class="scrim-meta-item"><span>نظام التسجيل</span><b>${s.registration_mode==="open"?"مفتوح":"بدعوة فقط"}</b></div>
    </div>
-   <div class="scrim-countdown"><span>حالة التسجيل والوقت المتبقي</span><strong>${state.label}</strong></div>
+   <div class="scrim-countdown"><span>العد التنازلي للفتح / الإغلاق</span><strong ${countdownAttrs(s)}>${state.label}</strong></div>
    <div class="scrim-capacity"><div class="scrim-control-head"><b>الفرق المقبولة</b><b>${accepted.length} / ${max}</b></div><div class="bar"><i style="width:${pct}%"></i></div><span class="small">${Math.max(0,max-accepted.length)} مقعد متبقٍ</span></div>
    <h4>الفرق المقبولة</h4><div class="accepted-team-list">${teamsHtml}</div>
    <p class="small">الحالة: ${esc(s.status)} · آخر تحديث: ${formatScrimDate(s.updated_at||s.created_at)}</p>
-   <div class="row"><button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
+   <div class="row">${s.status==="draft"?`<button onclick="publishScrim('${s.id}')">نشر الإعلان</button>`:""}<button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
   </div>`;
  }).join(""):"لا توجد سكريمات بعد.";
  await loadScrimRequests();
@@ -477,8 +497,15 @@ async function createScrim(){
  const {data:{user}}=await client.auth.getUser();
  const {error}=await client.from("scrims").insert({title,description:$("scrimDescription").value,registration_mode:$("scrimMode").value,status:"draft",max_teams:max,scheduled_at:scrimDate($("scrimScheduledAt").value),registration_opens_at:scrimDate($("scrimOpensAt").value),registration_closes_at:scrimDate($("scrimClosesAt").value),rules:$("scrimRules").value,created_by:user?.id});
  if(error){$("scrimCreateMsg").textContent=error.message;return;}
- $("scrimCreateMsg").textContent="تم إنشاء المسودة.";await loadScrimAdmin();
+ $("scrimCreateMsg").textContent="تم إنشاء الإعلان كمسودة. يمكنك مراجعته ثم الضغط على «نشر الإعلان».";await loadScrimAdmin();
 }
+async function publishScrim(id){
+ if(!confirm("نشر الإعلان للزوار؟ سيظهر في صفحة السكريمات، وسيظل التسجيل مغلقاً حتى تفتحه من لوحة الإدارة."))return;
+ const {error}=await client.from("scrims").update({status:"registration_closed"}).eq("id",id);
+ if(error){alert("تعذر نشر الإعلان: "+error.message);return;}
+ await loadScrimAdmin();await loadPublicScrims();
+}
+window.publishScrim=publishScrim;
 async function scrimStatus(id,status){const {error}=await client.from("scrims").update({status}).eq("id",id);if(error)alert(error.message);else{await loadScrimAdmin();await loadPublicScrims();}}
 async function scrimDelete(id,title){if(!confirm(`تأكيد حذف السكريم ${title}؟`))return;const {error}=await client.from("scrims").delete().eq("id",id);if(error)alert(error.message);else{await loadScrimAdmin();await loadPublicScrims();}}
 async function deleteTournament(id,title){if(!confirm(`تأكيد حذف البطولة ${title}؟`))return;const {error}=await client.from("tournaments").delete().eq("id",id);if(error)alert("تعذر الحذف: "+error.message);else{alert("تم الحذف");await refreshAdmin();await loadPublic();}}
@@ -491,6 +518,7 @@ window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview
 $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAccess;$("sendScrimInvite").onclick=inviteScrimTeam;$("saveScrimRoom").onclick=addScrimRoom;
 
 client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();await loadPublicScrims();},0));
+setInterval(()=>{refreshScrimCountdowns();},1000);
 setInterval(()=>{loadPublicScrims();},60000);
 (async()=>{await loadPublic();await loadPublicScrims();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
 </script>
