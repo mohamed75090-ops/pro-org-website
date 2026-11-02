@@ -57,6 +57,30 @@ td{color:#e2e3e7}
 footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid var(--line);margin-top:45px;background:#090a0d}
 .footer-brand{color:var(--gold);font-weight:bold;letter-spacing:2px}
 .pill{display:inline-block;padding:5px 10px;border:1px solid #66532d;border-radius:30px;color:var(--gold2);font-size:11px}
+/* PRO scrim control visual upgrades */
+.scrim-control-card{border:1px solid #34404d;background:linear-gradient(145deg,#141b24,#0e1218);padding:20px;border-radius:16px;margin:14px 0}
+.scrim-control-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.scrim-state{display:inline-flex;align-items:center;gap:7px;border-radius:7px;padding:7px 12px;font-size:12px;font-weight:800;background:#12352d;color:#71e0b0;border:1px solid #246b57}
+.scrim-state.closed{background:#3a2024;color:#ff9a9e;border-color:#713b42}
+.scrim-state.soon{background:#342b16;color:#f3cc70;border-color:#705b2c}
+.scrim-countdown{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin:15px 0;border:1px solid #31566c;border-radius:12px;background:linear-gradient(100deg,#102b3a,#15212b)}
+.scrim-countdown strong{color:#7dd3fc;font-size:17px}
+.scrim-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:14px 0}
+.scrim-meta-item{padding:13px;border-radius:10px;background:#171f2b;border:1px solid #2d4055}
+.scrim-meta-item span{display:block;color:#93a4b8;font-size:12px}
+.scrim-meta-item b{display:block;color:#e6edf5;margin-top:4px}
+.scrim-capacity{padding:14px;border-radius:10px;background:#211b31;border:1px solid #51406e;margin:12px 0}
+.scrim-capacity .bar{height:7px;border-radius:9px;background:#30283e;overflow:hidden;margin:9px 0}
+.scrim-capacity .bar i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,#ec8bcb)}
+.accepted-team-list{display:grid;gap:8px;margin-top:10px}
+.accepted-team-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #344b42;border-right:4px solid #45c69a;border-radius:9px;background:#121f1c}
+.accepted-team-row:nth-child(3n+2){border-color:#4a405d;border-right-color:#ad8cf4;background:#1b1725}
+.accepted-team-row:nth-child(3n){border-color:#55452e;border-right-color:#e5b85c;background:#211c14}
+.accepted-team-tag{color:#9de6cb;font-weight:800;letter-spacing:1px}
+.accepted-team-row:nth-child(3n+2) .accepted-team-tag{color:#c5aaff}
+.accepted-team-row:nth-child(3n) .accepted-team-tag{color:#f3d18b}
+@media(max-width:600px){.scrim-countdown{align-items:flex-start}.scrim-meta-grid{grid-template-columns:1fr 1fr}}
+
 @media(max-width:650px){.site-header{padding:12px 4%}.header-inner{align-items:flex-start}.nav-links{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nav-links a{white-space:nowrap;padding:8px 10px}.hero{min-height:280px}.hero:after{right:-3%;top:70%;font-size:120px}.section-heading{align-items:flex-start;flex-direction:column}main{padding:0 13px;margin-top:15px}th,td{padding:8px;font-size:12px}}
 
 </style>
@@ -365,15 +389,51 @@ async function registerTeamForScrim(scrimId){
  await renderTeamScrimStatus();
 }
 window.registerTeamForScrim=registerTeamForScrim;
+function scrimCountdownLabel(scrim){
+ const now=Date.now(),close=scrim.registration_closes_at?new Date(scrim.registration_closes_at).getTime():null;
+ const open=scrim.registration_opens_at?new Date(scrim.registration_opens_at).getTime():null;
+ if(scrim.status!=="registration_open")return {label:scrim.status==="completed"?"انتهى السكريم":scrim.status==="cancelled"?"تم إلغاء السكريم":"التسجيل غير مفتوح",cls:"closed"};
+ if(open&&now<open)return {label:"يفتح التسجيل خلال "+countdownParts(open-now),cls:"soon"};
+ if(close&&now>close)return {label:"انتهى وقت التسجيل",cls:"closed"};
+ if(close)return {label:"ينتهي التسجيل خلال "+countdownParts(close-now),cls:""};
+ return {label:"التسجيل مفتوح",cls:""};
+}
+function countdownParts(ms){
+ if(!Number.isFinite(ms)||ms<=0)return "الآن";
+ const total=Math.floor(ms/1000),d=Math.floor(total/86400),h=Math.floor(total%86400/3600),m=Math.floor(total%3600/60);
+ return `${d?d+" يوم ":""}${h} س ${m} د`;
+}
 async function loadScrimAdmin(){
- const [a,b]=await Promise.all([client.from("scrims").select("*").order("created_at",{ascending:false}),client.from("teams").select("id,name,tag").order("name")]);
+ const [a,b,c]=await Promise.all([
+  client.from("scrims").select("*").order("created_at",{ascending:false}),
+  client.from("teams").select("id,name,tag").order("name"),
+  client.from("scrim_registrations").select("id,scrim_id,status,teams(name,tag)").eq("status","accepted")
+ ]);
  const el=$("scrimAdminList");if(a.error){el.textContent="تعذر التحميل: "+a.error.message;return;}
- const ss=a.data||[],tt=b.data||[];
+ const ss=a.data||[],tt=b.data||[],acceptedRows=c.data||[];
  const teamOpts=tt.map(t=>`<option value="${t.id}">${esc(t.name)} ${esc(t.tag||"")}</option>`).join("");
  ["scrimAccessTeam","scrimInviteTeam"].forEach(id=>$(id).innerHTML=teamOpts);
  const scrimOpts=ss.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join("");
  ["scrimInviteSelect","scrimRoomSelect"].forEach(id=>$(id).innerHTML=scrimOpts);
- el.innerHTML=ss.length?ss.map(s=>`<div class="card"><h3>${esc(s.title)}</h3><p>الحالة: ${esc(s.status)} | ${s.registration_mode==="open"?"مفتوح":"بدعوة"} | ${s.max_teams} فريق</p><div class="row"><button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div></div>`).join(""):"لا توجد سكريمات بعد.";
+ const acceptedByScrim=new Map();
+ acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push(r);});
+ el.innerHTML=ss.length?ss.map(s=>{
+  const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
+  const teamsHtml=accepted.length?accepted.map((r,i)=>`<div class="accepted-team-row"><span>${String(i+1).padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span><span class="accepted-team-tag">[${esc(r.teams?.tag||"—")}]</span></div>`).join(""):'<p class="small">لا توجد فرق مقبولة حتى الآن.</p>';
+  return `<div class="scrim-control-card">
+   <div class="scrim-control-head"><h3>${esc(s.title)}</h3><span class="scrim-state ${state.cls}">${state.label}</span></div>
+   <div class="scrim-meta-grid">
+    <div class="scrim-meta-item"><span>موعد بداية السكريم</span><b>${formatScrimDate(s.scheduled_at)}</b></div>
+    <div class="scrim-meta-item"><span>المنطقة الزمنية</span><b>Africa/Cairo</b></div>
+    <div class="scrim-meta-item"><span>نظام التسجيل</span><b>${s.registration_mode==="open"?"مفتوح":"بدعوة فقط"}</b></div>
+   </div>
+   <div class="scrim-countdown"><span>حالة التسجيل والوقت المتبقي</span><strong>${state.label}</strong></div>
+   <div class="scrim-capacity"><div class="scrim-control-head"><b>الفرق المقبولة</b><b>${accepted.length} / ${max}</b></div><div class="bar"><i style="width:${pct}%"></i></div><span class="small">${Math.max(0,max-accepted.length)} مقعد متبقٍ</span></div>
+   <h4>الفرق المقبولة</h4><div class="accepted-team-list">${teamsHtml}</div>
+   <p class="small">الحالة: ${esc(s.status)} · آخر تحديث: ${formatScrimDate(s.updated_at||s.created_at)}</p>
+   <div class="row"><button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
+  </div>`;
+ }).join(""):"لا توجد سكريمات بعد.";
  await loadScrimRequests();
 }
 async function createScrim(){
