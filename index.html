@@ -65,6 +65,13 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .scrim-state.soon{background:#342b16;color:#f3cc70;border-color:#705b2c}
 .scrim-countdown{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin:15px 0;border:1px solid #31566c;border-radius:12px;background:linear-gradient(100deg,#102b3a,#15212b)}
 .scrim-countdown strong{color:#7dd3fc;font-size:17px}
+.scrim-countdown{display:block;text-align:right}
+.scrim-countdown-title{display:block;color:#e7edf4;font-weight:800;margin-bottom:12px}
+.scrim-timer-units{display:flex;direction:ltr;justify-content:flex-start;gap:8px;flex-wrap:wrap}
+.scrim-timer-unit{min-width:58px;text-align:center;padding:8px 7px;border-radius:9px;background:#f7f8fa;border:1px solid #cbd5e1;color:#111827}
+.scrim-timer-unit b{display:block;font-size:22px;line-height:1.15;font-variant-numeric:tabular-nums;direction:ltr}
+.scrim-timer-unit small{display:block;color:#64748b;font-size:11px;margin-top:4px}
+.scrim-countdown-status{display:block;color:#7dd3fc;font-size:14px;margin-top:10px;font-weight:800}
 .scrim-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:14px 0}
 .scrim-meta-item{padding:13px;border-radius:10px;background:#171f2b;border:1px solid #2d4055}
 .scrim-meta-item span{display:block;color:#93a4b8;font-size:12px}
@@ -317,7 +324,7 @@ const scrimDate=v=>v?new Date(v).toISOString():null;
 function formatScrimDate(value){
  if(!value)return "لم يحدد";
  const d=new Date(value);
- return Number.isNaN(d.getTime())?"لم يحدد":d.toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"});
+ return Number.isNaN(d.getTime())?"لم يحدد":d.toLocaleString("ar-EG-u-nu-latn",{dateStyle:"medium",timeStyle:"short"});
 }
 async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
@@ -342,7 +349,7 @@ async function loadPublicScrims(){
       <div class="scrim-meta-item"><span>بداية التسجيل</span><b>${formatScrimDate(s.registration_opens_at)}</b></div>
       <div class="scrim-meta-item"><span>نهاية التسجيل</span><b>${formatScrimDate(s.registration_closes_at)}</b></div>
      </div>
-     <div class="scrim-countdown"><span>العد التنازلي للفتح / الإغلاق</span><strong ${countdownAttrs(s)}>${state.label}</strong></div>
+     <div class="scrim-countdown" ${countdownAttrs(s)}>${countdownDisplay(s)}</div>
     </div>
     <aside class="scrim-public-details">
      <h4>الفرق المقبولة</h4>
@@ -427,36 +434,44 @@ window.registerTeamForScrim=registerTeamForScrim;
 function scrimCountdownLabel(scrim){
  const now=Date.now(),close=scrim.registration_closes_at?new Date(scrim.registration_closes_at).getTime():null;
  const open=scrim.registration_opens_at?new Date(scrim.registration_opens_at).getTime():null;
- if(scrim.status==="completed")return {label:"انتهى السكريم",cls:"closed"};
- if(scrim.status==="cancelled")return {label:"تم إلغاء السكريم",cls:"closed"};
- if(open&&now<open)return {label:"يفتح التسجيل خلال "+countdownParts(open-now),cls:"soon"};
- if(scrim.status!=="registration_open")return {label:scrim.status==="draft"?"الإعلان غير منشور":"التسجيل مغلق",cls:"closed"};
- if(close&&now>=close)return {label:"انتهى وقت التسجيل",cls:"closed"};
- if(close)return {label:"ينتهي التسجيل خلال "+countdownParts(close-now),cls:""};
- return {label:"التسجيل مفتوح",cls:""};
+ if(scrim.status==="completed")return {label:"انتهى السكريم",cls:"closed",target:null,title:"انتهى السكريم"};
+ if(scrim.status==="cancelled")return {label:"تم إلغاء السكريم",cls:"closed",target:null,title:"تم إلغاء السكريم"};
+ if(open&&now<open)return {label:"يفتح التسجيل خلال",cls:"soon",target:open,title:"يفتح التسجيل خلال"};
+ if(scrim.status!=="registration_open")return {label:scrim.status==="draft"?"الإعلان غير منشور":"التسجيل مغلق",cls:"closed",target:null,title:scrim.status==="draft"?"الإعلان غير منشور":"التسجيل مغلق"};
+ if(close&&now>=close)return {label:"انتهى وقت التسجيل",cls:"closed",target:null,title:"انتهى وقت التسجيل"};
+ if(close)return {label:"ينتهي التسجيل خلال",cls:"",target:close,title:"ينتهي التسجيل خلال"};
+ return {label:"التسجيل مفتوح",cls:"",target:null,title:"التسجيل مفتوح"};
 }
 function countdownAttrs(scrim){
  return `data-countdown="true" data-status="${esc(scrim.status||"")}" data-opens="${esc(scrim.registration_opens_at||"")}" data-closes="${esc(scrim.registration_closes_at||"")}"`;
 }
+function countdownDisplay(scrim){
+ const state=scrimCountdownLabel(scrim);
+ const html=state.target?countdownUnitsHTML(state.target-Date.now()):`<span class="scrim-countdown-status">${state.label}</span>`;
+ return `<span class="scrim-countdown-title">العد التنازلي للفتح / الإغلاق</span><div class="scrim-countdown-content" data-countdown-content><span class="scrim-countdown-status">${state.title}</span>${html}</div>`;
+}
+function countdownUnitsHTML(ms){
+ const total=Math.max(0,Math.floor(ms/1000)),values=[Math.floor(total/86400),Math.floor(total%86400/3600),Math.floor(total%3600/60),total%60],labels=["يوم","ساعة","دقيقة","ثانية"];
+ return `<div class="scrim-timer-units">${values.map((v,i)=>`<div class="scrim-timer-unit"><b>${String(v).padStart(2,"0")}</b><small>${labels[i]}</small></div>`).join("")}</div>`;
+}
 function refreshScrimCountdowns(){
  document.querySelectorAll('[data-countdown="true"]').forEach(el=>{
   const status=el.dataset.status,open=el.dataset.opens?new Date(el.dataset.opens).getTime():null,close=el.dataset.closes?new Date(el.dataset.closes).getTime():null,now=Date.now();
-  let label="",cls="";
+  let target=null,label="";
   if(status==="completed")label="انتهى السكريم";
   else if(status==="cancelled")label="تم إلغاء السكريم";
-  else if(open&&now<open){label="يفتح التسجيل خلال "+countdownParts(open-now);cls="soon";}
+  else if(open&&now<open){target=open;label="يفتح التسجيل خلال";}
   else if(status!=="registration_open")label=status==="draft"?"الإعلان غير منشور":"التسجيل مغلق";
   else if(close&&now>=close)label="انتهى وقت التسجيل";
-  else if(close)label="ينتهي التسجيل خلال "+countdownParts(close-now);
+  else if(close){target=close;label="ينتهي التسجيل خلال";}
   else label="التسجيل مفتوح";
-  el.textContent=label;
-  el.className=el.className.replace(/\bsoon\b/g,"").trim()+(cls?" "+cls:"");
+  const content=el.querySelector('[data-countdown-content]');
+  if(content)content.innerHTML=`<span class="scrim-countdown-status">${label}</span>${target?countdownUnitsHTML(target-now):""}`;
  });
 }
 function countdownParts(ms){
- if(!Number.isFinite(ms)||ms<=0)return "الآن";
- const total=Math.floor(ms/1000),d=Math.floor(total/86400),h=Math.floor(total%86400/3600),m=Math.floor(total%3600/60);
- return `${d?d+" يوم ":""}${h} س ${m} د`;
+ const total=Math.max(0,Math.floor(ms/1000)),d=Math.floor(total/86400),h=Math.floor(total%86400/3600),m=Math.floor(total%3600/60),sec=total%60;
+ return `${d} يوم ${h} ساعة ${m} دقيقة ${sec} ثانية`;
 }
 async function loadScrimAdmin(){
  const [a,b,c]=await Promise.all([
@@ -482,7 +497,7 @@ async function loadScrimAdmin(){
     <div class="scrim-meta-item"><span>المنطقة الزمنية</span><b>Africa/Cairo</b></div>
     <div class="scrim-meta-item"><span>نظام التسجيل</span><b>${s.registration_mode==="open"?"مفتوح":"بدعوة فقط"}</b></div>
    </div>
-   <div class="scrim-countdown"><span>العد التنازلي للفتح / الإغلاق</span><strong ${countdownAttrs(s)}>${state.label}</strong></div>
+   <div class="scrim-countdown" ${countdownAttrs(s)}>${countdownDisplay(s)}</div>
    <div class="scrim-capacity"><div class="scrim-control-head"><b>الفرق المقبولة</b><b>${accepted.length} / ${max}</b></div><div class="bar"><i style="width:${pct}%"></i></div><span class="small">${Math.max(0,max-accepted.length)} مقعد متبقٍ</span></div>
    <h4>الفرق المقبولة</h4><div class="accepted-team-list">${teamsHtml}</div>
    <p class="small">الحالة: ${esc(s.status)} · آخر تحديث: ${formatScrimDate(s.updated_at||s.created_at)}</p>
