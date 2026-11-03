@@ -282,8 +282,12 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
  <div id="weeklyMvpAdmin" class="card hidden">
   <h2>إدارة MVP الأسبوعي</h2>
-  <p class="small">أدخل بيانات أفضل ثلاثة لاعبين وصورهم كرابط مباشر. لن تظهر للجمهور إلا بعد النشر.</p>
+  <p class="small">أضف لاعب MVP بشكل مستقل، ثم أدخل أفضل ثلاثة لاعبين. لن تظهر البيانات للجمهور إلا بعد النشر.</p>
   <label>عنوان الأسبوع / الجولة</label><input id="mvpWeekLabel" placeholder="مثال: الأسبوع الأول - نوفمبر 2026">
+  <div class="mvp-admin-player" style="margin:12px 0;border-color:#9b7837">
+   <h3>⭐ لاعب MVP الأسبوع</h3><label>اسم اللاعب</label><input id="mvpSoloName" placeholder="اسم لاعب MVP"><label>الفريق</label><input id="mvpSoloTeam" placeholder="اسم الفريق أو TAG"><label>رابط صورة اللاعب</label><input id="mvpSoloPhoto" type="url" placeholder="https://..."><label>Eliminations</label><input id="mvpSoloKills" type="number" min="0" value="0"><label>Damage</label><input id="mvpSoloDamage" type="number" min="0" value="0">
+  </div>
+  <h3>أفضل 3 لاعبين</h3>
   <div class="mvp-admin-grid">
    <div class="mvp-admin-player"><h3>المركز 1</h3><label>اسم اللاعب</label><input id="mvpName1" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam1" placeholder="اسم الفريق أو TAG"><label>رابط صورة اللاعب</label><input id="mvpPhoto1" type="url" placeholder="https://..."><label>Eliminations</label><input id="mvpKills1" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage1" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 2</h3><label>اسم اللاعب</label><input id="mvpName2" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam2" placeholder="اسم الفريق أو TAG"><label>رابط صورة اللاعب</label><input id="mvpPhoto2" type="url" placeholder="https://..."><label>Eliminations</label><input id="mvpKills2" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage2" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 3</h3><label>اسم اللاعب</label><input id="mvpName3" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam3" placeholder="اسم الفريق أو TAG"><label>رابط صورة اللاعب</label><input id="mvpPhoto3" type="url" placeholder="https://..."><label>Eliminations</label><input id="mvpKills3" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage3" type="number" min="0" value="0"></div>
   </div>
@@ -324,28 +328,32 @@ async function loadWeeklyMvp(){
  top.innerHTML=rows.map((x,i)=>'<article class="mvp-rank-card '+(i===0?'first':'')+'"><img src="'+esc(x.photo_url||'')+'" alt="'+esc(x.player_name)+'" onerror="this.style.visibility=\'hidden\'"><div><div class="mvp-rank-number">#'+(i+1)+'</div><h3>'+esc(x.player_name)+'</h3><p>'+esc(x.team_name||"—")+'</p><div class="mvp-rank-stats"><span><b>'+Number(x.eliminations||0)+'</b>Kills</span><span><b>'+Number(x.damage||0).toLocaleString("en-US")+'</b>Damage</span></div></div></article>').join("");
 }
 async function loadWeeklyMvpAdmin(){
- const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position,is_published").order("rank_position",{ascending:true}).limit(3);
- if(error){$("mvpAdminStatus").textContent="جدول MVP غير جاهز بعد. نفّذ ملف SQL المرفق أولاً. التفاصيل: "+error.message;return;}
+ const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position,is_published").order("rank_position",{ascending:true});
+ if(error){$("mvpAdminStatus").textContent="تعذر تحميل بيانات MVP: "+error.message;return;}
  const rows=data||[];if(!rows.length)return;
- $("mvpWeekLabel").value=rows[0].week_label||"";
- rows.forEach(x=>{const n=Number(x.rank_position);if(n<1||n>3)return;$("mvpName"+n).value=x.player_name||"";$("mvpTeam"+n).value=x.team_name||"";$("mvpPhoto"+n).value=x.photo_url||"";$("mvpKills"+n).value=x.eliminations||0;$("mvpDamage"+n).value=x.damage||0;});
- $("mvpAdminStatus").textContent=rows[0].is_published?"القائمة منشورة حالياً. يمكنك تعديلها وإعادة نشرها أو إخفاؤها.":"البيانات محفوظة كمسودة.";
+ const week=rows[0].week_label;$("mvpWeekLabel").value=week||"";
+ const solo=rows.find(x=>Number(x.rank_position)===0);
+ if(solo){$("mvpSoloName").value=solo.player_name||"";$("mvpSoloTeam").value=solo.team_name||"";$("mvpSoloPhoto").value=solo.photo_url||"";$("mvpSoloKills").value=solo.eliminations||0;$("mvpSoloDamage").value=solo.damage||0;}
+ rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).forEach(x=>{const n=Number(x.rank_position);$("mvpName"+n).value=x.player_name||"";$("mvpTeam"+n).value=x.team_name||"";$("mvpPhoto"+n).value=x.photo_url||"";$("mvpKills"+n).value=x.eliminations||0;$("mvpDamage"+n).value=x.damage||0;});
+ $("mvpAdminStatus").textContent=rows.some(x=>x.is_published)?"بيانات الأسبوع منشورة حالياً. يمكنك تعديلها وإعادة النشر أو الإخفاء.":"البيانات محفوظة كمسودة.";
 }
 async function saveWeeklyMvp(publish=true){
  const week=$("mvpWeekLabel").value.trim();if(!week)return $("mvpAdminStatus").textContent="اكتب عنوان الأسبوع أولاً.";
  const payload=[];
+ const soloName=$("mvpSoloName").value.trim();
+ if(soloName)payload.push({week_label:week,rank_position:0,player_name:soloName,team_name:$("mvpSoloTeam").value.trim(),photo_url:$("mvpSoloPhoto").value.trim()||null,eliminations:Number($("mvpSoloKills").value)||0,damage:Number($("mvpSoloDamage").value)||0,is_published:publish,updated_at:new Date().toISOString()});
  for(let n=1;n<=3;n++){
   const name=$("mvpName"+n).value.trim();if(!name)continue;
   payload.push({week_label:week,rank_position:n,player_name:name,team_name:$("mvpTeam"+n).value.trim(),photo_url:$("mvpPhoto"+n).value.trim()||null,eliminations:Number($("mvpKills"+n).value)||0,damage:Number($("mvpDamage"+n).value)||0,is_published:publish,updated_at:new Date().toISOString()});
  }
- if(!payload.length)return $("mvpAdminStatus").textContent="أدخل اسم لاعب واحد على الأقل.";
+ if(!payload.length)return $("mvpAdminStatus").textContent="أدخل بيانات لاعب MVP أو لاعب واحد على الأقل في أفضل 3.";
  const {error:hideCurrentError}=await client.from("weekly_mvp_players").update({is_published:false}).eq("week_label",week);
  if(hideCurrentError){$("mvpAdminStatus").textContent="تعذر تحديث القائمة الحالية: "+hideCurrentError.message;return;}
  const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
  if(error){$("mvpAdminStatus").textContent="تعذر الحفظ: "+error.message;return;}
  const {error:hideError}=await client.from("weekly_mvp_players").update({is_published:false}).neq("week_label",week);
  if(hideError){$("mvpAdminStatus").textContent="تم حفظ الأسبوع، لكن تعذر إخفاء الأسابيع السابقة: "+hideError.message;return;}
- $("mvpAdminStatus").textContent=publish?"تم حفظ ونشر قائمة MVP.":"تم حفظ القائمة كمسودة.";
+ $("mvpAdminStatus").textContent=publish?"تم حفظ ونشر MVP وأفضل 3 لاعبين.":"تم حفظ البيانات كمسودة.";
  await loadWeeklyMvp();await loadWeeklyMvpAdmin();
 }
 $("saveWeeklyMvp").addEventListener("click",()=>saveWeeklyMvp(true));
