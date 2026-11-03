@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PROFESSIONAL ESPORTS | PRO ORG</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
 
@@ -311,7 +312,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 <script>
 const SUPABASE_URL = "https://pjirnjvkatkyrjpbiutd.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_";
-let client = null;
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const $ = id => document.getElementById(id);
 let currentRole = null, teamsCache = [], tournamentsCache = [], matchesCache = [];
 const PLACEMENT_POINTS = {1:10,2:6,3:5,4:4,5:3,6:2,7:1};
@@ -906,39 +907,17 @@ window.setScrimMatchStatus=setScrimMatchStatus;
 window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview=scrimReview;window.deleteTournament=deleteTournament;
  $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAccess;$("sendScrimInvite").onclick=inviteScrimTeam;$("addScrimMatch").onclick=addScrimMatch;
 
-// Auth listener is registered after the Supabase client is initialized.
+client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();await loadPublicScrims();},0));
 setInterval(()=>{refreshScrimCountdowns();},1000);
 setInterval(()=>{document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
 setInterval(()=>{loadPublicScrims();},60000);
 setInterval(()=>{loadWeeklyMvp();},60000);
 (async()=>{
- const showConnectionError=detail=>{msg(detail,"err");["tournaments","teams","results"].forEach(id=>{if($(id))$(id).innerHTML='<div class="mvp-empty">'+esc(detail)+'</div>';});if($("publicScrims"))$("publicScrims").innerHTML='<div class="card">'+esc(detail)+'</div>';if($("weeklyMvpFeature"))$("weeklyMvpFeature").innerHTML='<div class="mvp-empty">'+esc(detail)+'</div>';};
- const loadSdk=url=>new Promise((resolve,reject)=>{const script=document.createElement("script");let done=false;const finish=err=>{if(done)return;done=true;clearTimeout(timer);script.onload=()=>{};script.onerror=null;if(err){script.remove();reject(err);}else resolve();};script.src=url;script.onload=()=>finish();script.onerror=()=>finish(new Error("تعذر تحميل "+url));document.head.appendChild(script);const timer=setTimeout(()=>finish(new Error("انتهت مهلة تحميل مكتبة الاتصال.")),8000);});
- try{
-  if(!window.supabase?.createClient){try{await loadSdk("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");}catch(e){await loadSdk("https://unpkg.com/@supabase/supabase-js@2");}}
-  if(!window.supabase?.createClient)throw new Error("مكتبة Supabase لم تبدأ بعد التحميل.");
-  client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-  client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();await loadPublicScrims();},0));
- }catch(e){showConnectionError("تعذر تشغيل مكتبة الاتصال: "+(e?.message||e));return;}
  await Promise.allSettled([loadPublic(),loadWeeklyMvp(),loadPublicScrims()]);
- try{const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");}catch(e){msg("تعذر إكمال الاتصال: "+esc(e?.message||e),"err");}
-})();
-</script>
-<script>
-(function(){
- function report(message){
-  var status=document.getElementById("status");
-  if(status)status.textContent="خطأ في تشغيل الموقع: "+String(message||"تعذر بدء JavaScript");
- }
- window.addEventListener("error",function(e){report(e.message||"خطأ JavaScript");});
- window.addEventListener("unhandledrejection",function(e){report(e.reason&&e.reason.message||"فشل طلب غير معالج");});
- setTimeout(function(){
-  ["tournaments","teams","results"].forEach(function(id){
-   var el=document.getElementById(id);
-   if(el&&/جاري التحميل/.test(el.textContent))el.textContent="تعذر بدء تحميل هذا القسم. راجع رسالة الخطأ أعلى الصفحة.";
-  });
-  var scrims=document.getElementById("publicScrims");
-  if(scrims&&/جاري تحميل السكريمات/.test(scrims.textContent))scrims.textContent="تعذر بدء تحميل السكريمات. راجع رسالة الخطأ أعلى الصفحة.";
- },25000);
+ try{
+  const {data:{session}}=await client.auth.getSession();
+  if(session)await refreshAdmin();
+  else msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");
+ }catch(e){msg("تعذر إكمال الاتصال: "+esc(e?.message||e),"err");}
 })();
 </script>
