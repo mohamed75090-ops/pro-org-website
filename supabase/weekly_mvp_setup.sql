@@ -79,3 +79,11 @@ using (
       and lower(coalesce(p.role, '')) in ('founder', 'admin', 'results_manager')
   )
 );
+
+-- Allow rank_position = 0 for the standalone Weekly MVP entry.
+alter table public.weekly_mvp_players
+  drop constraint if exists weekly_mvp_players_rank_position_check;
+
+alter table public.weekly_mvp_players
+  add constraint weekly_mvp_players_rank_position_check
+  check (rank_position between 0 and 3);
