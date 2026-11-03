@@ -403,14 +403,15 @@ async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
  const [{data,error},{data:acceptedRows,error:acceptedError}]=await Promise.all([
   client.from("scrims").select("id,title,description,status,registration_mode,max_teams,scheduled_at,registration_opens_at,registration_closes_at").neq("status","draft").order("scheduled_at"),
-  client.from("scrim_team_applications").select("scrim_id,team_tag,status").eq("status","accepted")
+  client.rpc("get_public_scrim_accepted_teams")
  ]);
  if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات.</div>';return;}
  const rows=data||[],acceptedByScrim=new Map();
- if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:""}});});
+ if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:""},slot_number:r.slot_number});});
  el.innerHTML=rows.length?rows.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
-  const teamsHtml=accepted.length?accepted.map((r,i)=>`<div class="accepted-team-row"><span>${String(i+1).padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="scrim-public-empty">لا توجد فرق مقبولة حتى الآن.</p>';
+  accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
+  const teamsHtml=accepted.length?accepted.map(r=>`<div class="accepted-team-row"><span>${String(r.slot_number??"—").padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="scrim-public-empty">قائمة الفرق لم تُنشر بعد.</p>';
   return `<article class="scrim-public-card">
    <div class="scrim-public-layout">
     <div>
@@ -564,7 +565,7 @@ async function loadScrimAdmin(){
  const [a,b,c]=await Promise.all([
   client.from("scrims").select("*").order("created_at",{ascending:false}),
   client.from("teams").select("id,name,tag").order("name"),
-  client.from("scrim_team_applications").select("id,scrim_id,status,team_tag").eq("status","accepted")
+  client.from("scrim_team_applications").select("id,scrim_id,status,team_tag,slot_number").eq("status","accepted")
  ]);
  const el=$("scrimAdminList");if(a.error){el.textContent="تعذر التحميل: "+a.error.message;return;}
  const ss=a.data||[],tt=b.data||[],acceptedRows=c.data||[];
@@ -573,10 +574,11 @@ async function loadScrimAdmin(){
  const scrimOpts=ss.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join("");
  ["scrimInviteSelect","scrimRoomSelect","scrimMatchSelect"].forEach(id=>$(id).innerHTML=scrimOpts);
  const acceptedByScrim=new Map();
- acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:r.team_tag}});});
+ acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:r.team_tag},slot_number:r.slot_number});});
  el.innerHTML=ss.length?ss.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
-  const teamsHtml=accepted.length?accepted.map((r,i)=>`<div class="accepted-team-row"><span>${String(i+1).padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="small">لا توجد فرق مقبولة حتى الآن.</p>';
+  accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
+  const teamsHtml=accepted.length?accepted.map(r=>`<div class="accepted-team-row"><span>${String(r.slot_number??"—").padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="small">لا توجد فرق مقبولة حتى الآن.</p>';
   return `<div class="scrim-control-card">
    <div class="scrim-control-head"><h3>${esc(s.title)}</h3><span class="scrim-state ${state.cls}">${state.label}</span></div>
    <div class="scrim-meta-grid">
@@ -588,17 +590,24 @@ async function loadScrimAdmin(){
    <div class="scrim-capacity"><div class="scrim-control-head"><b>الفرق المقبولة</b><b>${accepted.length} / ${max}</b></div><div class="bar"><i style="width:${pct}%"></i></div><span class="small">${Math.max(0,max-accepted.length)} مقعد متبقٍ</span></div>
    <h4>الفرق المقبولة</h4><div class="accepted-team-list">${teamsHtml}</div>
    <p class="small">الحالة: ${esc(s.status)} · آخر تحديث: ${formatScrimDate(s.updated_at||s.created_at)}</p>
-   <div class="row">${s.status==="draft"?`<button onclick="publishScrim('${s.id}')">نشر الإعلان</button>`:""}<button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
+   <div class="row"><button class="secondary" onclick="toggleAcceptedTeamsVisibility('${s.id}',true)">إظهار الفرق للمستخدمين</button><button class="secondary" onclick="toggleAcceptedTeamsVisibility('${s.id}',false)">إخفاء الفرق</button></div><p class="small">ظهور قائمة الفرق للعامة: <b>${s.accepted_teams_visible?"مفعّل":"مخفي"}</b></p><div class="row">${s.status==="draft"?`<button onclick="publishScrim('${s.id}')">نشر الإعلان</button>`:""}<button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
   </div>`;
  }).join(""):"لا توجد سكريمات بعد.";
  await loadScrimRequests();await loadTeamApplicationsAdmin();await loadScrimMatchAdmin();
 }
+async function toggleAcceptedTeamsVisibility(scrimId,visible){
+ if(!confirm(visible?"إظهار قائمة الفرق للمستخدمين؟":"إخفاء قائمة الفرق عن المستخدمين؟"))return;
+ const {error}=await client.from("scrims").update({accepted_teams_visible:visible}).eq("id",scrimId);
+ if(error){alert("تعذر تحديث ظهور القائمة: "+error.message);return;}
+ await loadScrimAdmin();await loadPublicScrims();
+}
+window.toggleAcceptedTeamsVisibility=toggleAcceptedTeamsVisibility;
 async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
- const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,contact_phone,status,access_code,created_at,scrims(title)").order("created_at",{ascending:false});
+ const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
  const rows=data||[];
- el.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.team_tag)}</b><p class="small">السكريم: ${esc(r.scrims?.title||"—")} · رقم التواصل: <b dir="ltr">${esc(r.contact_phone)}</b></p><p>الحالة: <b>${r.status==="pending"?"قيد الانتظار":r.status==="accepted"?"مقبول":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="accepted"&&r.access_code?`<p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code)}</b></p>`:""}${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:""}</div>`).join(""):"لا توجد طلبات تسجيل فرق حتى الآن.";
+ el.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.team_tag)}</b><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الدخول: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"قيد الانتظار":r.status==="accepted"?"مقبول":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="accepted"&&r.access_code?`<p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code)}</b></p>`:""}${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:""}</div>`).join(""):"لا توجد طلبات تسجيل فرق حتى الآن.";
 }
 async function reviewTeamApplication(id,status){
  if(!["accepted","rejected"].includes(status))return;
