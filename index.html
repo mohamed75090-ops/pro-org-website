@@ -433,16 +433,31 @@ $("hideSoloMvp").addEventListener("click",()=>hideMvpGroup("solo"));
 $("hideTop3Mvp").addEventListener("click",()=>hideMvpGroup("top3"));
 
 async function loadPublic(){
- const [t,tm,r]=await Promise.all([
-  client.from("tournaments").select("id,name,status,start_date").in("status",["published","completed"]).order("created_at",{ascending:false}),
-  client.from("teams").select("id,name,tag").eq("status","active").order("name"),
-  client.from("match_results").select("placement,kills,placement_points,total_points,teams(name,tag),matches(name)").eq("status","approved").order("total_points",{ascending:false}).limit(30)
- ]);
- if(t.error||tm.error||r.error)msg("تعذر تحميل بعض البيانات. تأكد من إعدادات الجداول وسياسات RLS.","err");
- tournamentsCache=t.data||[];teamsCache=tm.data||[];
- $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>`<p>🏆 ${esc(x.name)}</p>`).join(""):"لا توجد بطولات منشورة حالياً.";
- $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>`<p><b>${esc(x.tag)}</b> — ${esc(x.name)}</p>`).join(""):"لا توجد فرق مسجلة حالياً.";
- $("results").innerHTML=(r.data||[]).length?`<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>${r.data.map(x=>`<tr><td>${esc(x.teams?.name||"-")}</td><td>${esc(x.matches?.name||"-")}</td><td>${x.placement}</td><td>${x.kills}</td><td>${x.total_points??((x.placement_points||0)+(x.kills||0))}</td></tr>`).join("")}</table>`:"لا توجد نتائج معتمدة بعد.";
+ const targets=["tournaments","teams","results"];
+ let timer;
+ try{
+  const pending=Promise.all([
+   client.from("tournaments").select("id,name,status,start_date").in("status",["published","completed"]).order("created_at",{ascending:false}),
+   client.from("teams").select("id,name,tag").eq("status","active").order("name"),
+   client.from("match_results").select("placement,kills,placement_points,total_points,teams(name,tag),matches(name)").eq("status","approved").order("total_points",{ascending:false}).limit(30)
+  ]);
+  const [t,tm,r]=await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات (15 ثانية). تحقق من الإنترنت وإعدادات Supabase.")),15000);})]);
+  clearTimeout(timer);
+  if(t.error||tm.error||r.error){
+   const detail=t.error?.message||tm.error?.message||r.error?.message||"تحقق من صلاحيات الجداول وسياسات RLS.";
+   targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'</div>');
+   msg("تعذر تحميل البيانات العامة من قاعدة البيانات.","err");return;
+  }
+  tournamentsCache=t.data||[];teamsCache=tm.data||[];
+  $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>"<p>🏆 "+esc(x.name)+"</p>").join(""):"لا توجد بطولات منشورة حالياً."; 
+  $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>"<p><b>"+esc(x.tag)+"</b> — "+esc(x.name)+"</p>").join(""):"لا توجد فرق مسجلة حالياً."; 
+  $("results").innerHTML=(r.data||[]).length?'<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>'+r.data.map(x=>'<tr><td>'+esc(x.teams?.name||"-")+'</td><td>'+esc(x.matches?.name||"-")+'</td><td>'+x.placement+'</td><td>'+x.kills+'</td><td>'+(x.total_points??((x.placement_points||0)+(x.kills||0)))+'</td></tr>').join("")+"</table>":"لا توجد نتائج معتمدة بعد."; 
+ }catch(e){
+  clearTimeout(timer);
+  const detail=e?.message||"تعذر الاتصال بالخادم.";
+  targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'</div>');
+  msg("فشل تحميل الأقسام العامة: "+detail,"err");
+ }
 }
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
