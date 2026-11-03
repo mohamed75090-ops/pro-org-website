@@ -390,8 +390,8 @@ async function refreshAdmin(){
  if(["founder","admin","tournament_manager"].includes(currentRole)) await loadScrimAdmin();
  show("resultForm",["founder","admin","results_manager"].includes(currentRole));
  show("aiScanner",["founder","admin","results_manager"].includes(currentRole));
- show("weeklyMvpAdmin",["founder","admin","results_manager"].includes(currentRole));
- if(["founder","admin","results_manager"].includes(currentRole)) await loadWeeklyMvpAdmin();
+ show("weeklyMvpAdmin",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
+ if(["founder","admin","results_manager","tournament_manager"].includes(currentRole)) await loadWeeklyMvpAdmin();
  const [ts,ms,tm,rs]=await Promise.all([
   client.from("tournaments").select("id,name,status").order("created_at",{ascending:false}),
   client.from("matches").select("id,name,tournament_id,status").order("created_at",{ascending:false}),
