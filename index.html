@@ -671,6 +671,8 @@ function returnToPublicPages(){
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function openTeamCenterPage(){showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
+window.openTeamCenterPage=openTeamCenterPage;
+window.returnToPublicPages=returnToPublicPages;
 function openTeamRegistration(scrimId,title){
  $("applicationScrimId").value=scrimId;
  $("teamRegistrationScrimName").textContent=title||"";
