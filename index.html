@@ -1046,16 +1046,52 @@ async function inviteScrimTeam(){const {data:{user}}=await client.auth.getUser()
 async function addScrimMatch(){
  const scrimId=$("scrimMatchSelect").value,number=Number($("scrimMatchNumber").value),map=$("scrimMatchTitle").value,roomId=$("scrimRoomId").value.trim(),roomPassword=$("scrimRoomPassword").value.trim();
  if(!scrimId||!Number.isInteger(number)||number<1||!map||!roomId||!roomPassword)return alert("حدد السكريم والخريطة ورقم المباراة وأدخل بيانات الروم.");
- const {error}=await client.from("scrim_matches").insert({scrim_id:scrimId,match_number:number,title:map,starts_at:scrimDate($("scrimMatchStarts").value),notes:$("scrimMatchNotes").value.trim(),room_id:roomId,room_password:roomPassword,room_published:true,status:"published"});
+ const {error}=await client.from("scrim_matches").insert({scrim_id:scrimId,match_number:number,title:map,starts_at:scrimDate($("scrimMatchStarts").value),notes:$("scrimMatchNotes").value.trim(),room_id:roomId,room_password:roomPassword,room_published:false,status:"published"});
  if(error){alert("تعذر إضافة المباراة: "+error.message);return;}
- alert("تمت إضافة المباراة وحفظ بيانات الروم بنجاح.");$("scrimMatchNumber").value="";$("scrimMatchTitle").value="";$("scrimRoomId").value="";$("scrimRoomPassword").value="";$("scrimMatchStarts").value="";$("scrimMatchNotes").value="";await loadScrimMatchAdmin();
+ alert("تمت إضافة المباراة. بيانات الروم مخفية عن الفرق حتى تضغط «نشر الروم للفرق».");$("scrimMatchNumber").value="";$("scrimMatchTitle").value="";$("scrimRoomId").value="";$("scrimRoomPassword").value="";$("scrimMatchStarts").value="";$("scrimMatchNotes").value="";await loadScrimMatchAdmin();
 }
 async function loadScrimMatchAdmin(){
- const {data,error}=await client.from("scrim_matches").select("id,scrim_id,match_number,title,starts_at,status,room_published").order("scrim_id").order("match_number");
+ const {data,error}=await client.from("scrim_matches").select("id,scrim_id,match_number,title,starts_at,status,room_published,room_id,room_password").order("scrim_id").order("match_number");
  const el=$("scrimMatchAdminList");if(error){el.textContent=error.message;return;}
- el.innerHTML=(data||[]).map(m=>{const total=(data||[]).filter(x=>x.scrim_id===m.scrim_id).length;return "<div class=\"card\"><b>المباراة "+esc(m.match_number)+"/"+total+" — "+esc(m.title||"بدون خريطة")+"</b><p class=\"small\">"+formatScrimDate(m.starts_at)+" · "+esc(m.status)+" · "+(m.room_published?"تم نشر بيانات الروم":"لم تنشر بيانات الروم")+"</p>"+(m.status==="draft"?"<button type=\"button\" onclick=\"setScrimMatchStatus(\'"+m.id+"\',\'published\')\">نشر المباراة للمستخدمين</button>":"")+"</div>";}).join("")||"لا توجد مباريات.";
+ el.innerHTML=(data||[]).map(m=>{
+  const total=(data||[]).filter(x=>x.scrim_id===m.scrim_id).length;
+  const ended=m.status==="completed";
+  const visibility=m.room_published?"منشورة للفرق":"مخفية عن الفرق";
+  let controls="";
+  if(ended){
+   controls="<button type='button' class='secondary' onclick=\"setScrimMatchStatus('"+m.id+"','published')\">إعادة فتح المباراة</button>";
+  }else{
+   controls=(m.room_published
+    ? "<button type='button' class='secondary' onclick=\"setScrimRoomVisibility('"+m.id+"',false)\">إخفاء الروم</button>"
+    : "<button type='button' onclick=\"setScrimRoomVisibility('"+m.id+"',true)\">نشر الروم للفرق</button>");
+   controls+=(m.status==="live"
+    ? "<button type='button' class='secondary' onclick=\"setScrimMatchStatus('"+m.id+"','published')\">إيقاف البث المباشر</button>"
+    : "<button type='button' class='secondary' onclick=\"setScrimMatchStatus('"+m.id+"','live')\">بدء الروم</button>");
+   controls+="<button type='button' class='danger' onclick=\"finishScrimRoom('"+m.id+"')\">إنهاء المباراة</button>";
+  }
+  return "<div class='card'><b>المباراة "+esc(m.match_number)+"/"+total+" — "+esc(m.title||"بدون خريطة")+"</b><p class='small'>"+formatScrimDate(m.starts_at)+" · الحالة: "+esc(ended?"انتهت":m.status==="live"?"مباشرة":"مجدولة")+" · "+visibility+"</p><p class='small'>Room ID: <b dir='ltr'>"+esc(m.room_id||"—")+"</b> · كلمة المرور: <b dir='ltr'>"+(m.room_password?"••••••":"—")+"</b></p><div class='row'>"+controls+"</div></div>";
+ }).join("")||"لا توجد مباريات.";
 }
-async function setScrimMatchStatus(id,status){const {error}=await client.from("scrim_matches").update({status}).eq("id",id);if(error)alert(error.message);else{await loadScrimMatchAdmin();await loadTeamScrimPanel();}}
+async function setScrimRoomVisibility(id,visible){
+ if(!confirm(visible?"نشر بيانات الروم للفرق المقبولة؟":"إخفاء بيانات الروم عن الفرق؟"))return;
+ const {error}=await client.from("scrim_matches").update({room_published:visible}).eq("id",id);
+ if(error){alert("تعذر تحديث ظهور الروم: "+error.message);return;}
+ await loadScrimMatchAdmin();await loadTeamScrimPanel();
+}
+async function finishScrimRoom(id){
+ if(!confirm("تأكيد إنهاء المباراة؟ سيتم إخفاء بيانات الروم عن الفرق وتغيير الحالة إلى انتهت."))return;
+ const {error}=await client.from("scrim_matches").update({status:"completed",room_published:false}).eq("id",id);
+ if(error){alert("تعذر إنهاء المباراة: "+error.message);return;}
+ await loadScrimMatchAdmin();await loadTeamScrimPanel();
+}
+async function setScrimMatchStatus(id,status){
+ if(!["published","live","completed"].includes(status))return;
+ const {error}=await client.from("scrim_matches").update({status}).eq("id",id);
+ if(error){alert("تعذر تحديث حالة المباراة: "+error.message);return;}
+ await loadScrimMatchAdmin();await loadTeamScrimPanel();
+}
+window.setScrimRoomVisibility=setScrimRoomVisibility;
+window.finishScrimRoom=finishScrimRoom;
 window.setScrimMatchStatus=setScrimMatchStatus;
 window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview=scrimReview;window.deleteTournament=deleteTournament;
  $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAccess;$("sendScrimInvite").onclick=inviteScrimTeam;$("addScrimMatch").onclick=addScrimMatch;
