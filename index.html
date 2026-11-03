@@ -80,7 +80,10 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .scrim-capacity .bar{height:7px;border-radius:9px;background:#30283e;overflow:hidden;margin:9px 0}
 .scrim-capacity .bar i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,#ec8bcb)}
 .accepted-team-list{display:grid;gap:8px;margin-top:10px}
-.accepted-team-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #344b42;border-right:4px solid #45c69a;border-radius:9px;background:#121f1c}
+.accepted-team-table-head,.accepted-team-row{display:grid;grid-template-columns:minmax(0,1fr) 86px;align-items:center;gap:10px;padding:10px 12px;text-align:center;direction:rtl}
+.accepted-team-table-head{font-weight:800;color:var(--gold2);background:#24202d;border:1px solid #51406e;border-radius:9px}
+.accepted-team-row{border:1px solid #344b42;border-right:4px solid #45c69a;border-radius:9px;background:#121f1c}
+.accepted-team-slot{direction:ltr;font-weight:900;font-variant-numeric:tabular-nums;color:#f3d18b}
 .accepted-team-row:nth-child(3n+2){border-color:#4a405d;border-right-color:#ad8cf4;background:#1b1725}
 .accepted-team-row:nth-child(3n){border-color:#55452e;border-right-color:#e5b85c;background:#211c14}
 .accepted-team-tag{color:#9de6cb;font-weight:800;letter-spacing:1px}
@@ -399,6 +402,13 @@ async function submitTeamApplication(event){
  await loadPublicScrims();
 }
 
+
+function renderAcceptedTeamsTable(accepted,emptyText){
+ if(!accepted.length)return '<p class="scrim-public-empty">'+emptyText+'</p>';
+ return '<div class="accepted-team-table-head"><span>اسم الفريق</span><span>رقم الخانة</span></div>'+
+ accepted.map((r,i)=>{const slot=r.slot_number??(i+3);return '<div class="accepted-team-row" dir="rtl"><span class="accepted-team-tag">'+esc(r.teams?.name||"فريق")+'</span><b class="accepted-team-slot">'+String(slot).padStart(2,"0")+'</b></div>';}).join("");
+}
+
 async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
  const [{data,error},{data:acceptedRows,error:acceptedError}]=await Promise.all([
@@ -411,7 +421,7 @@ async function loadPublicScrims(){
  el.innerHTML=rows.length?rows.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
-  const teamsHtml=accepted.length?accepted.map(r=>`<div class="accepted-team-row"><span>${String(r.slot_number??"—").padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="scrim-public-empty">قائمة الفرق لم تُنشر بعد.</p>';
+  const teamsHtml=renderAcceptedTeamsTable(accepted,"قائمة الفرق لم تُنشر بعد.");
   return `<article class="scrim-public-card">
    <div class="scrim-public-layout">
     <div>
@@ -578,7 +588,7 @@ async function loadScrimAdmin(){
  el.innerHTML=ss.length?ss.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
-  const teamsHtml=accepted.length?accepted.map(r=>`<div class="accepted-team-row"><span>${String(r.slot_number??"—").padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="small">لا توجد فرق مقبولة حتى الآن.</p>';
+  const teamsHtml=renderAcceptedTeamsTable(accepted,"لا توجد فرق مقبولة حتى الآن.");
   return `<div class="scrim-control-card">
    <div class="scrim-control-head"><h3>${esc(s.title)}</h3><span class="scrim-state ${state.cls}">${state.label}</span></div>
    <div class="scrim-meta-grid">
