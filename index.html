@@ -125,7 +125,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 
 @media(max-width:650px){.site-header{padding:12px 4%}.header-inner{align-items:flex-start}.nav-links{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nav-links a{white-space:nowrap;padding:8px 10px}.hero{min-height:280px}.hero:after{right:-3%;top:70%;font-size:120px}.section-heading{align-items:flex-start;flex-direction:column}main{padding:0 13px;margin-top:15px}th,td{padding:8px;font-size:12px}}
 
-.scrim-public-match-schedule{margin-top:16px;padding:14px;border:1px solid var(--line,#ddd);border-radius:12px}.scrim-public-match-schedule h4{margin:0 0 10px}.scrim-public-match-row{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line,#ddd)}.scrim-public-match-row:first-of-type{border-top:0}.scrim-public-match-row span{font-size:13px;opacity:.8}</style>
+</style>
 </head>
 <body>
 
@@ -431,21 +431,17 @@ function renderAcceptedTeamsTable(accepted,emptyText){
 
 async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
- const [{data,error},{data:acceptedRows,error:acceptedError},{data:matchRows,error:matchError}]=await Promise.all([
+ const [{data,error},{data:acceptedRows,error:acceptedError}]=await Promise.all([
   client.from("scrims").select("id,title,description,status,registration_mode,max_teams,scheduled_at,registration_opens_at,registration_closes_at").neq("status","draft").order("scheduled_at"),
-  client.rpc("get_public_scrim_accepted_teams"),
-  client.from("scrim_matches").select("id,scrim_id,match_number,title,starts_at,status").in("status",["published","live","completed"]).order("match_number")
+  client.rpc("get_public_scrim_accepted_teams")
  ]);
  if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات.</div>';return;}
- const rows=data||[],matchesByScrim=new Map(),acceptedByScrim=new Map();
- if(!matchError)(matchRows||[]).forEach(m=>{if(!matchesByScrim.has(m.scrim_id))matchesByScrim.set(m.scrim_id,[]);matchesByScrim.get(m.scrim_id).push(m);});
+ const rows=data||[],acceptedByScrim=new Map();
  if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=rows.length?rows.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
   const teamsHtml=renderAcceptedTeamsTable(accepted,"قائمة الفرق لم تُنشر بعد.");
-  const scrimMatches=matchesByScrim.get(s.id)||[];
-  const matchesHtml=matchError?"<p class='small'>تعذر تحميل جدول المباريات حالياً.</p>":scrimMatches.length?scrimMatches.map((m,i)=>"<div class='scrim-public-match-row'><b>المباراة "+esc(m.match_number)+"/"+scrimMatches.length+" — "+esc(m.title||"بدون خريطة")+"</b><span>"+formatScrimDate(m.starts_at)+"</span><span>"+esc(m.status==="published"?"مجدولة":m.status==="live"?"مباشرة":"انتهت")+"</span></div>").join(""):"<p class='small'>لم تُنشر مباريات لهذا السكريم حتى الآن.</p>";
   return `<article class="scrim-public-card">
    <div class="scrim-public-layout">
     <div>
@@ -464,7 +460,6 @@ async function loadPublicScrims(){
      <div class="accepted-team-list">${teamsHtml}</div>
     </aside>
    </div>
-   <section class="scrim-public-match-schedule"><h4>جدول المباريات</h4>${matchesHtml}</section>
    <div class="scrim-public-actions">${scrimRegistrationIsOpen(s)?`<button onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">تسجيل الفريق</button>`:`<button class="secondary" disabled>التسجيل غير متاح حالياً</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button></div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
@@ -556,7 +551,7 @@ async function openScrimTeamCenter(){
  const left=deadline?deadline-Date.now():null;
  const withdrawalText=!deadline?"لم تحدد الإدارة موعد إغلاق الانسحاب بعد.":left<=0?"انتهت فترة الانسحاب.":formatScrimDate(row.withdrawal_closes_at);
  const {data:matches,error:matchesError}=await client.from("scrim_matches").select("match_number,title,starts_at,status,room_id,room_password,room_published").eq("scrim_id",row.scrim_id).in("status",["published","live","completed"]).order("match_number");
- const matchHtml=matchesError?"<p>تعذر تحميل جدول المباريات حالياً.</p>":(matches||[]).length?(matches||[]).map(m=>"<div class=\"team-center-match-item\"><b>المباراة "+esc(m.match_number)+"/"+(matches||[]).length+" — "+esc(m.title||"لم تحدد الخريطة")+"</b><p>الموعد: "+formatScrimDate(m.starts_at)+"</p><p>الحالة: "+esc(m.status==="published"?"مجدولة":m.status==="live"?"مباشرة":m.status==="completed"?"انتهت":m.status)+"</p>"+(m.room_published?"<div class=\"team-center-room-details\"><b>بيانات الغرفة</b><div class=\"team-center-copy-row\">Room ID: <b>"+esc(m.room_id||"—")+"</b><button type=\"button\" class=\"secondary\" data-copy-value=\""+esc(m.room_id||"")+"\">نسخ ID</button></div><div class=\"team-center-copy-row\">كلمة المرور: <b>"+esc(m.room_password||"—")+"</b><button type=\"button\" class=\"secondary\" data-copy-value=\""+esc(m.room_password||"")+"\">نسخ كلمة المرور</button></div></div>":"<p class=\"small\">لم يتم نشر بيانات الغرفة لهذه المباراة بعد.</p>")+"</div>").join(""):"لم يتم نشر مباريات لهذا السكريم حتى الآن.";
+ const matchHtml=matchesError?"<p>تعذر تحميل جدول المباريات: "+esc(matchesError.message)+"</p>":(matches||[]).length?(matches||[]).map(m=>"<div class=\"team-center-match-item\"><b>المباراة "+esc(m.match_number)+"/"+(matches||[]).length+" — "+esc(m.title||"لم تحدد الخريطة")+"</b><p>الموعد: "+formatScrimDate(m.starts_at)+"</p><p>الحالة: "+esc(m.status==="published"?"مجدولة":m.status==="live"?"مباشرة":m.status==="completed"?"انتهت":m.status)+"</p>"+(m.room_published?"<div class=\"team-center-room-details\"><b>بيانات الغرفة</b><div class=\"team-center-copy-row\">Room ID: <b>"+esc(m.room_id||"—")+"</b><button type=\"button\" class=\"secondary\" data-copy-value=\""+esc(m.room_id||"")+"\">نسخ ID</button></div><div class=\"team-center-copy-row\">كلمة المرور: <b>"+esc(m.room_password||"—")+"</b><button type=\"button\" class=\"secondary\" data-copy-value=\""+esc(m.room_password||"")+"\">نسخ كلمة المرور</button></div></div>":"<p class=\"small\">لم يتم نشر بيانات الغرفة لهذه المباراة بعد.</p>")+"</div>").join(""):"لم يتم نشر مباريات لهذا السكريم حتى الآن.";
  out.innerHTML="<h3>"+esc(row.scrim_title||"مركز الفريق")+"</h3>"+
  "<div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>تم قبول الفريق وتحديد الخانة</b><ol><li>إرسال الطلب ✓</li><li>مراجعة المنظم ✓</li><li>قبول وتحديد الخانة ✓</li></ol><p>رقم الخانة: <b>"+esc(row.slot_number??"—")+"</b></p></div>"+
  "<div class=\"team-center-section team-center-info\"><h3>معلومات الفريق</h3><p>اسم الفريق الكامل: <b>"+esc(row.team_name||row.team_tag||"—")+"</b></p><p>اختصار الفريق: <b>"+esc(row.team_short_name||"—")+"</b></p><p>اسم ممثل الفريق: <b>"+esc(row.team_representative||"—")+"</b></p><p>حالة التسجيل: <b>تم تأكيد التسجيل</b></p></div>"+
