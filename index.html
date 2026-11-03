@@ -325,8 +325,10 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   window.__supabaseReady=true;
   window.dispatchEvent(new Event("supabase-ready"));
  }catch(e){
+  window.__supabaseLoadError=e?.message||"فشل تحميل مكتبة الاتصال";
+  window.dispatchEvent(new Event("supabase-ready"));
   const status=document.getElementById("status");
-  if(status)status.textContent="تعذر تشغيل الموقع: فشل تحميل مكتبة الاتصال. "+(e.message||"");
+  if(status)status.textContent="تعذر تشغيل الموقع: "+window.__supabaseLoadError;
   ["tournaments","teams","results","publicScrims","weeklyMvpFeature"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="تعذر الاتصال حالياً. أعد المحاولة بعد قليل.";});
  }
 })();
