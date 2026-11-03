@@ -185,7 +185,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 <section id="teamCenterPage" class="card hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
  <h2>مركز الفريق</h2>
- <p class="small">أدخل كود الفريق الذي حصلت عليه بعد قبول التسجيل.</p>
+ <p class="small">أدخل الكود الذي حصلت عليه بعد إرسال طلب التسجيل لمتابعة حالته وتفاصيله بعد القبول.</p>
  <label for="scrimCenterCode">كود الفريق</label>
  <input id="scrimCenterCode" autocomplete="off" placeholder="أدخل كود الفريق">
  <button id="openScrimCenter" type="button" onclick="openScrimTeamCenter()">فتح مركز الفريق</button>
@@ -419,10 +419,14 @@ async function submitTeamApplication(event){
  if(teamName.length<2||tag.length<2||representative.length<2){alert("أكمل اسم الفريق واختصاره واسم ممثله.");return;}
  if(!scrimId){alert("لم يتم تحديد السكريم.");return;}
  button.disabled=true;button.textContent="جارٍ إرسال الطلب...";
- const {error}=await client.from("scrim_team_applications").insert({scrim_id:scrimId,team_tag:tag,team_name:teamName,team_short_name:tag,team_representative:representative,status:"pending"});
+ const {data,error}=await client.rpc("submit_team_application",{p_scrim_id:scrimId,p_team_name:teamName,p_team_tag:tag,p_team_representative:representative});
  button.disabled=false;button.textContent="إرسال الطلب";
  if(error){message.textContent="تعذر إرسال الطلب: "+error.message;message.classList.remove("hidden");return;}
- $("teamRegistrationForm").classList.add("hidden");message.textContent="تم إرسال طلب الفريق بنجاح. الحالة الآن: قيد انتظار موافقة المشرفين.";message.classList.remove("hidden");
+ const result=Array.isArray(data)?data[0]:data,code=result?.access_code||"";
+ if(!code){message.textContent="تم إرسال الطلب، لكن تعذر استرجاع كود الفريق. تواصل مع الإدارة قبل إعادة التسجيل.";message.classList.remove("hidden");return;}
+ $("teamRegistrationForm").classList.add("hidden");
+ message.innerHTML="<b>تم إرسال طلب الفريق بنجاح.</b><p>حالة الطلب: <b>قيد انتظار موافقة المشرفين</b></p><p>كود مركز الفريق الخاص بك:</p><div style=\"direction:ltr;font-size:26px;font-weight:900;letter-spacing:3px;margin:10px 0\">"+esc(code)+"</div><p class=\"small\">احتفظ بالكود؛ ستحتاج إليه لمتابعة حالة الطلب ومعرفة قرار المشرفين.</p><button type=\"button\" class=\"secondary\" onclick=\"openTeamCenterPage();document.getElementById('scrimCenterCode').value='"+esc(code)+"'\">فتح مركز الفريق</button>";
+ message.classList.remove("hidden");
  await loadPublicScrims();
 }
 
@@ -547,10 +551,26 @@ async function openScrimTeamCenter(){
  if(!out){alert("تعذر العثور على مساحة عرض مركز الفريق. حدّث الصفحة وحاول مجدداً.");return;}
  if(!code){out.textContent="أدخل كود الفريق.";return;}
  out.textContent="جاري التحقق من كود الفريق...";
+ const {data:statusData,error:statusError}=await client.rpc("get_team_application_status",{team_code:code});
+ if(statusError){out.textContent="تعذر التحقق من الكود: "+statusError.message;return;}
+ const statusRow=Array.isArray(statusData)?statusData[0]:statusData;
+ if(!statusRow){out.textContent="الكود غير صحيح. تأكد من إدخاله بصورة صحيحة.";return;}
+ if(statusRow.status==="pending"){
+  out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>قيد انتظار موافقة المشرفين</b><ol><li>تم إرسال الطلب ✓</li><li>بانتظار مراجعة المشرفين</li><li>سيتم تحديث الحالة بعد اتخاذ القرار</li></ol><p>احتفظ بكود الفريق لمتابعة حالة الطلب.</p></div>";
+  return;
+ }
+ if(statusRow.status==="rejected"){
+  out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>تم رفض طلب الفريق</b><p>نأسف، لم تتم الموافقة على طلب التسجيل. يُرجى التواصل مع إدارة Professional eSports للاستفسار.</p></div>";
+  return;
+ }
+ if(statusRow.status!=="accepted"){
+  out.innerHTML="<div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>"+esc(statusRow.status||"قيد المراجعة")+"</b></div>";
+  return;
+ }
  const {data,error}=await client.rpc("get_team_scrim_details",{team_code:code});
- if(error){out.textContent="تعذر التحقق من الكود: "+error.message;return;}
+ if(error){out.textContent="تعذر تحميل بيانات الفريق: "+error.message;return;}
  const row=Array.isArray(data)?data[0]:data;
- if(!row){out.textContent="الكود غير صحيح أو الفريق غير مقبول.";return;}
+ if(!row){out.textContent="تم قبول الطلب، لكن تعذر تحميل تفاصيل الفريق. تواصل مع الإدارة.";return;}
  const deadline=row.withdrawal_closes_at?new Date(row.withdrawal_closes_at).getTime():null;
  const left=deadline?deadline-Date.now():null;
  const withdrawalText=!deadline?"لم تحدد الإدارة موعد إغلاق الانسحاب بعد.":left<=0?"انتهت فترة الانسحاب.":formatScrimDate(row.withdrawal_closes_at);
