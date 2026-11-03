@@ -690,14 +690,14 @@ async function inviteScrimTeam(){const {data:{user}}=await client.auth.getUser()
 async function addScrimMatch(){
  const scrimId=$("scrimMatchSelect").value,number=Number($("scrimMatchNumber").value),map=$("scrimMatchTitle").value,roomId=$("scrimRoomId").value.trim(),roomPassword=$("scrimRoomPassword").value.trim();
  if(!scrimId||!Number.isInteger(number)||number<1||!map||!roomId||!roomPassword)return alert("حدد السكريم والخريطة ورقم المباراة وأدخل بيانات الروم.");
- const {error}=await client.from("scrim_matches").insert({scrim_id:scrimId,match_number:number,title:map,starts_at:scrimDate($("scrimMatchStarts").value),notes:$("scrimMatchNotes").value.trim(),room_id:roomId,room_password:roomPassword,room_published:true,status:"draft"});
+ const {error}=await client.from("scrim_matches").insert({scrim_id:scrimId,match_number:number,title:map,starts_at:scrimDate($("scrimMatchStarts").value),notes:$("scrimMatchNotes").value.trim(),room_id:roomId,room_password:roomPassword,room_published:true,status:"published"});
  if(error){alert("تعذر إضافة المباراة: "+error.message);return;}
  alert("تمت إضافة المباراة وحفظ بيانات الروم بنجاح.");$("scrimMatchNumber").value="";$("scrimMatchTitle").value="";$("scrimRoomId").value="";$("scrimRoomPassword").value="";$("scrimMatchStarts").value="";$("scrimMatchNotes").value="";await loadScrimMatchAdmin();
 }
 async function loadScrimMatchAdmin(){
  const {data,error}=await client.from("scrim_matches").select("id,scrim_id,match_number,title,starts_at,status,room_published").order("scrim_id").order("match_number");
  const el=$("scrimMatchAdminList");if(error){el.textContent=error.message;return;}
- el.innerHTML=(data||[]).map(m=>{const total=(data||[]).filter(x=>x.scrim_id===m.scrim_id).length;return "<div class=\"card\"><b>المباراة "+esc(m.match_number)+"/"+total+" — "+esc(m.title||"بدون خريطة")+"</b><p class=\"small\">"+formatScrimDate(m.starts_at)+" · "+esc(m.status)+" · "+(m.room_published?"تم نشر بيانات الروم":"لم تنشر بيانات الروم")+"</p></div>";}).join("")||"لا توجد مباريات.";
+ el.innerHTML=(data||[]).map(m=>{const total=(data||[]).filter(x=>x.scrim_id===m.scrim_id).length;return "<div class=\"card\"><b>المباراة "+esc(m.match_number)+"/"+total+" — "+esc(m.title||"بدون خريطة")+"</b><p class=\"small\">"+formatScrimDate(m.starts_at)+" · "+esc(m.status)+" · "+(m.room_published?"تم نشر بيانات الروم":"لم تنشر بيانات الروم")+"</p>"+(m.status==="draft"?"<button type=\"button\" onclick=\"setScrimMatchStatus(\'"+m.id+"\',\'published\')\">نشر المباراة للمستخدمين</button>":"")+"</div>";}).join("")||"لا توجد مباريات.";
 }
 async function setScrimMatchStatus(id,status){const {error}=await client.from("scrim_matches").update({status}).eq("id",id);if(error)alert(error.message);else{await loadScrimMatchAdmin();await loadTeamScrimPanel();}}
 window.setScrimMatchStatus=setScrimMatchStatus;
