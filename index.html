@@ -615,7 +615,7 @@ async function loadScrimAdmin(){
  const teamOpts=tt.map(t=>`<option value="${t.id}">${esc(t.name)} ${esc(t.tag||"")}</option>`).join("");
  ["scrimAccessTeam","scrimInviteTeam"].forEach(id=>$(id).innerHTML=teamOpts);
  const scrimOpts=ss.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join("");
- ["scrimInviteSelect","scrimRoomSelect","scrimMatchSelect"].forEach(id=>$(id).innerHTML=scrimOpts);
+ ["scrimInviteSelect","scrimMatchSelect"].forEach(id=>$(id).innerHTML=scrimOpts);
  const acceptedByScrim=new Map();
  acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=ss.length?ss.map(s=>{
