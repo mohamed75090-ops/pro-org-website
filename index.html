@@ -133,17 +133,19 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 /* Weekly MVP feature */
 .mvp-feature{position:relative;overflow:hidden;margin:22px 0 26px;border:1px solid #8b6828;border-radius:20px;background:radial-gradient(circle at 72% 35%,#70451466,transparent 34%),linear-gradient(115deg,#080a0e,#17130d 60%,#080a0e);box-shadow:0 18px 55px #0009}
 .mvp-feature:before{content:"MVP";position:absolute;left:2%;top:-35px;font-size:clamp(110px,25vw,260px);font-weight:1000;color:#f3bd4810;line-height:1;pointer-events:none}
-.mvp-feature-inner{position:relative;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);gap:22px;align-items:center;padding:clamp(20px,4vw,42px)}
-.mvp-kicker{color:#f0c05b;font-weight:900;letter-spacing:3px;font-size:12px}
-.mvp-title{font-size:clamp(34px,6vw,64px);line-height:1;margin:10px 0;color:#f4c65e;font-weight:1000}
-.mvp-player-name{font-size:clamp(24px,4vw,38px);font-weight:900;margin:8px 0 2px}
-.mvp-player-team{color:#c5c5c5}
-.mvp-photo-wrap{height:300px;display:grid;place-items:center;overflow:hidden;border-radius:16px;background:linear-gradient(145deg,#292014,#0d0f13);border:1px solid #735727}
-.mvp-photo{width:100%;height:100%;object-fit:cover;object-position:center 25%}
-.mvp-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0}
-.mvp-stat{padding:12px 8px;text-align:center;border:1px solid #5d4925;border-radius:11px;background:#090b0edb}
-.mvp-stat b{display:block;color:#f5c75e;font-size:clamp(19px,3vw,28px);direction:ltr}
-.mvp-stat span{font-size:11px;color:#c8c4ba}
+.mvp-feature-inner{position:relative;display:flex;flex-direction:column;gap:0;padding:clamp(14px,3vw,28px);max-width:760px;margin:auto}
+.mvp-kicker{color:#f0c05b;font-weight:900;letter-spacing:3px;font-size:12px;text-align:center}
+.mvp-title{font-size:clamp(34px,6vw,58px);line-height:1;margin:10px 0 18px;color:#f4c65e;font-weight:1000;text-align:center;text-shadow:0 3px 18px #d58a2455}
+.mvp-photo-wrap{order:1;width:100%;height:clamp(280px,58vw,520px);display:grid;place-items:center;overflow:hidden;border-radius:15px;background:linear-gradient(145deg,#292014,#0d0f13);border:1px solid #a7792c;box-shadow:0 12px 32px #0009}
+.mvp-photo{width:100%;height:100%;object-fit:cover;object-position:center 22%}
+.mvp-feature-copy{order:2;width:100%;padding:20px 8px 4px;text-align:center}
+.mvp-player-name{font-size:clamp(26px,4vw,42px);font-weight:1000;margin:4px 0;color:#fff}
+.mvp-player-team{color:#d4d0c7;font-weight:700;letter-spacing:1px}
+.mvp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 10px}
+.mvp-stat{padding:14px 8px;text-align:center;border:1px solid #765a2b;border-radius:11px;background:linear-gradient(145deg,#15171b,#090b0e)}
+.mvp-stat b{display:block;color:#f5c75e;font-size:clamp(22px,3vw,32px);direction:ltr}
+.mvp-stat span{font-size:11px;color:#c8c4ba;letter-spacing:1px}
+.mvp-feature-copy .pill{display:inline-block;margin-top:10px;border-color:#a7792c;color:#f4c65e}
 .mvp-top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:12px 0 30px}
 .mvp-rank-card{position:relative;overflow:hidden;border:1px solid #51452e;border-radius:14px;background:linear-gradient(145deg,#1a1b1e,#0d0e11);padding:12px;text-align:center}
 .mvp-rank-card.first{border-color:#c89b3d;box-shadow:0 0 24px #d69e3322}
@@ -332,8 +334,8 @@ async function loadWeeklyMvp(){
  const rows=data||[],solo=rows.find(x=>Number(x.rank_position)===0),leaders=rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).sort((a,b)=>Number(a.rank_position)-Number(b.rank_position));
  if(!solo&&!leaders.length){feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div>';top.innerHTML='<div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة أفضل 3 منشورة حالياً.</div>';return;}
  if(solo){
-  const photo=solo.photo_url?'<img class="mvp-photo" src="'+esc(solo.photo_url)+'" alt="'+esc(solo.player_name)+'" onerror="this.style.display=\'none\'">':'';
-  feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · '+esc(solo.week_label)+'</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-player-name">'+esc(solo.player_name)+'</div><div class="mvp-player-team">TEAM · '+esc(solo.team_name||"—")+'</div><div class="mvp-stats"><div class="mvp-stat"><b>'+Number(solo.eliminations||0)+'</b><span>ELIMINATIONS</span></div><div class="mvp-stat"><b>'+Number(solo.damage||0).toLocaleString("en-US")+'</b><span>DAMAGE</span></div><div class="mvp-stat"><b>★</b><span>WEEKLY MVP</span></div></div><span class="pill">PLAYER OF THE WEEK</span></div><div class="mvp-photo-wrap">'+(photo||'<div class="mvp-empty">صورة اللاعب غير متاحة</div>')+'</div>';
+  const photo=solo.photo_url?'<img class="mvp-photo" src="'+esc(solo.photo_url)+'" alt="'+esc(solo.player_name)+'" onerror="this.style.display=\\'none\\'">':'';
+  feature.innerHTML='<div class="mvp-kicker">PROFESSIONAL ESPORTS · '+esc(solo.week_label)+'</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-photo-wrap">'+(photo||'<div class="mvp-empty">صورة اللاعب غير متاحة</div>')+'</div><div class="mvp-feature-copy"><div class="mvp-player-name">'+esc(solo.player_name)+'</div><div class="mvp-player-team">TEAM · '+esc(solo.team_name||"—")+'</div><div class="mvp-stats"><div class="mvp-stat"><b>'+Number(solo.eliminations||0)+'</b><span>ELIMINATIONS</span></div><div class="mvp-stat"><b>'+Number(solo.damage||0).toLocaleString("en-US")+'</b><span>DAMAGE</span></div></div><span class="pill">★ WEEKLY MVP</span></div>';
  }else{
   feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">لم تتم إضافة لاعب MVP المستقل لهذا الأسبوع بعد.</div></div>';
  }
