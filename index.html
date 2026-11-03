@@ -291,8 +291,16 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="mvp-admin-grid">
    <div class="mvp-admin-player"><h3>المركز 1</h3><label>اسم اللاعب</label><input id="mvpName1" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam1" placeholder="اسم الفريق أو TAG"><label>صورة اللاعب</label><input id="mvpPhoto1File" type="file" accept="image/*"><input id="mvpPhoto1" type="hidden"><div class="small" id="mvpPhoto1Status">اختر صورة من الموبايل.</div><label>Eliminations</label><input id="mvpKills1" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage1" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 2</h3><label>اسم اللاعب</label><input id="mvpName2" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam2" placeholder="اسم الفريق أو TAG"><label>صورة اللاعب</label><input id="mvpPhoto2File" type="file" accept="image/*"><input id="mvpPhoto2" type="hidden"><div class="small" id="mvpPhoto2Status">اختر صورة من الموبايل.</div><label>Eliminations</label><input id="mvpKills2" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage2" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 3</h3><label>اسم اللاعب</label><input id="mvpName3" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam3" placeholder="اسم الفريق أو TAG"><label>صورة اللاعب</label><input id="mvpPhoto3File" type="file" accept="image/*"><input id="mvpPhoto3" type="hidden"><div class="small" id="mvpPhoto3Status">اختر صورة من الموبايل.</div><label>Eliminations</label><input id="mvpKills3" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage3" type="number" min="0" value="0"></div>
   </div>
-  <div class="row"><button id="saveWeeklyMvp">حفظ ونشر MVP</button><button class="secondary" id="unpublishWeeklyMvp">إخفاء القائمة</button></div>
-  <div id="mvpAdminStatus" class="notice">أدخل البيانات ثم احفظها لنشرها في الواجهة الرئيسية.</div>
+  <div class="mvp-admin-player" style="margin-top:14px">
+   <h3>إدارة لاعب MVP فقط</h3>
+   <div class="row"><button id="saveSoloMvp">حفظ ونشر لاعب MVP</button><button class="secondary" id="hideSoloMvp">إخفاء لاعب MVP</button></div>
+   <div id="soloMvpStatus" class="notice">حفظ ونشر بيانات لاعب MVP بشكل مستقل.</div>
+  </div>
+  <div class="mvp-admin-player" style="margin-top:14px">
+   <h3>إدارة أفضل 3 لاعبين فقط</h3>
+   <div class="row"><button id="saveTop3Mvp">حفظ ونشر أفضل 3 لاعبين</button><button class="secondary" id="hideTop3Mvp">إخفاء أفضل 3 لاعبين</button></div>
+   <div id="top3MvpStatus" class="notice">حفظ ونشر قائمة أفضل 3 بشكل مستقل عن لاعب MVP.</div>
+  </div>
  </div>
  <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
 </section>
@@ -356,31 +364,51 @@ async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
  $(statusId).textContent="تم اختيار الصورة ورفعها بنجاح.";
  return data.publicUrl;
 }
-async function saveWeeklyMvp(publish=true){
- const week=$("mvpWeekLabel").value.trim();if(!week)return $("mvpAdminStatus").textContent="اكتب عنوان الأسبوع أولاً.";
+async function saveMvpGroup(group){
+ const week=$("mvpWeekLabel").value.trim();
+ const statusId=group==="solo"?"soloMvpStatus":"top3MvpStatus";
+ const status=$(statusId);
+ if(!week){status.textContent="اكتب عنوان الأسبوع أولاً.";return;}
+ const positions=group==="solo"?[0]:[1,2,3];
  const payload=[];
  try{
-  const soloName=$("mvpSoloName").value.trim();
-  if(soloName){const photo=await uploadMvpPhoto("mvpSoloPhotoFile","mvpSoloPhoto","mvpSoloPhotoStatus",week,"mvp");payload.push({week_label:week,rank_position:0,player_name:soloName,team_name:$("mvpSoloTeam").value.trim(),photo_url:photo,eliminations:Number($("mvpSoloKills").value)||0,damage:Number($("mvpSoloDamage").value)||0,is_published:publish,updated_at:new Date().toISOString()});}
-  for(let n=1;n<=3;n++){
-   const name=$("mvpName"+n).value.trim();if(!name)continue;
-   const photo=await uploadMvpPhoto("mvpPhoto"+n+"File","mvpPhoto"+n,"mvpPhoto"+n+"Status",week,String(n));
-   payload.push({week_label:week,rank_position:n,player_name:name,team_name:$("mvpTeam"+n).value.trim(),photo_url:photo,eliminations:Number($("mvpKills"+n).value)||0,damage:Number($("mvpDamage"+n).value)||0,is_published:publish,updated_at:new Date().toISOString()});
+  for(const n of positions){
+   const solo=n===0;
+   const name=$(solo?"mvpSoloName":"mvpName"+n).value.trim();
+   if(!name)continue;
+   const photo=solo
+    ?await uploadMvpPhoto("mvpSoloPhotoFile","mvpSoloPhoto","mvpSoloPhotoStatus",week,"mvp")
+    :await uploadMvpPhoto("mvpPhoto"+n+"File","mvpPhoto"+n,"mvpPhoto"+n+"Status",week,String(n));
+   payload.push({
+    week_label:week,rank_position:n,player_name:name,
+    team_name:$(solo?"mvpSoloTeam":"mvpTeam"+n).value.trim(),
+    photo_url:photo,
+    eliminations:Number($(solo?"mvpSoloKills":"mvpKills"+n).value)||0,
+    damage:Number($(solo?"mvpSoloDamage":"mvpDamage"+n).value)||0,
+    is_published:true,updated_at:new Date().toISOString()
+   });
   }
- }catch(e){$("mvpAdminStatus").textContent="تعذر رفع الصورة: "+(e.message||"خطأ غير معروف");return;}
- if(!payload.length)return $("mvpAdminStatus").textContent="أدخل بيانات لاعب MVP أو لاعب واحد على الأقل في أفضل 3.";
- const {error:hideCurrentError}=await client.from("weekly_mvp_players").update({is_published:false}).eq("week_label",week);
- if(hideCurrentError){$("mvpAdminStatus").textContent="تعذر تحديث القائمة الحالية: "+hideCurrentError.message;return;}
+ }catch(e){status.textContent="تعذر رفع الصورة: "+(e.message||"خطأ غير معروف");return;}
+ if(!payload.length){status.textContent=group==="solo"?"أدخل اسم لاعب MVP أولاً.":"أدخل بيانات لاعب واحد على الأقل في أفضل 3.";return;}
  const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
- if(error){$("mvpAdminStatus").textContent="تعذر الحفظ: "+error.message;return;}
- const {error:hideError}=await client.from("weekly_mvp_players").update({is_published:false}).neq("week_label",week);
- if(hideError){$("mvpAdminStatus").textContent="تم حفظ الأسبوع، لكن تعذر إخفاء الأسابيع السابقة: "+hideError.message;return;}
- $("mvpAdminStatus").textContent=publish?"تم حفظ ونشر MVP وأفضل 3 لاعبين.":"تم حفظ البيانات كمسودة.";
- for(const id of ["mvpSoloPhotoFile","mvpPhoto1File","mvpPhoto2File","mvpPhoto3File"])$(id).value="";
+ if(error){status.textContent="تعذر الحفظ: "+error.message;return;}
+ for(const n of positions){const id=n===0?"mvpSoloPhotoFile":"mvpPhoto"+n+"File";$(id).value="";}
+ status.textContent=group==="solo"?"تم حفظ ونشر لاعب MVP فقط بنجاح.":"تم حفظ ونشر أفضل 3 لاعبين فقط بنجاح.";
  await loadWeeklyMvp();await loadWeeklyMvpAdmin();
 }
-$("saveWeeklyMvp").addEventListener("click",()=>saveWeeklyMvp(true));
-$("unpublishWeeklyMvp").addEventListener("click",async()=>{const week=$("mvpWeekLabel").value.trim();if(!week)return;$("mvpAdminStatus").textContent="جارٍ إخفاء القائمة...";const {error}=await client.from("weekly_mvp_players").update({is_published:false}).eq("week_label",week);$("mvpAdminStatus").textContent=error?"تعذر الإخفاء: "+error.message:"تم إخفاء القائمة عن الزوار.";await loadWeeklyMvp();await loadWeeklyMvpAdmin();});
+async function hideMvpGroup(group){
+ const week=$("mvpWeekLabel").value.trim();
+ const status=$(group==="solo"?"soloMvpStatus":"top3MvpStatus");
+ if(!week){status.textContent="اكتب عنوان الأسبوع أولاً.";return;}
+ const query=client.from("weekly_mvp_players").update({is_published:false}).eq("week_label",week);
+ const {error}=group==="solo"?await query.eq("rank_position",0):await query.in("rank_position",[1,2,3]);
+ status.textContent=error?"تعذر الإخفاء: "+error.message:(group==="solo"?"تم إخفاء لاعب MVP فقط.":"تم إخفاء أفضل 3 لاعبين فقط.");
+ await loadWeeklyMvp();
+}
+$("saveSoloMvp").addEventListener("click",()=>saveMvpGroup("solo"));
+$("saveTop3Mvp").addEventListener("click",()=>saveMvpGroup("top3"));
+$("hideSoloMvp").addEventListener("click",()=>hideMvpGroup("solo"));
+$("hideTop3Mvp").addEventListener("click",()=>hideMvpGroup("top3"));
 
 async function loadPublic(){
  const [t,tm,r]=await Promise.all([
