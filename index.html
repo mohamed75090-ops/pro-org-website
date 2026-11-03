@@ -125,7 +125,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 
 @media(max-width:650px){.site-header{padding:12px 4%}.header-inner{align-items:flex-start}.nav-links{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nav-links a{white-space:nowrap;padding:8px 10px}.hero{min-height:280px}.hero:after{right:-3%;top:70%;font-size:120px}.section-heading{align-items:flex-start;flex-direction:column}main{padding:0 13px;margin-top:15px}th,td{padding:8px;font-size:12px}}
 
-</style>
+.scrim-public-match-schedule{margin-top:16px;padding:14px;border:1px solid var(--line,#ddd);border-radius:12px}.scrim-public-match-schedule h4{margin:0 0 10px}.scrim-public-match-row{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line,#ddd)}.scrim-public-match-row:first-of-type{border-top:0}.scrim-public-match-row span{font-size:13px;opacity:.8}</style>
 </head>
 <body>
 
@@ -431,17 +431,21 @@ function renderAcceptedTeamsTable(accepted,emptyText){
 
 async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
- const [{data,error},{data:acceptedRows,error:acceptedError}]=await Promise.all([
+ const [{data,error},{data:acceptedRows,error:acceptedError},{data:matchRows,error:matchError}]=await Promise.all([
   client.from("scrims").select("id,title,description,status,registration_mode,max_teams,scheduled_at,registration_opens_at,registration_closes_at").neq("status","draft").order("scheduled_at"),
-  client.rpc("get_public_scrim_accepted_teams")
+  client.rpc("get_public_scrim_accepted_teams"),
+  client.from("scrim_matches").select("id,scrim_id,match_number,title,starts_at,status").in("status",["published","live","completed"]).order("match_number")
  ]);
  if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات.</div>';return;}
- const rows=data||[],acceptedByScrim=new Map();
+ const rows=data||[],matchesByScrim=new Map(),acceptedByScrim=new Map();
+ if(!matchError)(matchRows||[]).forEach(m=>{if(!matchesByScrim.has(m.scrim_id))matchesByScrim.set(m.scrim_id,[]);matchesByScrim.get(m.scrim_id).push(m);});
  if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=rows.length?rows.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
   const teamsHtml=renderAcceptedTeamsTable(accepted,"قائمة الفرق لم تُنشر بعد.");
+  const scrimMatches=matchesByScrim.get(s.id)||[];
+  const matchesHtml=matchError?"<p class='small'>تعذر تحميل جدول المباريات حالياً.</p>":scrimMatches.length?scrimMatches.map((m,i)=>"<div class='scrim-public-match-row'><b>المباراة "+esc(m.match_number)+"/"+scrimMatches.length+" — "+esc(m.title||"بدون خريطة")+"</b><span>"+formatScrimDate(m.starts_at)+"</span><span>"+esc(m.status==="published"?"مجدولة":m.status==="live"?"مباشرة":"انتهت")+"</span></div>").join(""):"<p class='small'>لم تُنشر مباريات لهذا السكريم حتى الآن.</p>";
   return `<article class="scrim-public-card">
    <div class="scrim-public-layout">
     <div>
@@ -460,6 +464,7 @@ async function loadPublicScrims(){
      <div class="accepted-team-list">${teamsHtml}</div>
     </aside>
    </div>
+   <section class="scrim-public-match-schedule"><h4>جدول المباريات</h4>${matchesHtml}</section>
    <div class="scrim-public-actions">${scrimRegistrationIsOpen(s)?`<button onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">تسجيل الفريق</button>`:`<button class="secondary" disabled>التسجيل غير متاح حالياً</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button></div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
