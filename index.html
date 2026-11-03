@@ -129,6 +129,35 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 
 @media(max-width:650px){.site-header{padding:12px 4%}.header-inner{align-items:flex-start}.nav-links{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nav-links a{white-space:nowrap;padding:8px 10px}.hero{min-height:280px}.hero:after{right:-3%;top:70%;font-size:120px}.section-heading{align-items:flex-start;flex-direction:column}main{padding:0 13px;margin-top:15px}th,td{padding:8px;font-size:12px}}
 
+
+/* Weekly MVP feature */
+.mvp-feature{position:relative;overflow:hidden;margin:22px 0 26px;border:1px solid #8b6828;border-radius:20px;background:radial-gradient(circle at 72% 35%,#70451466,transparent 34%),linear-gradient(115deg,#080a0e,#17130d 60%,#080a0e);box-shadow:0 18px 55px #0009}
+.mvp-feature:before{content:"MVP";position:absolute;left:2%;top:-35px;font-size:clamp(110px,25vw,260px);font-weight:1000;color:#f3bd4810;line-height:1;pointer-events:none}
+.mvp-feature-inner{position:relative;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);gap:22px;align-items:center;padding:clamp(20px,4vw,42px)}
+.mvp-kicker{color:#f0c05b;font-weight:900;letter-spacing:3px;font-size:12px}
+.mvp-title{font-size:clamp(34px,6vw,64px);line-height:1;margin:10px 0;color:#f4c65e;font-weight:1000}
+.mvp-player-name{font-size:clamp(24px,4vw,38px);font-weight:900;margin:8px 0 2px}
+.mvp-player-team{color:#c5c5c5}
+.mvp-photo-wrap{height:300px;display:grid;place-items:center;overflow:hidden;border-radius:16px;background:linear-gradient(145deg,#292014,#0d0f13);border:1px solid #735727}
+.mvp-photo{width:100%;height:100%;object-fit:cover;object-position:center 25%}
+.mvp-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0}
+.mvp-stat{padding:12px 8px;text-align:center;border:1px solid #5d4925;border-radius:11px;background:#090b0edb}
+.mvp-stat b{display:block;color:#f5c75e;font-size:clamp(19px,3vw,28px);direction:ltr}
+.mvp-stat span{font-size:11px;color:#c8c4ba}
+.mvp-top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:12px 0 30px}
+.mvp-rank-card{position:relative;overflow:hidden;border:1px solid #51452e;border-radius:14px;background:linear-gradient(145deg,#1a1b1e,#0d0e11);padding:12px;text-align:center}
+.mvp-rank-card.first{border-color:#c89b3d;box-shadow:0 0 24px #d69e3322}
+.mvp-rank-card img{width:100%;height:150px;object-fit:cover;object-position:center 20%;border-radius:9px;background:#222}
+.mvp-rank-number{color:#e9bd59;font-weight:1000;font-size:25px}
+.mvp-rank-card h3{margin:5px 0 0;font-size:17px}
+.mvp-rank-card p{margin:2px 0;color:#aaa;font-size:12px}
+.mvp-rank-stats{display:flex;justify-content:space-around;gap:5px;margin-top:10px;padding-top:9px;border-top:1px solid #39332a;font-size:11px}
+.mvp-rank-stats b{display:block;color:#f0c05b;font-size:15px}
+.mvp-empty{padding:22px;text-align:center;color:#aaa;border:1px dashed #66532d;border-radius:14px;background:#111318}
+.mvp-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mvp-admin-player{border:1px solid #38332a;border-radius:12px;padding:13px;background:#101216}
+@media(max-width:700px){.mvp-feature-inner{grid-template-columns:1fr}.mvp-photo-wrap{height:230px}.mvp-top3{grid-template-columns:1fr}.mvp-rank-card{display:grid;grid-template-columns:100px 1fr;gap:10px;text-align:right;align-items:center}.mvp-rank-card img{height:115px;grid-row:span 2}.mvp-rank-stats{grid-column:2}.mvp-admin-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -192,17 +221,11 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <div id="scrimCenterResult" class="notice">ستظهر هنا بيانات الروم بعد التحقق من الكود ونشرها من الإدارة.</div>
 </section>
 <section id="public">
- <section class="hero" id="home">
-  <div class="hero-content">
-   <div class="eyebrow">WELCOME TO THE ARENA</div>
-   <h2>YOUR ARENA.<br><span>YOUR GLORY.</span></h2>
-   <p>منصة PROFESSIONAL ESPORTS لتنظيم سكريمات وبطولات PUBG MOBILE. تابع الفعاليات، اكتشف الفرق، وكن جزءاً من المنافسة.</p>
-   <div class="hero-actions">
-    <a href="#scrims"><button>استكشف السكريمات</button></a>
-    <a href="#teamsSection"><button class="secondary">استعرض الفرق</button></a>
-   </div>
-  </div>
+ <section id="home" class="mvp-feature">
+  <div id="weeklyMvpFeature" class="mvp-feature-inner"><div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div></div>
  </section>
+ <div class="section-heading"><div><span class="pill">WEEKLY LEADERS</span><h2>أفضل 3 لاعبين في الأسبوع</h2><p>ترتيب اللاعبين وفق البيانات التي تعتمدها إدارة النتائج.</p></div></div>
+ <div id="weeklyMvpTop3" class="mvp-top3"><div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة MVP منشورة حالياً.</div></div>
  <div class="section-heading" id="scrims"><div><span class="pill">COMPETITIVE EVENTS</span><h2>السكريمات والبطولات</h2><p>تابع الفعاليات المنشورة وحالة كل بطولة.</p></div></div>
  <div class="grid">
   <div class="card"><h2>البطولات والسكريمات</h2><div id="tournaments" class="muted">جاري التحميل...</div></div>
@@ -257,6 +280,16 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 </div>
 
 <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
+ <div id="weeklyMvpAdmin" class="card hidden">
+  <h2>إدارة MVP الأسبوعي</h2>
+  <p class="small">أدخل بيانات أفضل ثلاثة لاعبين وصورهم كرابط مباشر. لن تظهر للجمهور إلا بعد النشر.</p>
+  <label>عنوان الأسبوع / الجولة</label><input id="mvpWeekLabel" placeholder="مثال: الأسبوع الأول - نوفمبر 2026">
+  <div class="mvp-admin-grid">
+   <div class="mvp-admin-player"><h3>المركز 1</h3><label>اسم اللاعب</label><input id="mvpName1" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam1" placeholder="اسم الفريق أو TAG"><label>رابط صورة اللاعب</label><input id="mvpPhoto1" type="url" placeholder="https://..."><label>Eliminations</label><input id="mvpKills1" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage1" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 2</h3><label>اسم اللاعب</label><input id="mvpName2" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam2" placeholder="اسم الفريق أو TAG"><label>رابط صورة اللاعب</label><input id="mvpPhoto2" type="url" placeholder="https://..."><label>Eliminations</label><input id="mvpKills2" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage2" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 3</h3><label>اسم اللاعب</label><input id="mvpName3" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam3" placeholder="اسم الفريق أو TAG"><label>رابط صورة اللاعب</label><input id="mvpPhoto3" type="url" placeholder="https://..."><label>Eliminations</label><input id="mvpKills3" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage3" type="number" min="0" value="0"></div>
+  </div>
+  <div class="row"><button id="saveWeeklyMvp">حفظ ونشر MVP</button><button class="secondary" id="unpublishWeeklyMvp">إخفاء القائمة</button></div>
+  <div id="mvpAdminStatus" class="notice">أدخل البيانات ثم احفظها لنشرها في الواجهة الرئيسية.</div>
+ </div>
  <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
 </section>
 </main>
@@ -279,6 +312,43 @@ function updateScorePreview(){
 function msg(text,type=""){$("status").innerHTML=`<span class="${type}">${text}</span>`;}
 function show(id,yes=true){$(id).classList.toggle("hidden",!yes);}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+async function loadWeeklyMvp(){
+ const feature=$("weeklyMvpFeature"),top=$("weeklyMvpTop3");
+ const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position").eq("is_published",true).order("rank_position",{ascending:true}).limit(3);
+ if(error){feature.innerHTML='<div class="mvp-empty">تعذر تحميل بيانات MVP حالياً.</div>';top.innerHTML="";return;}
+ const rows=data||[];
+ if(!rows.length){feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div>';top.innerHTML='<div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة MVP منشورة حالياً.</div>';return;}
+ const p=rows[0],photo=p.photo_url?'<img class="mvp-photo" src="'+esc(p.photo_url)+'" alt="'+esc(p.player_name)+'" onerror="this.style.display=\'none\'">':'';
+ feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · '+esc(p.week_label)+'</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-player-name">'+esc(p.player_name)+'</div><div class="mvp-player-team">TEAM · '+esc(p.team_name||"—")+'</div><div class="mvp-stats"><div class="mvp-stat"><b>'+Number(p.eliminations||0)+'</b><span>ELIMINATIONS</span></div><div class="mvp-stat"><b>'+Number(p.damage||0).toLocaleString("en-US")+'</b><span>DAMAGE</span></div><div class="mvp-stat"><b>#1</b><span>WEEKLY RANK</span></div></div><span class="pill">PLAYER OF THE WEEK</span></div><div class="mvp-photo-wrap">'+(photo||'<div class="mvp-empty">صورة اللاعب غير متاحة</div>')+'</div>';
+ top.innerHTML=rows.map((x,i)=>'<article class="mvp-rank-card '+(i===0?'first':'')+'"><img src="'+esc(x.photo_url||'')+'" alt="'+esc(x.player_name)+'" onerror="this.style.visibility=\'hidden\'"><div><div class="mvp-rank-number">#'+(i+1)+'</div><h3>'+esc(x.player_name)+'</h3><p>'+esc(x.team_name||"—")+'</p><div class="mvp-rank-stats"><span><b>'+Number(x.eliminations||0)+'</b>Kills</span><span><b>'+Number(x.damage||0).toLocaleString("en-US")+'</b>Damage</span></div></div></article>').join("");
+}
+async function loadWeeklyMvpAdmin(){
+ const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position,is_published").order("rank_position",{ascending:true}).limit(3);
+ if(error){$("mvpAdminStatus").textContent="جدول MVP غير جاهز بعد. نفّذ ملف SQL المرفق أولاً. التفاصيل: "+error.message;return;}
+ const rows=data||[];if(!rows.length)return;
+ $("mvpWeekLabel").value=rows[0].week_label||"";
+ rows.forEach(x=>{const n=Number(x.rank_position);if(n<1||n>3)return;$("mvpName"+n).value=x.player_name||"";$("mvpTeam"+n).value=x.team_name||"";$("mvpPhoto"+n).value=x.photo_url||"";$("mvpKills"+n).value=x.eliminations||0;$("mvpDamage"+n).value=x.damage||0;});
+ $("mvpAdminStatus").textContent=rows[0].is_published?"القائمة منشورة حالياً. يمكنك تعديلها وإعادة نشرها أو إخفاؤها.":"البيانات محفوظة كمسودة.";
+}
+async function saveWeeklyMvp(publish=true){
+ const week=$("mvpWeekLabel").value.trim();if(!week)return $("mvpAdminStatus").textContent="اكتب عنوان الأسبوع أولاً.";
+ const payload=[];
+ for(let n=1;n<=3;n++){
+  const name=$("mvpName"+n).value.trim();if(!name)continue;
+  payload.push({week_label:week,rank_position:n,player_name:name,team_name:$("mvpTeam"+n).value.trim(),photo_url:$("mvpPhoto"+n).value.trim()||null,eliminations:Number($("mvpKills"+n).value)||0,damage:Number($("mvpDamage"+n).value)||0,is_published:publish,updated_at:new Date().toISOString()});
+ }
+ if(!payload.length)return $("mvpAdminStatus").textContent="أدخل اسم لاعب واحد على الأقل.";
+ const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
+ if(error){$("mvpAdminStatus").textContent="تعذر الحفظ: "+error.message;return;}
+ const {error:hideError}=await client.from("weekly_mvp_players").update({is_published:false}).neq("week_label",week);
+ if(hideError){$("mvpAdminStatus").textContent="تم حفظ الأسبوع، لكن تعذر إخفاء الأسابيع السابقة: "+hideError.message;return;}
+ $("mvpAdminStatus").textContent=publish?"تم حفظ ونشر قائمة MVP.":"تم حفظ القائمة كمسودة.";
+ await loadWeeklyMvp();await loadWeeklyMvpAdmin();
+}
+$("saveWeeklyMvp").addEventListener("click",()=>saveWeeklyMvp(true));
+$("unpublishWeeklyMvp").addEventListener("click",async()=>{const week=$("mvpWeekLabel").value.trim();if(!week)return;$("mvpAdminStatus").textContent="جارٍ إخفاء القائمة...";const {error}=await client.from("weekly_mvp_players").update({is_published:false}).eq("week_label",week);$("mvpAdminStatus").textContent=error?"تعذر الإخفاء: "+error.message:"تم إخفاء القائمة عن الزوار.";await loadWeeklyMvp();await loadWeeklyMvpAdmin();});
+
 async function loadPublic(){
  const [t,tm,r]=await Promise.all([
   client.from("tournaments").select("id,name,status,start_date").in("status",["published","completed"]).order("created_at",{ascending:false}),
@@ -306,6 +376,8 @@ async function refreshAdmin(){
  if(["founder","admin","tournament_manager"].includes(currentRole)) await loadScrimAdmin();
  show("resultForm",["founder","admin","results_manager"].includes(currentRole));
  show("aiScanner",["founder","admin","results_manager"].includes(currentRole));
+ show("weeklyMvpAdmin",["founder","admin","results_manager"].includes(currentRole));
+ if(["founder","admin","results_manager"].includes(currentRole)) await loadWeeklyMvpAdmin();
  const [ts,ms,tm,rs]=await Promise.all([
   client.from("tournaments").select("id,name,status").order("created_at",{ascending:false}),
   client.from("matches").select("id,name,tournament_id,status").order("created_at",{ascending:false}),
@@ -732,5 +804,6 @@ client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();awai
 setInterval(()=>{refreshScrimCountdowns();},1000);
 setInterval(()=>{document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
 setInterval(()=>{loadPublicScrims();},60000);
-(async()=>{await loadPublic();await loadPublicScrims();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
+setInterval(()=>{loadWeeklyMvp();},60000);
+(async()=>{await loadPublic();await loadWeeklyMvp();await loadPublicScrims();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
 </script>
