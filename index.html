@@ -308,7 +308,8 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="card"><h3>دعوة فريق</h3><label>السكريم</label><select id="scrimInviteSelect"></select><label>الفريق</label><select id="scrimInviteTeam"></select><button id="sendScrimInvite" class="secondary">إرسال الدعوة</button></div>
  </div>
  <div id="adminTabTeams" class="admin-tab-panel hidden">
-  <div class="card"><h3>طلبات تسجيل الفرق الجديدة</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div></div>
+  <div class="card"><h3>ملخص الفرق</h3><div class="admin-overview-grid"><div class="admin-overview-card"><span>الفرق المقبولة</span><b id="teamAcceptedCount">0</b></div><div class="admin-overview-card"><span>في الانتظار</span><b id="teamPendingCount">0</b></div><div class="admin-overview-card"><span>فرق الاحتياط</span><b id="teamReserveCount">0</b></div></div></div>
+  <div class="card"><h3>طلبات وقوائم الفرق</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div></div>
   <div class="card"><h3>طلبات التسجيل القديمة</h3><div id="scrimRequests">لا توجد طلبات.</div></div>
  </div>
  <div id="adminTabRooms" class="admin-tab-panel hidden">
@@ -823,6 +824,10 @@ async function openScrimTeamCenter(){
   out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>قيد انتظار موافقة المشرفين</b><ol><li>تم إرسال الطلب ✓</li><li>بانتظار مراجعة المشرفين</li><li>سيتم تحديث الحالة بعد اتخاذ القرار</li></ol><p>احتفظ بكود الفريق لمتابعة حالة الطلب.</p></div>";
   return;
  }
+ if(statusRow.status==="reserve"){
+  out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>الفريق في قائمة الاحتياط</b><p>طلبكم محفوظ ضمن فرق الاحتياط، وسيتم تحديث الحالة إذا تم اختياركم بدلاً من فريق منسحب.</p></div>";
+  return;
+ }
  if(statusRow.status==="rejected"){
   out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>تم رفض طلب الفريق</b><p>نأسف، لم تتم الموافقة على طلب التسجيل. يُرجى التواصل مع إدارة Professional eSports للاستفسار.</p></div>";
   return;
@@ -968,17 +973,25 @@ async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
  const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
- const rows=data||[];
- updateTeamApplicationBadge(rows.filter(r=>r.status==="pending").length);
- el.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"قيد الانتظار":r.status==="accepted"?"مقبول":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:""}</div>`).join(""):"لا توجد طلبات تسجيل فرق حتى الآن.";
+ const rows=data||[],pending=rows.filter(r=>r.status==="pending"),accepted=rows.filter(r=>r.status==="accepted"),reserve=rows.filter(r=>r.status==="reserve");
+ updateTeamApplicationBadge(pending.length);
+ $("teamAcceptedCount").textContent=String(accepted.length);
+ $("teamPendingCount").textContent=String(pending.length);
+ $("teamReserveCount").textContent=String(reserve.length);
+ const card=r=>`<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"في الانتظار":r.status==="accepted"?"مقبول":r.status==="reserve"?"احتياط":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">إضافة للاحتياط</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:r.status==="reserve"?`<button onclick="reviewTeamApplication('${r.id}','accepted')">تحويل إلى مقبول</button>`:r.status==="accepted"?`<button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">تحويل إلى الاحتياط</button>`:""}</div>`;
+ const section=(title,list,empty)=>`<section><h3>${title} (${list.length})</h3>${list.length?list.map(card).join(""):`<p class="small">${empty}</p>`}</section>`;
+ el.innerHTML=section("الفرق المقبولة",accepted,"لا توجد فرق مقبولة حالياً.")+section("الفرق في الانتظار",pending,"لا توجد طلبات تنتظر المراجعة.")+section("فرق الاحتياط",reserve,"لا توجد فرق في الاحتياط.")+section("الطلبات المرفوضة",rows.filter(r=>r.status==="rejected"),"لا توجد طلبات مرفوضة.");
 }
 async function reviewTeamApplication(id,status){
- if(!["accepted","rejected"].includes(status))return;
- const confirmText=status==="accepted"?"تأكيد قبول الفريق؟ سيظهر ضمن الفرق المقبولة وتُحجز له خانة.":"تأكيد رفض طلب الفريق؟";
+ if(!["accepted","rejected","reserve"].includes(status))return;
+ const currentStatus=status==="accepted"?"pending,reserve":"pending";
+ const confirmText=status==="accepted"?"تأكيد قبول الفريق؟ سيظهر ضمن الفرق المقبولة.":status==="reserve"?"إضافة الفريق إلى قائمة الاحتياط؟ لن يظهر ضمن الفرق المقبولة.":"تأكيد رفض طلب الفريق؟";
  if(!confirm(confirmText))return;
  const {data:{user}}=await client.auth.getUser();
- const {error}=await client.from("scrim_team_applications").update({status,reviewed_by:user?.id,reviewed_at:new Date().toISOString()}).eq("id",id).eq("status","pending");
- if(error){alert("تعذر تحديث الطلب: "+error.message);return;}
+ let query=client.from("scrim_team_applications").update({status,reviewed_by:user?.id,reviewed_at:new Date().toISOString()}).eq("id",id);
+ query=status==="accepted"?query.in("status",["pending","reserve"]):query.eq("status","pending");
+ const {error}=await query;
+ if(error){alert("تعذر تحديث حالة الفريق: "+error.message);return;}
  await loadTeamApplicationsAdmin();await loadScrimAdmin();await loadPublicScrims();
 }
 window.reviewTeamApplication=reviewTeamApplication;
