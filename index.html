@@ -151,8 +151,12 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <p class="small" id="teamRegistrationScrimName"></p>
  <form id="teamRegistrationForm">
   <input type="hidden" id="applicationScrimId">
-  <label for="applicationTeamTag">تاق الفريق الكامل (FULL TEAM TAG)</label>
-  <input id="applicationTeamTag" maxlength="80" required placeholder="اكتب تاق الفريق بالكامل" autocomplete="organization">
+  <label for="applicationTeamName">اسم الفريق الكامل</label>
+  <input id="applicationTeamName" maxlength="100" required placeholder="اكتب اسم الفريق الكامل">
+  <label for="applicationTeamTag">اختصار الفريق</label>
+  <input id="applicationTeamTag" maxlength="20" required placeholder="مثال: PRO">
+  <label for="applicationTeamRepresentative">اسم ممثل الفريق</label>
+  <input id="applicationTeamRepresentative" maxlength="100" required placeholder="اسم ممثل الفريق">
   <p class="small">بعد الإرسال سيصل الطلب إلى المشرفين بحالة «قيد الانتظار»، ولن يُحتسب الفريق ضمن الفرق المقبولة إلا بعد الموافقة.</p>
   <div class="row"><button type="submit" id="submitTeamApplication">إرسال الطلب</button></div>
  </form>
@@ -387,16 +391,16 @@ function openTeamRegistration(scrimId,title){
  $("teamRegistrationMessage").classList.add("hidden");
  $("teamRegistrationForm").classList.remove("hidden");
  showStandalonePage("registrationPage");
- $("applicationTeamTag").focus();
+ $("applicationTeamName").focus();
 }
 window.openTeamRegistration=openTeamRegistration;
 async function submitTeamApplication(event){
  event.preventDefault();
- const tag=$("applicationTeamTag").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
- if(tag.length<2){alert("اكتب تاق الفريق الكامل.");return;}
+ const teamName=$("applicationTeamName").value.trim(),tag=$("applicationTeamTag").value.trim(),representative=$("applicationTeamRepresentative").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
+ if(teamName.length<2||tag.length<2||representative.length<2){alert("أكمل اسم الفريق واختصاره واسم ممثله.");return;}
  if(!scrimId){alert("لم يتم تحديد السكريم.");return;}
  button.disabled=true;button.textContent="جارٍ إرسال الطلب...";
- const {error}=await client.from("scrim_team_applications").insert({scrim_id:scrimId,team_tag:tag,status:"pending"});
+ const {error}=await client.from("scrim_team_applications").insert({scrim_id:scrimId,team_tag:tag,team_name:teamName,team_short_name:tag,team_representative:representative,status:"pending"});
  button.disabled=false;button.textContent="إرسال الطلب";
  if(error){message.textContent="تعذر إرسال الطلب: "+error.message;message.classList.remove("hidden");return;}
  $("teamRegistrationForm").classList.add("hidden");message.textContent="تم إرسال طلب الفريق بنجاح. الحالة الآن: قيد انتظار موافقة المشرفين.";message.classList.remove("hidden");
@@ -626,10 +630,10 @@ async function toggleAcceptedTeamsVisibility(scrimId,visible){
 window.toggleAcceptedTeamsVisibility=toggleAcceptedTeamsVisibility;
 async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
- const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
+ const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
  const rows=data||[];
- el.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.team_tag)}</b><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"قيد الانتظار":r.status==="accepted"?"مقبول":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:""}</div>`).join(""):"لا توجد طلبات تسجيل فرق حتى الآن.";
+ el.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"قيد الانتظار":r.status==="accepted"?"مقبول":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:""}</div>`).join(""):"لا توجد طلبات تسجيل فرق حتى الآن.";
 }
 async function reviewTeamApplication(id,status){
  if(!["accepted","rejected"].includes(status))return;
