@@ -309,18 +309,18 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 </main>
 <footer><div class="footer-brand">PROFESSIONAL ESPORTS</div><div>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</div><p class="small">© PROFESSIONAL ESPORTS. جميع الحقوق محفوظة.</p></footer>
 <script>
-const bootStatus=document.getElementById("status");if(bootStatus)bootStatus.textContent="تم تشغيل JavaScript في الصفحة؛ جاري فحص مكتبة الاتصال...";
+const bootStatus=document.getElementById("status");const bootMessage=(m)=>{if(bootStatus)bootStatus.textContent=m;};bootMessage("تم تشغيل JavaScript؛ جاري بدء فحص مكتبة الاتصال...");
 (async()=>{
  const load=(url)=>new Promise((resolve,reject)=>{
   const tag=document.createElement("script");let settled=false;
-  const timer=setTimeout(()=>finish(new Error("timeout")),12000);
+  bootMessage("جاري تحميل مكتبة الاتصال من المصدر الخارجي...");const timer=setTimeout(()=>finish(new Error("انتهت مهلة تحميل مكتبة الاتصال بعد 12 ثانية")),12000);
   function finish(err){if(settled)return;settled=true;clearTimeout(timer);err?(tag.remove(),reject(err)):resolve();}
   tag.onload=()=>finish();tag.onerror=()=>finish(new Error("failed"));tag.src=url;document.head.appendChild(tag);
  });
  try{
   if(!window.supabase?.createClient){
-   try{await load("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");}
-   catch(_){await load("https://unpkg.com/@supabase/supabase-js@2");}
+   try{bootMessage("جاري تحميل المكتبة من jsDelivr...");await load("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");}
+   catch(firstError){bootMessage("تعذر المصدر الأول ("+(firstError?.message||firstError)+")؛ جاري تجربة unpkg...");await load("https://unpkg.com/@supabase/supabase-js@2");}
   }
   if(!window.supabase?.createClient)throw new Error("تعذر تحميل مكتبة الاتصال");
   window.__supabaseReady=true;
