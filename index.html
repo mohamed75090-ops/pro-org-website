@@ -149,22 +149,25 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 @media(max-width:650px){.site-header{padding:12px 4%}.header-inner{align-items:flex-start}.nav-links{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nav-links a{white-space:nowrap;padding:8px 10px}.hero{min-height:280px}.hero:after{right:-3%;top:70%;font-size:120px}.section-heading{align-items:flex-start;flex-direction:column}main{padding:0 13px;margin-top:15px}th,td{padding:8px;font-size:12px}}
 
 
-/* Weekly MVP feature */
-.mvp-feature{position:relative;overflow:hidden;margin:22px 0 26px;border:1px solid #8b6828;border-radius:20px;background:radial-gradient(circle at 72% 35%,#70451466,transparent 34%),linear-gradient(115deg,#080a0e,#17130d 60%,#080a0e);box-shadow:0 18px 55px #0009}
-.mvp-feature:before{content:"MVP";position:absolute;left:2%;top:-35px;font-size:clamp(110px,25vw,260px);font-weight:1000;color:#f3bd4810;line-height:1;pointer-events:none}
-.mvp-feature-inner{position:relative;display:flex;flex-direction:column;gap:0;padding:clamp(14px,3vw,28px);max-width:760px;margin:auto}
-.mvp-kicker{color:#f0c05b;font-weight:900;letter-spacing:3px;font-size:12px;text-align:center}
-.mvp-title{font-size:clamp(34px,6vw,58px);line-height:1;margin:10px 0 18px;color:#f4c65e;font-weight:1000;text-align:center;text-shadow:0 3px 18px #d58a2455}
-.mvp-photo-wrap{order:1;width:100%;height:clamp(280px,58vw,520px);display:grid;place-items:center;overflow:hidden;border-radius:15px;background:linear-gradient(145deg,#292014,#0d0f13);border:1px solid #a7792c;box-shadow:0 12px 32px #0009}
-.mvp-photo{width:100%;height:100%;object-fit:cover;object-position:center 22%}
-.mvp-feature-copy{order:2;width:100%;padding:20px 8px 4px;text-align:center}
-.mvp-player-name{font-size:clamp(26px,4vw,42px);font-weight:1000;margin:4px 0;color:#fff}
-.mvp-player-team{color:#d4d0c7;font-weight:700;letter-spacing:1px}
-.mvp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 10px}
-.mvp-stat{padding:14px 8px;text-align:center;border:1px solid #765a2b;border-radius:11px;background:linear-gradient(145deg,#15171b,#090b0e)}
-.mvp-stat b{display:block;color:#f5c75e;font-size:clamp(22px,3vw,32px);direction:ltr}
-.mvp-stat span{font-size:11px;color:#c8c4ba;letter-spacing:1px}
-.mvp-feature-copy .pill{display:inline-block;margin-top:10px;border-color:#a7792c;color:#f4c65e}
+/* Weekly MVP feature — premium champion card */
+.mvp-feature{position:relative;isolation:isolate;overflow:hidden;margin:26px 0 30px;border:1px solid #b58a3b;border-radius:24px;background:radial-gradient(ellipse at 18% 55%,#b47b2630,transparent 42%),radial-gradient(ellipse at 88% 12%,#f3c45a20,transparent 35%),linear-gradient(125deg,#080a0f 0%,#17140f 48%,#090b10 100%);box-shadow:0 22px 65px #000b,inset 0 1px #f7d98730}
+.mvp-feature:before{content:"MVP";position:absolute;z-index:-1;right:-18px;bottom:-70px;font-size:clamp(150px,27vw,330px);font-weight:1000;letter-spacing:-12px;color:#f3bd4809;line-height:1;pointer-events:none}
+.mvp-feature:after{content:"";position:absolute;inset:9px;border:1px solid #e8c16b20;border-radius:17px;pointer-events:none}
+.mvp-feature-inner{position:relative;display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.1fr);grid-template-rows:auto auto 1fr;column-gap:clamp(22px,4vw,54px);align-items:center;padding:clamp(22px,4vw,46px);max-width:1120px;margin:auto}
+.mvp-kicker{grid-column:1/-1;color:#f3cb70;font-weight:900;letter-spacing:3.5px;font-size:11px;text-align:center;text-transform:uppercase;margin:0 0 9px}
+.mvp-title{grid-column:1/-1;font-size:clamp(32px,5.5vw,62px);line-height:1;margin:0 0 27px;color:#f8d77e;font-weight:1000;text-align:center;letter-spacing:1px;text-shadow:0 4px 28px #d58a2466}
+.mvp-photo-wrap{grid-column:1;grid-row:3;position:relative;width:100%;height:clamp(330px,42vw,500px);display:grid;place-items:center;overflow:hidden;border-radius:18px;background:linear-gradient(145deg,#342716,#0d0f13 72%);border:1px solid #c99a43;box-shadow:0 18px 42px #000b,0 0 0 5px #d9aa4a12}
+.mvp-photo-wrap:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,#090b10a8);pointer-events:none}
+.mvp-photo{width:100%;height:100%;object-fit:cover;object-position:center 22%;filter:saturate(1.08) contrast(1.04)}
+.mvp-feature-copy{grid-column:2;grid-row:3;width:100%;padding:12px 0;text-align:left}
+.mvp-feature-copy:before{content:"♛  PLAYER OF THE WEEK";display:inline-block;margin-bottom:16px;padding:8px 13px;border:1px solid #b88b3e;border-radius:999px;background:#c18a2520;color:#f4ce79;font-size:10px;font-weight:1000;letter-spacing:2px}
+.mvp-player-name{font-size:clamp(30px,4.2vw,54px);line-height:1.08;font-weight:1000;margin:5px 0 12px;color:#fff;text-shadow:0 4px 22px #000}
+.mvp-player-team{color:#d9cba9;font-weight:800;letter-spacing:1.6px;font-size:13px}
+.mvp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:26px 0 16px}
+.mvp-stat{padding:17px 12px;text-align:center;border:1px solid #80632f;border-radius:14px;background:linear-gradient(145deg,#201b12,#0c0e12);box-shadow:inset 0 1px #fff1}
+.mvp-stat b{display:block;color:#f7cf70;font-size:clamp(25px,3.2vw,38px);direction:ltr;line-height:1.15}
+.mvp-stat span{font-size:10px;color:#d1c5a9;letter-spacing:1.8px;font-weight:900}
+.mvp-feature-copy .pill{display:inline-block;margin-top:5px;padding:9px 16px;border-color:#b88b3e;color:#f7d27c;background:#c18a2518;font-weight:900;letter-spacing:1px}
 .mvp-top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:12px 0 30px}
 .mvp-rank-card{position:relative;overflow:hidden;border:1px solid #51452e;border-radius:14px;background:linear-gradient(145deg,#1a1b1e,#0d0e11);padding:12px;text-align:center}
 .mvp-rank-card.first{border-color:#c89b3d;box-shadow:0 0 24px #d69e3322}
@@ -177,7 +180,20 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .mvp-empty{padding:22px;text-align:center;color:#aaa;border:1px dashed #66532d;border-radius:14px;background:#111318}
 .mvp-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .mvp-admin-player{border:1px solid #38332a;border-radius:12px;padding:13px;background:#101216}
-@media(max-width:700px){.mvp-feature-inner{grid-template-columns:1fr}.mvp-photo-wrap{height:230px}.mvp-top3{grid-template-columns:1fr}.mvp-rank-card{display:grid;grid-template-columns:100px 1fr;gap:10px;text-align:right;align-items:center}.mvp-rank-card img{height:115px;grid-row:span 2}.mvp-rank-stats{grid-column:2}.mvp-admin-grid{grid-template-columns:1fr}}
+@media(max-width:700px){
+ .mvp-feature-inner{grid-template-columns:1fr;grid-template-rows:auto}
+ .mvp-kicker,.mvp-title{grid-column:1}
+ .mvp-title{font-size:clamp(31px,9vw,44px);margin-bottom:18px}
+ .mvp-photo-wrap{grid-column:1;grid-row:auto;height:clamp(260px,78vw,390px);max-width:440px;margin:0 auto;width:100%}
+ .mvp-feature-copy{grid-column:1;grid-row:auto;text-align:center;padding:22px 0 4px}
+ .mvp-player-name{font-size:clamp(29px,8vw,42px)}
+ .mvp-stats{margin:19px 0 13px}
+ .mvp-top3{grid-template-columns:1fr}
+ .mvp-rank-card{display:grid;grid-template-columns:100px 1fr;gap:10px;text-align:right;align-items:center}
+ .mvp-rank-card img{height:115px;grid-row:span 2}
+ .mvp-rank-stats{grid-column:2}
+ .mvp-admin-grid{grid-template-columns:1fr}
+}
 
 </style>
 </head>
