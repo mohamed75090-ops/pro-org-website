@@ -4,6 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PROFESSIONAL ESPORTS | PRO ORG</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
 
 :root{--bg:#08090c;--panel:#111318;--panel2:#171a20;--gold:#d8b15b;--gold2:#f0d58d;--muted:#a7a9b0;--line:#2b2d34;--green:#63d49a}
@@ -311,7 +312,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 <script>
 const SUPABASE_URL = "https://pjirnjvkatkyrjpbiutd.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_";
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const client = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) : null;
 const $ = id => document.getElementById(id);
 let currentRole = null, teamsCache = [], tournamentsCache = [], matchesCache = [];
 const PLACEMENT_POINTS = {1:10,2:6,3:5,4:4,5:3,6:2,7:1};
@@ -903,5 +904,5 @@ setInterval(()=>{refreshScrimCountdowns();},1000);
 setInterval(()=>{document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
 setInterval(()=>{loadPublicScrims();},60000);
 setInterval(()=>{loadWeeklyMvp();},60000);
-(async()=>{await loadPublic();await loadWeeklyMvp();await loadPublicScrims();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
+(async()=>{if(!client){const detail="تعذر تحميل مكتبة الاتصال بـ Supabase من مزودي CDN. جرّب شبكة أخرى أو عطّل مانع المحتوى.";msg(detail,"err");["tournaments","teams","results"].forEach(id=>{if($(id))$(id).textContent=detail;});if($("publicScrims"))$("publicScrims").innerHTML='<div class="card">'+esc(detail)+'</div>';if($("weeklyMvpFeature"))$("weeklyMvpFeature").innerHTML='<div class="mvp-empty">'+esc(detail)+'</div>';return;}await Promise.allSettled([loadPublic(),loadWeeklyMvp(),loadPublicScrims()]);try{const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");}catch(e){msg("تعذر إكمال الاتصال: "+esc(e?.message||e),"err");}})();
 </script>
