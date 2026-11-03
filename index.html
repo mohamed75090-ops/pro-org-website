@@ -309,6 +309,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 </main>
 <footer><div class="footer-brand">PROFESSIONAL ESPORTS</div><div>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</div><p class="small">© PROFESSIONAL ESPORTS. جميع الحقوق محفوظة.</p></footer>
 <script>
+const bootStatus=document.getElementById("status");if(bootStatus)bootStatus.textContent="تم تشغيل JavaScript في الصفحة؛ جاري فحص مكتبة الاتصال...";
 (async()=>{
  const load=(url)=>new Promise((resolve,reject)=>{
   const tag=document.createElement("script");let settled=false;
