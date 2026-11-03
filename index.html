@@ -434,7 +434,7 @@ async function loadPublicScrims(){
  ]);
  if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات.</div>';return;}
  const rows=data||[],acceptedByScrim=new Map();
- if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:""},slot_number:r.slot_number});});
+ if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=rows.length?rows.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
@@ -614,7 +614,7 @@ async function loadScrimAdmin(){
  const scrimOpts=ss.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join("");
  ["scrimInviteSelect","scrimRoomSelect","scrimMatchSelect"].forEach(id=>$(id).innerHTML=scrimOpts);
  const acceptedByScrim=new Map();
- acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:r.team_tag},slot_number:r.slot_number});});
+ acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=ss.length?ss.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
