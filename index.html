@@ -326,6 +326,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   window.dispatchEvent(new Event("supabase-ready"));
  }catch(e){
   window.__supabaseLoadError=e?.message||"فشل تحميل مكتبة الاتصال";
+  window.__supabaseReady=true;
   window.dispatchEvent(new Event("supabase-ready"));
   const status=document.getElementById("status");
   if(status)status.textContent="تعذر تشغيل الموقع: "+window.__supabaseLoadError;
@@ -337,6 +338,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 (async()=>{
  await new Promise(resolve=>{if(window.__supabaseReady)return resolve();window.addEventListener("supabase-ready",resolve,{once:true});});
  try{
+if(window.__supabaseLoadError)throw new Error("تعذر تحميل مكتبة الاتصال: "+window.__supabaseLoadError);
 const SUPABASE_URL = "https://pjirnjvkatkyrjpbiutd.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
