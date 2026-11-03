@@ -323,6 +323,7 @@ const bootStatus=document.getElementById("status");const bootMessage=(m)=>{if(bo
    catch(firstError){bootMessage("تعذر المصدر الأول ("+(firstError?.message||firstError)+")؛ جاري تجربة unpkg...");await load("https://unpkg.com/@supabase/supabase-js@2");}
   }
   if(!window.supabase?.createClient)throw new Error("تعذر تحميل مكتبة الاتصال");
+  bootMessage("تم تحميل مكتبة الاتصال بنجاح؛ جاري إنشاء الاتصال بقاعدة البيانات...");
   window.__supabaseReady=true;
   window.dispatchEvent(new Event("supabase-ready"));
  }catch(e){
@@ -344,6 +345,7 @@ const SUPABASE_URL = "https://pjirnjvkatkyrjpbiutd.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const $ = id => document.getElementById(id);
+msg("تم إنشاء الاتصال؛ جاري تحميل بيانات الموقع...","ok");
 let currentRole = null, teamsCache = [], tournamentsCache = [], matchesCache = [];
 const PLACEMENT_POINTS = {1:10,2:6,3:5,4:4,5:3,6:2,7:1};
 function pointsForPlacement(place){return PLACEMENT_POINTS[Number(place)]||0;}
