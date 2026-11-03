@@ -104,6 +104,12 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .admin-overview-card span,.admin-overview-card small{display:block;color:#aeb2bc;font-size:12px}
 .admin-overview-card b{display:block;color:#f4d58b;font-size:clamp(20px,3vw,27px);margin:5px 0;overflow-wrap:anywhere}
 @media(max-width:600px){.admin-overview-grid{grid-template-columns:1fr}.admin-scrim-tabs .admin-tab{padding:10px 5px;font-size:13px}}
+.team-status-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 16px}
+.team-status-tab{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;background:#20232a;color:#eee;border:1px solid #3a3d45;padding:11px 7px;font-size:13px}
+.team-status-tab.active{background:linear-gradient(135deg,#f0d58d,#c69b42);color:#17120a;border-color:#d8b15b}
+.team-status-tab>span:not(.admin-notification-badge){display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:20px;background:#343943;color:#fff;font-size:12px}
+.team-status-tab.active>span:not(.admin-notification-badge){background:#17120a;color:#f0d58b}
+@media(max-width:650px){.team-status-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Team center section colors */
 #scrimCenterResult .team-center-section{border-radius:14px;padding:18px;margin:14px 0;border:1px solid transparent;box-shadow:0 8px 22px #0003}
 #scrimCenterResult .team-center-section h3{margin-top:0;font-size:18px}
@@ -281,15 +287,6 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <button type="button" class="admin-tab" data-admin-tab="teams">الفرق <span id="teamApplicationsBadge" class="admin-notification-badge" hidden>0</span></button>
   <button type="button" class="admin-tab" data-admin-tab="rooms">الرومات</button>
  </nav>
- <section class="admin-scrim-overview">
-  <h3>السكرم النشط</h3>
-  <div class="admin-overview-grid">
-   <div class="admin-overview-card"><span>الفرق المقبولة والمتبقية</span><b id="adminActiveTeams">—</b><small id="adminActiveTeamsNote">بانتظار تحميل البيانات</small></div>
-   <div class="admin-overview-card"><span>الرومات</span><b id="adminActiveRooms">—</b><small id="adminActiveRoomsNote">عدد مباريات السكريم النشط</small></div>
-   <div class="admin-overview-card"><span>النتائج المعلّقة</span><b id="adminPendingResults">—</b><small>تحتاج إلى مراجعة المشرف</small></div>
-  </div>
-  <p id="adminActiveScrimName" class="small">جاري تحديد السكريم النشط...</p>
- </section>
  <div id="adminTabScrims" class="admin-tab-panel">
   <div class="card"><h3>إنشاء سكريم جديد</h3>
    <label>اسم السكريم</label><input id="scrimTitle" placeholder="PRO NIGHT SCRIM">
@@ -308,8 +305,18 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="card"><h3>دعوة فريق</h3><label>السكريم</label><select id="scrimInviteSelect"></select><label>الفريق</label><select id="scrimInviteTeam"></select><button id="sendScrimInvite" class="secondary">إرسال الدعوة</button></div>
  </div>
  <div id="adminTabTeams" class="admin-tab-panel hidden">
-  <div class="card"><h3>ملخص الفرق</h3><div class="admin-overview-grid"><div class="admin-overview-card"><span>الفرق المقبولة</span><b id="teamAcceptedCount">0</b></div><div class="admin-overview-card"><span>في الانتظار</span><b id="teamPendingCount">0</b></div><div class="admin-overview-card"><span>فرق الاحتياط</span><b id="teamReserveCount">0</b></div></div></div>
-  <div class="card"><h3>طلبات وقوائم الفرق</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div></div>
+ <section class="admin-scrim-overview">
+  <h3>السكرم النشط</h3>
+  <div class="admin-overview-grid">
+   <div class="admin-overview-card"><span>الفرق المقبولة والمتبقية</span><b id="adminActiveTeams">—</b><small id="adminActiveTeamsNote">بانتظار تحميل البيانات</small></div>
+   <div class="admin-overview-card"><span>الرومات</span><b id="adminActiveRooms">—</b><small id="adminActiveRoomsNote">عدد مباريات السكريم النشط</small></div>
+   <div class="admin-overview-card"><span>النتائج المعلّقة</span><b id="adminPendingResults">—</b><small>تحتاج إلى مراجعة المشرف</small></div>
+  </div>
+  <p id="adminActiveScrimName" class="small">جاري تحديد السكريم النشط...</p>
+ </section>
+ 
+  <div class="card"><h3>ملخص الفرق</h3><div class="admin-overview-grid"><div class="admin-overview-card"><span>الفرق المقبولة</span><b id="teamAcceptedCount">0</b></div><div class="admin-overview-card"><span>في الانتظار</span><b id="teamPendingCount">0</b></div><div class="admin-overview-card"><span>فرق الاحتياط</span><b id="teamReserveCount">0</b></div><div class="admin-overview-card"><span>الفرق المرفوضة</span><b id="teamRejectedCount">0</b></div></div></div>
+  <div class="card"><h3>إدارة الفرق</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div></div>
   <div class="card"><h3>طلبات التسجيل القديمة</h3><div id="scrimRequests">لا توجد طلبات.</div></div>
  </div>
  <div id="adminTabRooms" class="admin-tab-panel hidden">
@@ -969,6 +976,12 @@ function updateTeamApplicationBadge(count){
  badge.hidden=pending===0;
  badge.setAttribute("aria-label",pending+" طلبات فرق تنتظر المراجعة");
 }
+function setTeamApplicationFilter(status){
+ if(!["accepted","pending","reserve","rejected"].includes(status))return;
+ document.querySelectorAll("[data-team-status]").forEach(button=>button.classList.toggle("active",button.dataset.teamStatus===status));
+ document.querySelectorAll("[data-team-panel]").forEach(panel=>panel.classList.toggle("hidden",panel.dataset.teamPanel!==status));
+}
+window.setTeamApplicationFilter=setTeamApplicationFilter;
 async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
  const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
@@ -979,8 +992,19 @@ async function loadTeamApplicationsAdmin(){
  $("teamPendingCount").textContent=String(pending.length);
  $("teamReserveCount").textContent=String(reserve.length);
  const card=r=>`<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"في الانتظار":r.status==="accepted"?"مقبول":r.status==="reserve"?"احتياط":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">إضافة للاحتياط</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:r.status==="reserve"?`<button onclick="reviewTeamApplication('${r.id}','accepted')">تحويل إلى مقبول</button>`:r.status==="accepted"?`<button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">تحويل إلى الاحتياط</button>`:""}</div>`;
- const section=(title,list,empty)=>`<section><h3>${title} (${list.length})</h3>${list.length?list.map(card).join(""):`<p class="small">${empty}</p>`}</section>`;
- el.innerHTML=section("الفرق المقبولة",accepted,"لا توجد فرق مقبولة حالياً.")+section("الفرق في الانتظار",pending,"لا توجد طلبات تنتظر المراجعة.")+section("فرق الاحتياط",reserve,"لا توجد فرق في الاحتياط.")+section("الطلبات المرفوضة",rows.filter(r=>r.status==="rejected"),"لا توجد طلبات مرفوضة.");
+ const rejected=rows.filter(r=>r.status==="rejected");
+ const rejectedCount=$("teamRejectedCount");if(rejectedCount)rejectedCount.textContent=String(rejected.length);
+ el.innerHTML=`<nav class="team-status-tabs" aria-label="تصنيفات الفرق">
+  <button type="button" class="team-status-tab active" data-team-status="accepted" onclick="setTeamApplicationFilter('accepted')">الفرق المقبولة <span>${accepted.length}</span></button>
+  <button type="button" class="team-status-tab" data-team-status="pending" onclick="setTeamApplicationFilter('pending')">في الانتظار <span id="teamPendingSectionBadge" class="admin-notification-badge" ${pending.length?"":"hidden"}>${pending.length>99?"99+":pending.length}</span></button>
+  <button type="button" class="team-status-tab" data-team-status="reserve" onclick="setTeamApplicationFilter('reserve')">الفرق في الاحتياط <span>${reserve.length}</span></button>
+  <button type="button" class="team-status-tab" data-team-status="rejected" onclick="setTeamApplicationFilter('rejected')">الفرق المرفوضة <span>${rejected.length}</span></button>
+ </nav>
+ <div class="team-status-panel" data-team-panel="accepted">${accepted.length?accepted.map(card).join(""):`<p class="small">لا توجد فرق مقبولة حالياً.</p>`}</div>
+ <div class="team-status-panel hidden" data-team-panel="pending">${pending.length?pending.map(card).join(""):`<p class="small">لا توجد طلبات تنتظر المراجعة.</p>`}</div>
+ <div class="team-status-panel hidden" data-team-panel="reserve">${reserve.length?reserve.map(card).join(""):`<p class="small">لا توجد فرق في الاحتياط.</p>`}</div>
+ <div class="team-status-panel hidden" data-team-panel="rejected">${rejected.length?rejected.map(card).join(""):`<p class="small">لا توجد طلبات مرفوضة.</p>`}</div>`;
+
 }
 async function reviewTeamApplication(id,status){
  if(!["accepted","rejected","reserve"].includes(status))return;
