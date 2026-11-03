@@ -222,6 +222,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <label>موعد السكريم</label><input id="scrimScheduledAt" type="datetime-local">
   <label>بداية التسجيل</label><input id="scrimOpensAt" type="datetime-local">
   <label>نهاية التسجيل</label><input id="scrimClosesAt" type="datetime-local">
+  <label>موعد إغلاق الانسحاب (يظهر للفرق المقبولة فقط)</label><input id="scrimWithdrawalClosesAt" type="datetime-local">
   <label>القوانين</label><textarea id="scrimRules"></textarea>
   <button id="createScrim">إنشاء الإعلان كمسودة</button><p id="scrimCreateMsg" class="small"></p>
  </div>
@@ -525,8 +526,18 @@ async function openScrimTeamCenter(){
  const {data,error}=await client.rpc("get_team_scrim_details",{team_code:code});
  if(error){out.textContent="تعذر التحقق من الكود: "+error.message;return;}
  const row=Array.isArray(data)?data[0]:data;
- if(!row){out.textContent="الكود غير صحيح، أو لم يتم نشر بيانات الروم لهذا الفريق بعد.";return;}
- out.innerHTML=`<h3>${esc(row.scrim_title||"بيانات السكريم")}</h3><p>الفريق: <b>${esc(row.team_tag||"—")}</b></p><div class="notice"><b>بيانات الروم</b><p>Room ID: <b dir="ltr">${esc(row.room_id||"—")}</b></p><p>كلمة المرور: <b dir="ltr">${esc(row.room_password||"—")}</b></p></div>`;
+ if(!row){out.textContent="الكود غير صحيح أو الفريق غير مقبول.";return;}
+ const deadline=row.withdrawal_closes_at?new Date(row.withdrawal_closes_at).getTime():null;
+ const left=deadline?deadline-Date.now():null;
+ const withdrawalText=!deadline?"لم تحدد الإدارة موعد إغلاق الانسحاب بعد.":left<=0?"انتهت فترة الانسحاب.":formatScrimDate(row.withdrawal_closes_at);
+ const {data:matches,error:matchesError}=await client.from("scrim_matches").select("match_number,title,starts_at,status").eq("scrim_id",row.scrim_id).in("status",["published","live","completed"]).order("match_number");
+ const matchHtml=matchesError?"<p>تعذر تحميل جدول المباريات حالياً.</p>":(matches||[]).length?(matches||[]).map(m=>"<div class=\"notice\"><b>"+esc(m.title||("المباراة "+m.match_number))+"</b><p>الموعد: "+formatScrimDate(m.starts_at)+"</p><p>الحالة: "+esc(m.status==="published"?"مجدولة":m.status==="live"?"مباشرة":m.status==="completed"?"انتهت":m.status)+"</p></div>").join(""):"لم يتم نشر مباريات لهذا السكريم حتى الآن.";
+ const roomHtml=row.room_published?"<p>Room ID: <b dir=\"ltr\">"+esc(row.room_id||"—")+"</b></p><p>كلمة المرور: <b dir=\"ltr\">"+esc(row.room_password||"—")+"</b></p>":"<p>لم يتم نشر بيانات الغرفة بعد. ستظهر هنا فور نشرها من الإدارة.</p>";
+ out.innerHTML="<h3>"+esc(row.scrim_title||"مركز الفريق")+"</h3>"+
+ "<div class=\"card\"><h3>حالة التسجيل</h3><b>تم قبول الفريق وتحديد الخانة</b><ol><li>إرسال الطلب ✓</li><li>مراجعة المنظم ✓</li><li>قبول وتحديد الخانة ✓</li></ol><p>رقم الخانة: <b>"+esc(row.slot_number??"—")+"</b></p></div>"+
+ "<div class=\"card\"><h3>معلومات الفريق</h3><p>اسم الفريق الكامل: <b>"+esc(row.team_name||row.team_tag||"—")+"</b></p><p>اختصار الفريق: <b>"+esc(row.team_short_name||"—")+"</b></p><p>اسم ممثل الفريق: <b>"+esc(row.team_representative||"—")+"</b></p><p>حالة التسجيل: <b>تم تأكيد التسجيل</b></p></div>"+
+ "<div class=\"card\"><h3>موعد إغلاق الانسحاب</h3><p>"+esc(withdrawalText)+"</p>"+(deadline&&left>0?"<div class=\"scrim-countdown\" data-withdrawal-deadline=\""+deadline+"\"><div data-withdrawal-countdown>"+countdownUnitsHTML(left)+"</div></div>":"")+"</div>"+
+ "<div class=\"card\"><h3>جدول المباريات | الغرفة</h3><p>متابعة جدول المباريات وحالة الغرف</p><p>هذه هي كافة المباريات المقررة في البطولة.</p>"+matchHtml+"<div class=\"notice\"><b>بيانات الغرفة</b>"+roomHtml+"</div></div>";
 }
 $("openScrimCenter").onclick=openScrimTeamCenter;
 function scrimCountdownLabel(scrim){
@@ -595,6 +606,7 @@ async function loadScrimAdmin(){
     <div class="scrim-meta-item"><span>موعد بداية السكريم</span><b>${formatScrimDate(s.scheduled_at)}</b></div>
     <div class="scrim-meta-item"><span>المنطقة الزمنية</span><b>Africa/Cairo</b></div>
     <div class="scrim-meta-item"><span>نظام التسجيل</span><b>${s.registration_mode==="open"?"مفتوح":"بدعوة فقط"}</b></div>
+    <div class="scrim-meta-item"><span>إغلاق الانسحاب (للمسؤولين فقط)</span><b>${formatScrimDate(s.withdrawal_closes_at)}</b></div>
    </div>
    <div class="scrim-countdown" ${countdownAttrs(s)}>${countdownDisplay(s)}</div>
    <div class="scrim-capacity"><div class="scrim-control-head"><b>الفرق المقبولة</b><b>${accepted.length} / ${max}</b></div><div class="bar"><i style="width:${pct}%"></i></div><span class="small">${Math.max(0,max-accepted.length)} مقعد متبقٍ</span></div>
@@ -635,7 +647,7 @@ async function createScrim(){
  const title=$("scrimTitle").value.trim(),max=Number($("scrimMaxTeams").value)||16;
  if(!title)return alert("اكتب اسم السكريم.");
  const {data:{user}}=await client.auth.getUser();
- const {error}=await client.from("scrims").insert({title,description:$("scrimDescription").value,registration_mode:$("scrimMode").value,status:"draft",max_teams:max,scheduled_at:scrimDate($("scrimScheduledAt").value),registration_opens_at:scrimDate($("scrimOpensAt").value),registration_closes_at:scrimDate($("scrimClosesAt").value),rules:$("scrimRules").value,created_by:user?.id});
+ const {error}=await client.from("scrims").insert({title,description:$("scrimDescription").value,registration_mode:$("scrimMode").value,status:"draft",max_teams:max,scheduled_at:scrimDate($("scrimScheduledAt").value),registration_opens_at:scrimDate($("scrimOpensAt").value),registration_closes_at:scrimDate($("scrimClosesAt").value),withdrawal_closes_at:scrimDate($("scrimWithdrawalClosesAt").value),rules:$("scrimRules").value,created_by:user?.id});
  if(error){$("scrimCreateMsg").textContent=error.message;return;}
  $("scrimCreateMsg").textContent="تم إنشاء الإعلان كمسودة. يمكنك مراجعته ثم الضغط على «نشر الإعلان».";await loadScrimAdmin();
 }
@@ -679,6 +691,7 @@ $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAcc
 
 client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();await loadPublicScrims();},0));
 setInterval(()=>{refreshScrimCountdowns();},1000);
+setInterval(()=>{document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
 setInterval(()=>{loadPublicScrims();},60000);
 (async()=>{await loadPublic();await loadPublicScrims();const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("الموقع متصل بقاعدة البيانات. النتائج العامة ستظهر بعد اعتمادها.","ok");})();
 </script>
