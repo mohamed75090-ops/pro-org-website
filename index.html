@@ -91,6 +91,17 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .accepted-team-row:nth-child(3n) .accepted-team-tag{color:#f3d18b}
 @media(max-width:600px){.scrim-countdown{align-items:flex-start}.scrim-meta-grid{grid-template-columns:1fr 1fr}}
 
+/* Admin scrim dashboard */
+.admin-scrim-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0}
+.admin-scrim-tabs .admin-tab{background:#20232a;color:#e8e8ec;border:1px solid #3a3d45;padding:12px}
+.admin-scrim-tabs .admin-tab.active{background:linear-gradient(135deg,#f0d58d,#c69b42);color:#17120a;border-color:#d8b15b}
+.admin-scrim-overview{padding:16px;border:1px solid #66532d;border-radius:14px;background:linear-gradient(145deg,#211b11,#111318);margin:14px 0 20px}
+.admin-scrim-overview h3{margin:0 0 12px;color:var(--gold2)}
+.admin-overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.admin-overview-card{min-width:0;padding:14px;border:1px solid #3b3b40;border-radius:11px;background:#11151b}
+.admin-overview-card span,.admin-overview-card small{display:block;color:#aeb2bc;font-size:12px}
+.admin-overview-card b{display:block;color:#f4d58b;font-size:clamp(20px,3vw,27px);margin:5px 0;overflow-wrap:anywhere}
+@media(max-width:600px){.admin-overview-grid{grid-template-columns:1fr}.admin-scrim-tabs .admin-tab{padding:10px 5px;font-size:13px}}
 /* Team center section colors */
 #scrimCenterResult .team-center-section{border-radius:14px;padding:18px;margin:14px 0;border:1px solid transparent;box-shadow:0 8px 22px #0003}
 #scrimCenterResult .team-center-section h3{margin-top:0;font-size:18px}
@@ -261,24 +272,46 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  </div>
  
 <div id="scrimAdmin" class="card hidden">
- <h2>إدارة السكريمات</h2>
- <p class="small">إنشاء سكريم مستقل، فتح التسجيل، قبول ورفض الفرق، إرسال الدعوات وإضافة بيانات الروم.</p>
- <div class="card"><h3>إنشاء سكريم جديد</h3>
-  <label>اسم السكريم</label><input id="scrimTitle" placeholder="PRO NIGHT SCRIM">
-  <label>الوصف</label><textarea id="scrimDescription"></textarea>
-  <label>نوع التسجيل</label><select id="scrimMode"><option value="open">مفتوح</option><option value="invite_only">بدعوة فقط</option></select>
-  <label>الحد الأقصى للفرق</label><input id="scrimMaxTeams" type="number" min="1" max="100" value="16">
-  <label>موعد السكريم</label><input id="scrimScheduledAt" type="datetime-local">
-  <label>بداية التسجيل</label><input id="scrimOpensAt" type="datetime-local">
-  <label>نهاية التسجيل</label><input id="scrimClosesAt" type="datetime-local">
-  <label>موعد إغلاق الانسحاب (يظهر للفرق المقبولة فقط)</label><input id="scrimWithdrawalClosesAt" type="datetime-local">
-  <label>القوانين</label><textarea id="scrimRules"></textarea>
-  <button id="createScrim">إنشاء الإعلان كمسودة</button><p id="scrimCreateMsg" class="small"></p>
+ <h2>لوحة إدارة السكريمات</h2>
+ <p class="small">إدارة السكريمات والفرق والرومات من مكان واحد.</p>
+ <nav class="admin-scrim-tabs" aria-label="أقسام إدارة السكريمات">
+  <button type="button" class="admin-tab active" data-admin-tab="scrims">السكريمات</button>
+  <button type="button" class="admin-tab" data-admin-tab="teams">الفرق</button>
+  <button type="button" class="admin-tab" data-admin-tab="rooms">الرومات</button>
+ </nav>
+ <section class="admin-scrim-overview">
+  <h3>السكرم النشط</h3>
+  <div class="admin-overview-grid">
+   <div class="admin-overview-card"><span>الفرق المقبولة والمتبقية</span><b id="adminActiveTeams">—</b><small id="adminActiveTeamsNote">بانتظار تحميل البيانات</small></div>
+   <div class="admin-overview-card"><span>الرومات</span><b id="adminActiveRooms">—</b><small id="adminActiveRoomsNote">عدد مباريات السكريم النشط</small></div>
+   <div class="admin-overview-card"><span>النتائج المعلّقة</span><b id="adminPendingResults">—</b><small>تحتاج إلى مراجعة المشرف</small></div>
+  </div>
+  <p id="adminActiveScrimName" class="small">جاري تحديد السكريم النشط...</p>
+ </section>
+ <div id="adminTabScrims" class="admin-tab-panel">
+  <div class="card"><h3>إنشاء سكريم جديد</h3>
+   <label>اسم السكريم</label><input id="scrimTitle" placeholder="PRO NIGHT SCRIM">
+   <label>الوصف</label><textarea id="scrimDescription"></textarea>
+   <label>نوع التسجيل</label><select id="scrimMode"><option value="open">مفتوح</option><option value="invite_only">بدعوة فقط</option></select>
+   <label>الحد الأقصى للفرق</label><input id="scrimMaxTeams" type="number" min="1" max="100" value="16">
+   <label>موعد السكريم</label><input id="scrimScheduledAt" type="datetime-local">
+   <label>بداية التسجيل</label><input id="scrimOpensAt" type="datetime-local">
+   <label>نهاية التسجيل</label><input id="scrimClosesAt" type="datetime-local">
+   <label>موعد إغلاق الانسحاب (يظهر للفرق المقبولة فقط)</label><input id="scrimWithdrawalClosesAt" type="datetime-local">
+   <label>القوانين</label><textarea id="scrimRules"></textarea>
+   <button id="createScrim">إنشاء الإعلان كمسودة</button><p id="scrimCreateMsg" class="small"></p>
+  </div>
+  <div class="card"><h3>السكريمات والتحكم</h3><div id="scrimAdminList">جاري التحميل...</div></div>
+  <div class="card"><h3>ربط قائد الفريق بحسابه</h3><label>الفريق</label><select id="scrimAccessTeam"></select><label>UUID حساب القائد</label><input id="scrimAccessUser"><button id="grantScrimAccess" class="secondary">ربط الحساب</button></div>
+  <div class="card"><h3>دعوة فريق</h3><label>السكريم</label><select id="scrimInviteSelect"></select><label>الفريق</label><select id="scrimInviteTeam"></select><button id="sendScrimInvite" class="secondary">إرسال الدعوة</button></div>
  </div>
- <div class="card"><h3>ربط قائد الفريق بحسابه</h3><label>الفريق</label><select id="scrimAccessTeam"></select><label>UUID حساب القائد</label><input id="scrimAccessUser"><button id="grantScrimAccess" class="secondary">ربط الحساب</button></div>
- <div class="card"><h3>دعوة فريق</h3><label>السكريم</label><select id="scrimInviteSelect"></select><label>الفريق</label><select id="scrimInviteTeam"></select><button id="sendScrimInvite" class="secondary">إرسال الدعوة</button></div>
+ <div id="adminTabTeams" class="admin-tab-panel hidden">
+  <div class="card"><h3>طلبات تسجيل الفرق الجديدة</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div></div>
+  <div class="card"><h3>طلبات التسجيل القديمة</h3><div id="scrimRequests">لا توجد طلبات.</div></div>
+ </div>
+ <div id="adminTabRooms" class="admin-tab-panel hidden">
   <div class="card"><h3>إضافة مباراة ونشر بيانات الروم</h3><label>السكريم</label><select id="scrimMatchSelect"></select><label>اسم الخريطة</label><select id="scrimMatchTitle"><option value="">اختر الخريطة</option><option value="ERANGEL">ERANGEL</option><option value="MIRMAR">MIRMAR</option><option value="RONDO">RONDO</option></select><label>رقم المباراة</label><input id="scrimMatchNumber" type="number" min="1" placeholder="1"><label>Room ID</label><input id="scrimRoomId" dir="ltr"><label>كلمة المرور</label><input id="scrimRoomPassword" dir="ltr"><label>موعد المباراة</label><input id="scrimMatchStarts" type="datetime-local"><label>ملاحظات</label><textarea id="scrimMatchNotes"></textarea><button id="addScrimMatch">إضافة المباراة ونشر بيانات الروم</button><div id="scrimMatchAdminList"></div></div>
- <h3>السكريمات والتحكم</h3><div id="scrimAdminList">جاري التحميل...</div><h3>طلبات تسجيل الفرق الجديدة</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div><h3>طلبات التسجيل القديمة</h3><div id="scrimRequests">لا توجد طلبات.</div>
+ </div>
 </div>
 
 <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
@@ -531,7 +564,9 @@ async function refreshAdmin(){
  $("tournamentManagement").innerHTML="<h3>البطولات</h3>"+(tournamentsCache.length?tournamentsCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setTournamentStatus('${x.id}','published')">نشر</button><button class="secondary" onclick="setTournamentStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setTournamentStatus('${x.id}','draft')">إرجاع لمسودة</button><button class="danger" onclick="setTournamentStatus('${x.id}','completed')">إنهاء البطولة</button><button class="danger" onclick="deleteTournament('${x.id}','${esc(x.name)}')">حذف البطولة</button></div></div>`).join(""):"لا توجد بطولات.");
  $("matchManagement").innerHTML="<h3>الرومات والمباريات</h3>"+(matchesCache.length?matchesCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setMatchStatus('${x.id}','published')">فتح الروم</button><button class="secondary" onclick="setMatchStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setMatchStatus('${x.id}','draft')">مسودة</button><button class="danger" onclick="setMatchStatus('${x.id}','completed')">إنهاء</button></div></div>`).join(""):"لا توجد مباريات.");
  const canReview=["founder","admin","results_manager"].includes(currentRole);
- $("pendingResults").innerHTML=(rs.data||[]).length?rs.data.map(x=>`<div class="card"><b>${esc(x.teams?.name||"-")}</b> · ${esc(x.matches?.name||"-")}<p>المركز ${x.placement} | Kills ${x.kills} | النقاط ${x.total_points}</p>${canReview?`<button onclick="approveResult('${x.id}')">اعتماد</button> <button class="danger" onclick="rejectResult('${x.id}')">رفض</button>`:""}</div>`).join(""):"لا توجد نتائج معلّقة.";
+ const pendingCount=(rs.data||[]).length,quickResults=$("adminPendingResults");
+ if(quickResults)quickResults.textContent=String(pendingCount);
+ $("pendingResults").innerHTML=pendingCount?rs.data.map(x=>`<div class="card"><b>${esc(x.teams?.name||"-")}</b> · ${esc(x.matches?.name||"-")}<p>المركز ${x.placement} | Kills ${x.kills} | النقاط ${x.total_points}</p>${canReview?`<button onclick="approveResult('${x.id}')">اعتماد</button> <button class="danger" onclick="rejectResult('${x.id}')">رفض</button>`:""}</div>`).join(""):"لا توجد نتائج معلّقة.";
 }
 async function setTournamentStatus(id,status){const {error}=await client.from("tournaments").update({status}).eq("id",id);if(error){alert("تعذر تغيير حالة البطولة: "+error.message);return;}await refreshAdmin();await loadPublic();}
 async function setMatchStatus(id,status){const {error}=await client.from("matches").update({status}).eq("id",id);if(error){alert("تعذر تغيير حالة المباراة: "+error.message);return;}await refreshAdmin();}
@@ -843,14 +878,37 @@ function countdownParts(ms){
  const total=Math.max(0,Math.floor(ms/1000)),d=Math.floor(total/86400),h=Math.floor(total%86400/3600),m=Math.floor(total%3600/60),sec=total%60;
  return `${d} يوم ${h} ساعة ${m} دقيقة ${sec} ثانية`;
 }
+function setupAdminScrimTabs(){
+ const buttons=document.querySelectorAll("[data-admin-tab]");
+ buttons.forEach(button=>button.addEventListener("click",()=>{
+  const target=button.dataset.adminTab;
+  buttons.forEach(item=>item.classList.toggle("active",item===button));
+  ["scrims","teams","rooms"].forEach(name=>{
+   const panel=$("adminTab"+name.charAt(0).toUpperCase()+name.slice(1));
+   if(panel)panel.classList.toggle("hidden",name!==target);
+  });
+ }));
+}
+setupAdminScrimTabs();
 async function loadScrimAdmin(){
- const [a,b,c]=await Promise.all([
+ const [a,b,c,d]=await Promise.all([
   client.from("scrims").select("*").order("created_at",{ascending:false}),
   client.from("teams").select("id,name,tag").order("name"),
-  client.from("scrim_team_applications").select("id,scrim_id,status,team_tag,slot_number").eq("status","accepted")
+  client.from("scrim_team_applications").select("id,scrim_id,status,team_tag,slot_number").eq("status","accepted"),
+  client.from("scrim_matches").select("id,scrim_id,status,room_published")
  ]);
  const el=$("scrimAdminList");if(a.error){el.textContent="تعذر التحميل: "+a.error.message;return;}
- const ss=a.data||[],tt=b.data||[],acceptedRows=c.data||[];
+ const ss=a.data||[],tt=b.data||[],acceptedRows=c.data||[],roomRows=d.data||[];
+ const activeScrim=ss.find(item=>["live","registration_open","registration_closed"].includes(item.status));
+ const activeAccepted=activeScrim?(acceptedRows.filter(row=>row.scrim_id===activeScrim.id).length):0;
+ const activeMax=activeScrim?Math.max(1,Number(activeScrim.max_teams)||0):0;
+ const activeRooms=activeScrim?roomRows.filter(row=>row.scrim_id===activeScrim.id).length:0;
+ const teamsStat=$("adminActiveTeams"),teamsNote=$("adminActiveTeamsNote"),roomsStat=$("adminActiveRooms"),roomsNote=$("adminActiveRoomsNote"),scrimName=$("adminActiveScrimName");
+ if(teamsStat)teamsStat.textContent=activeScrim?`${activeAccepted} / ${activeMax}`:"—";
+ if(teamsNote)teamsNote.textContent=activeScrim?`${Math.max(0,activeMax-activeAccepted)} فريق متبقٍ`:"لا يوجد سكرم نشط";
+ if(roomsStat)roomsStat.textContent=activeScrim?String(activeRooms):"—";
+ if(roomsNote)roomsNote.textContent=activeScrim?roomRows.filter(row=>row.scrim_id===activeScrim.id&&row.room_published).length+" روم منشور":"لا توجد بيانات";
+ if(scrimName)scrimName.textContent=activeScrim?"السكرم النشط: "+activeScrim.title:"لا يوجد سكرم نشط حالياً";
  const teamOpts=tt.map(t=>`<option value="${t.id}">${esc(t.name)} ${esc(t.tag||"")}</option>`).join("");
  ["scrimAccessTeam","scrimInviteTeam"].forEach(id=>$(id).innerHTML=teamOpts);
  const scrimOpts=ss.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join("");
