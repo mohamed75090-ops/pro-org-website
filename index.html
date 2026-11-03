@@ -167,7 +167,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <p class="small">أدخل كود الفريق الذي حصلت عليه بعد قبول التسجيل.</p>
  <label for="scrimCenterCode">كود الفريق</label>
  <input id="scrimCenterCode" autocomplete="off" placeholder="أدخل كود الفريق">
- <button id="openScrimCenter" type="button">فتح مركز الفريق</button>
+ <button id="openScrimCenter" type="button" onclick="openScrimTeamCenter()">فتح مركز الفريق</button>
  <div id="scrimCenterResult" class="notice">ستظهر هنا بيانات الروم بعد التحقق من الكود ونشرها من الإدارة.</div>
 </section>
 <section id="public">
@@ -523,7 +523,8 @@ async function registerTeamForScrim(scrimId){
 }
 window.registerTeamForScrim=registerTeamForScrim;
 async function openScrimTeamCenter(){
- const code=$("scrimCenterCode").value.trim(),out=$("scrimCenterResult");
+ const code=$("scrimCenterCode")?.value?.trim()||"",out=$("scrimCenterResult");
+ if(!out){alert("تعذر العثور على مساحة عرض مركز الفريق. حدّث الصفحة وحاول مجدداً.");return;}
  if(!code){out.textContent="أدخل كود الفريق.";return;}
  out.textContent="جاري التحقق من كود الفريق...";
  const {data,error}=await client.rpc("get_team_scrim_details",{team_code:code});
@@ -542,7 +543,9 @@ async function openScrimTeamCenter(){
  "<div class=\"card\"><h3>موعد إغلاق الانسحاب</h3><p>"+esc(withdrawalText)+"</p>"+(deadline&&left>0?"<div class=\"scrim-countdown\" data-withdrawal-deadline=\""+deadline+"\"><div data-withdrawal-countdown>"+countdownUnitsHTML(left)+"</div></div>":"")+"</div>"+
  "<div class=\"card\"><h3>جدول المباريات | الغرفة</h3><p>متابعة جدول المباريات وحالة الغرف</p><p>هذه هي كافة المباريات المقررة في البطولة.</p>"+matchHtml+"<div class=\"notice\"><b>بيانات الغرفة</b>"+roomHtml+"</div></div>";
 }
-$("openScrimCenter").onclick=openScrimTeamCenter;
+window.openScrimTeamCenter=openScrimTeamCenter;
+const teamCenterOpenButton=$("openScrimCenter");
+if(teamCenterOpenButton){teamCenterOpenButton.addEventListener("click",()=>{openScrimTeamCenter().catch(error=>{const out=$("scrimCenterResult");if(out)out.textContent="حدث خطأ أثناء فتح مركز الفريق: "+(error?.message||String(error));});});}
 function scrimCountdownLabel(scrim){
  const now=Date.now(),close=scrim.registration_closes_at?new Date(scrim.registration_closes_at).getTime():null;
  const open=scrim.registration_opens_at?new Date(scrim.registration_opens_at).getTime():null;
