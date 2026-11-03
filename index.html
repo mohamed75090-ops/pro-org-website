@@ -906,7 +906,7 @@ window.setScrimMatchStatus=setScrimMatchStatus;
 window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview=scrimReview;window.deleteTournament=deleteTournament;
  $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAccess;$("sendScrimInvite").onclick=inviteScrimTeam;$("addScrimMatch").onclick=addScrimMatch;
 
-client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();await loadPublicScrims();},0));
+// Auth listener is registered after the Supabase client is initialized.
 setInterval(()=>{refreshScrimCountdowns();},1000);
 setInterval(()=>{document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
 setInterval(()=>{loadPublicScrims();},60000);
@@ -918,6 +918,7 @@ setInterval(()=>{loadWeeklyMvp();},60000);
   if(!window.supabase?.createClient){try{await loadSdk("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");}catch(e){await loadSdk("https://unpkg.com/@supabase/supabase-js@2");}}
   if(!window.supabase?.createClient)throw new Error("مكتبة Supabase لم تبدأ بعد التحميل.");
   client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+  client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();await loadPublicScrims();},0));
  }catch(e){showConnectionError("تعذر تشغيل مكتبة الاتصال: "+(e?.message||e));return;}
  await Promise.allSettled([loadPublic(),loadWeeklyMvp(),loadPublicScrims()]);
  try{const {data:{session}}=await client.auth.getSession();if(session)await refreshAdmin();else msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");}catch(e){msg("تعذر إكمال الاتصال: "+esc(e?.message||e),"err");}
