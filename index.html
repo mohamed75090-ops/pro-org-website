@@ -95,6 +95,11 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .scrim-public-card .scrim-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .scrim-public-card .scrim-meta-item{min-width:0}
 .scrim-public-card .accepted-team-row{font-size:13px}
+.scrim-public-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.scrim-modal-backdrop{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:center;padding:18px}
+.scrim-modal{width:min(100%,480px);background:#151820;border:1px solid #806a3c;border-radius:16px;padding:22px;box-shadow:0 24px 80px #000b}
+.scrim-modal h3{color:var(--gold2);margin-top:0}
+.scrim-modal .modal-actions{display:flex;gap:10px;flex-wrap:wrap}
 .scrim-public-empty{color:var(--muted);font-size:13px}
 @media(max-width:700px){.scrim-public-layout{grid-template-columns:1fr}.scrim-public-card .scrim-meta-grid{grid-template-columns:1fr 1fr}}
 
@@ -137,6 +142,22 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="card"><h3>مركز الفريق</h3><p class="small">أدخل كود التسجيل مع تسجيل الدخول بحساب قائد الفريق المرتبط بالفريق.</p><label for="scrimCenterCode">كود الدخول</label><input id="scrimCenterCode" autocomplete="off" placeholder="أدخل كود التسجيل"><button id="openScrimCenter">فتح مركز الفريق</button><div id="scrimCenterResult" class="notice">ستظهر هنا حالة التسجيل والمباريات وبيانات الروم المصرح بها.</div></div>
  </div>
 </section>
+<div id="teamRegistrationModal" class="scrim-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="teamRegistrationTitle">
+ <div class="scrim-modal">
+  <h3 id="teamRegistrationTitle">تسجيل الفريق في السكريم</h3>
+  <p class="small" id="teamRegistrationScrimName"></p>
+  <form id="teamRegistrationForm">
+   <input type="hidden" id="applicationScrimId">
+   <label for="applicationTeamTag">تاق الفريق الكامل (FULL TEAM TAG)</label>
+   <input id="applicationTeamTag" maxlength="80" required placeholder="اكتب تاق الفريق بالكامل" autocomplete="organization">
+   <label for="applicationContact">رقم التواصل (CONTACT NUMBER)</label>
+   <input id="applicationContact" type="tel" maxlength="30" required placeholder="+966xxxxxxxxx" autocomplete="tel">
+   <p class="small">بعد الإرسال سيصل الطلب إلى المشرفين بحالة «قيد الانتظار»، ولن يُحتسب الفريق ضمن الفرق المقبولة إلا بعد الموافقة.</p>
+   <div class="modal-actions"><button type="submit" id="submitTeamApplication">إرسال الطلب</button><button type="button" class="secondary" id="closeTeamRegistration">إلغاء</button></div>
+  </form>
+  <div id="teamRegistrationMessage" class="notice hidden" aria-live="polite"></div>
+ </div>
+</div>
 <section id="public">
  <section class="hero" id="home">
   <div class="hero-content">
@@ -199,7 +220,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <div class="card"><h3>دعوة فريق</h3><label>السكريم</label><select id="scrimInviteSelect"></select><label>الفريق</label><select id="scrimInviteTeam"></select><button id="sendScrimInvite" class="secondary">إرسال الدعوة</button></div>
  <div class="card"><h3>بيانات الروم</h3><label>السكريم</label><select id="scrimRoomSelect"></select><label>اسم الروم</label><input id="scrimRoomName"><label>Room ID</label><input id="scrimRoomId"><label>كلمة المرور</label><input id="scrimRoomPassword"><label>موعد الروم</label><input id="scrimRoomStarts" type="datetime-local"><button id="saveScrimRoom" class="secondary">حفظ بيانات الروم</button></div>
  <div class="card"><h3>إضافة مباراة للسكريم</h3><label>السكريم</label><select id="scrimMatchSelect"></select><label>رقم المباراة</label><input id="scrimMatchNumber" type="number" min="1"><label>عنوان المباراة</label><input id="scrimMatchTitle" placeholder="Match 1"><label>موعد المباراة</label><input id="scrimMatchStarts" type="datetime-local"><label>ملاحظات</label><textarea id="scrimMatchNotes"></textarea><button id="addScrimMatch">إضافة المباراة كمسودة</button><div id="scrimMatchAdminList"></div></div>
- <h3>السكريمات والتحكم</h3><div id="scrimAdminList">جاري التحميل...</div><h3>طلبات التسجيل</h3><div id="scrimRequests">لا توجد طلبات.</div>
+ <h3>السكريمات والتحكم</h3><div id="scrimAdminList">جاري التحميل...</div><h3>طلبات تسجيل الفرق الجديدة</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div><h3>طلبات التسجيل القديمة</h3><div id="scrimRequests">لا توجد طلبات.</div>
 </div>
 
 <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
@@ -242,7 +263,7 @@ async function refreshAdmin(){
  if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);return;}
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
- currentRole=profile.role;show("admin",true);show("login",false);
+ currentRole=String(profile.role||"").trim().toLowerCase();show("admin",true);show("login",false);
  $("who").textContent=`${profile.display_name||user.email} · ${currentRole}`;$("roleNote").textContent=`الصلاحية الحالية: ${currentRole}`;
  show("teamForm",["founder","admin"].includes(currentRole));
  show("tournamentForm",["founder","admin","tournament_manager"].includes(currentRole));
@@ -329,28 +350,63 @@ function formatScrimDate(value){
  const d=new Date(value);
  return Number.isNaN(d.getTime())?"لم يحدد":d.toLocaleString("ar-EG-u-nu-latn",{dateStyle:"medium",timeStyle:"short"});
 }
+function formatScrimTimeKSA(value){
+ if(!value)return "لم يحدد";
+ const d=new Date(value);
+ return Number.isNaN(d.getTime())?"لم يحدد":d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true,timeZone:"Asia/Riyadh"})+" KSA";
+}
+function scrimRegistrationIsOpen(scrim){
+ const now=Date.now(),opens=scrim.registration_opens_at?new Date(scrim.registration_opens_at).getTime():null,closes=scrim.registration_closes_at?new Date(scrim.registration_closes_at).getTime():null;
+ return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
+}
+function openTeamRegistration(scrimId,title){
+ client.auth.getUser().then(({data})=>{
+  if(!data?.user){alert("يرجى تسجيل الدخول بحساب الفريق أولاً.");return;}
+  $("applicationScrimId").value=scrimId;
+  $("teamRegistrationScrimName").textContent=title||"";
+  $("teamRegistrationForm").classList.remove("hidden");
+  $("teamRegistrationMessage").classList.add("hidden");
+  $("teamRegistrationModal").classList.remove("hidden");
+  $("applicationTeamTag").focus();
+ });
+}
+window.openTeamRegistration=openTeamRegistration;
+async function submitTeamApplication(event){
+ event.preventDefault();
+ const tag=$("applicationTeamTag").value.trim(),phone=$("applicationContact").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
+ if(tag.length<2){alert("اكتب تاق الفريق الكامل.");return;}
+ if(phone.replace(/\D/g,"").length<7){alert("أدخل رقم تواصل صحيحاً.");return;}
+ const {data:{user}}=await client.auth.getUser();
+ if(!user){alert("انتهت جلسة الدخول. سجّل الدخول ثم أعد المحاولة.");return;}
+ button.disabled=true;button.textContent="جارٍ إرسال الطلب...";
+ const {error}=await client.from("scrim_team_applications").insert({scrim_id:scrimId,team_tag:tag,contact_phone:phone,submitted_by:user.id,status:"pending"});
+ button.disabled=false;button.textContent="إرسال الطلب";
+ if(error){message.textContent="تعذر إرسال الطلب: "+error.message;message.classList.remove("hidden");return;}
+ $("teamRegistrationForm").classList.add("hidden");message.textContent="تم إرسال طلب الفريق بنجاح. الحالة الآن: قيد انتظار موافقة المشرفين.";message.classList.remove("hidden");
+ await loadPublicScrims();
+}
+
 async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
  const [{data,error},{data:acceptedRows,error:acceptedError}]=await Promise.all([
   client.from("scrims").select("id,title,description,status,registration_mode,max_teams,scheduled_at,registration_opens_at,registration_closes_at").neq("status","draft").order("scheduled_at"),
-  client.from("scrim_accepted_teams_public").select("scrim_id,name,tag")
+  client.from("scrim_team_applications").select("scrim_id,team_tag,status").eq("status","accepted")
  ]);
  if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات.</div>';return;}
  const rows=data||[],acceptedByScrim=new Map();
- if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.name,tag:r.tag}});});
+ if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:""}});});
  el.innerHTML=rows.length?rows.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
-  const teamsHtml=accepted.length?accepted.map((r,i)=>`<div class="accepted-team-row"><span>${String(i+1).padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span><span class="accepted-team-tag">[${esc(r.teams?.tag||"—")}]</span></div>`).join(""):'<p class="scrim-public-empty">لا توجد فرق مقبولة حتى الآن.</p>';
+  const teamsHtml=accepted.length?accepted.map((r,i)=>`<div class="accepted-team-row"><span>${String(i+1).padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="scrim-public-empty">لا توجد فرق مقبولة حتى الآن.</p>';
   return `<article class="scrim-public-card">
    <div class="scrim-public-layout">
     <div>
      <div class="scrim-control-head"><div><span class="small">إعلان سكريم</span><h3>${esc(s.title)}</h3></div><span class="scrim-state ${state.cls}">${state.label}</span></div>
      <p>${esc(s.description||"")}</p>
      <div class="scrim-meta-grid">
-      <div class="scrim-meta-item"><span>موعد السكريم</span><b>${formatScrimDate(s.scheduled_at)}</b></div>
-      <div class="scrim-meta-item"><span>نظام التسجيل</span><b>${s.registration_mode==="open"?"مفتوح":"بدعوة فقط"}</b></div>
-      <div class="scrim-meta-item"><span>بداية التسجيل</span><b>${formatScrimDate(s.registration_opens_at)}</b></div>
-      <div class="scrim-meta-item"><span>نهاية التسجيل</span><b>${formatScrimDate(s.registration_closes_at)}</b></div>
+      <div class="scrim-meta-item"><span>موعد السكريم</span><b>${formatScrimTimeKSA(s.scheduled_at)}</b></div>
+      <div class="scrim-meta-item"><span>بداية التسجيل</span><b>${formatScrimTimeKSA(s.registration_opens_at)}</b></div>
+      <div class="scrim-meta-item"><span>نهاية التسجيل</span><b>${formatScrimTimeKSA(s.registration_closes_at)}</b></div>
      </div>
      <div class="scrim-countdown" ${countdownAttrs(s)}>${countdownDisplay(s)}</div>
     </div>
@@ -360,6 +416,7 @@ async function loadPublicScrims(){
      <div class="accepted-team-list">${teamsHtml}</div>
     </aside>
    </div>
+   <div class="scrim-public-actions">${scrimRegistrationIsOpen(s)?`<button onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">تسجيل الفريق</button>`:`<button class="secondary" disabled>التسجيل غير متاح حالياً</button>`}<a href="#teamsSection"><button type="button" class="secondary">مركز الفريق</button></a></div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
  await loadTeamScrimPanel();
@@ -501,7 +558,7 @@ async function loadScrimAdmin(){
  const [a,b,c]=await Promise.all([
   client.from("scrims").select("*").order("created_at",{ascending:false}),
   client.from("teams").select("id,name,tag").order("name"),
-  client.from("scrim_registrations").select("id,scrim_id,status,teams(name,tag)").eq("status","accepted")
+  client.from("scrim_team_applications").select("id,scrim_id,status,team_tag").eq("status","accepted")
  ]);
  const el=$("scrimAdminList");if(a.error){el.textContent="تعذر التحميل: "+a.error.message;return;}
  const ss=a.data||[],tt=b.data||[],acceptedRows=c.data||[];
@@ -510,10 +567,10 @@ async function loadScrimAdmin(){
  const scrimOpts=ss.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join("");
  ["scrimInviteSelect","scrimRoomSelect","scrimMatchSelect"].forEach(id=>$(id).innerHTML=scrimOpts);
  const acceptedByScrim=new Map();
- acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push(r);});
+ acceptedRows.forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_tag,tag:r.team_tag}});});
  el.innerHTML=ss.length?ss.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
-  const teamsHtml=accepted.length?accepted.map((r,i)=>`<div class="accepted-team-row"><span>${String(i+1).padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span><span class="accepted-team-tag">[${esc(r.teams?.tag||"—")}]</span></div>`).join(""):'<p class="small">لا توجد فرق مقبولة حتى الآن.</p>';
+  const teamsHtml=accepted.length?accepted.map((r,i)=>`<div class="accepted-team-row"><span>${String(i+1).padStart(2,"0")} · ${esc(r.teams?.name||"فريق")}</span></div>`).join(""):'<p class="small">لا توجد فرق مقبولة حتى الآن.</p>';
   return `<div class="scrim-control-card">
    <div class="scrim-control-head"><h3>${esc(s.title)}</h3><span class="scrim-state ${state.cls}">${state.label}</span></div>
    <div class="scrim-meta-grid">
@@ -528,8 +585,29 @@ async function loadScrimAdmin(){
    <div class="row">${s.status==="draft"?`<button onclick="publishScrim('${s.id}')">نشر الإعلان</button>`:""}<button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
   </div>`;
  }).join(""):"لا توجد سكريمات بعد.";
- await loadScrimRequests();await loadScrimMatchAdmin();
+ await loadScrimRequests();await loadTeamApplicationsAdmin();await loadScrimMatchAdmin();
 }
+async function loadTeamApplicationsAdmin(){
+ const el=$("teamApplicationsAdmin");if(!el)return;
+ const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,contact_phone,status,created_at,scrims(title)").order("created_at",{ascending:false});
+ if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
+ const rows=data||[];
+ el.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.team_tag)}</b><p class="small">السكريم: ${esc(r.scrims?.title||"—")} · رقم التواصل: <b dir="ltr">${esc(r.contact_phone)}</b></p><p>الحالة: <b>${r.status==="pending"?"قيد الانتظار":r.status==="accepted"?"مقبول":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:""}</div>`).join(""):"لا توجد طلبات تسجيل فرق حتى الآن.";
+}
+async function reviewTeamApplication(id,status){
+ if(!["accepted","rejected"].includes(status))return;
+ const confirmText=status==="accepted"?"تأكيد قبول الفريق؟ سيظهر ضمن الفرق المقبولة وتُحجز له خانة.":"تأكيد رفض طلب الفريق؟";
+ if(!confirm(confirmText))return;
+ const {data:{user}}=await client.auth.getUser();
+ const {error}=await client.from("scrim_team_applications").update({status,reviewed_by:user?.id,reviewed_at:new Date().toISOString()}).eq("id",id).eq("status","pending");
+ if(error){alert("تعذر تحديث الطلب: "+error.message);return;}
+ await loadTeamApplicationsAdmin();await loadScrimAdmin();await loadPublicScrims();
+}
+window.reviewTeamApplication=reviewTeamApplication;
+$("teamRegistrationForm").addEventListener("submit",submitTeamApplication);
+$("closeTeamRegistration").addEventListener("click",()=>$("teamRegistrationModal").classList.add("hidden"));
+$("teamRegistrationModal").addEventListener("click",e=>{if(e.target.id==="teamRegistrationModal")$("teamRegistrationModal").classList.add("hidden");});
+
 async function createScrim(){
  const title=$("scrimTitle").value.trim(),max=Number($("scrimMaxTeams").value)||16;
  if(!title)return alert("اكتب اسم السكريم.");
