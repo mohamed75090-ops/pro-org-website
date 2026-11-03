@@ -150,8 +150,6 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <input type="hidden" id="applicationScrimId">
   <label for="applicationTeamTag">تاق الفريق الكامل (FULL TEAM TAG)</label>
   <input id="applicationTeamTag" maxlength="80" required placeholder="اكتب تاق الفريق بالكامل" autocomplete="organization">
-  <label for="applicationContact">رقم التواصل (CONTACT NUMBER)</label>
-  <input id="applicationContact" type="tel" maxlength="30" required placeholder="+966xxxxxxxxx" autocomplete="tel">
   <p class="small">بعد الإرسال سيصل الطلب إلى المشرفين بحالة «قيد الانتظار»، ولن يُحتسب الفريق ضمن الفرق المقبولة إلا بعد الموافقة.</p>
   <div class="row"><button type="submit" id="submitTeamApplication">إرسال الطلب</button></div>
  </form>
@@ -378,27 +376,23 @@ function returnToPublicPages(){
 }
 function openTeamCenterPage(){showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
 function openTeamRegistration(scrimId,title){
- client.auth.getUser().then(({data})=>{
-  if(!data?.user){alert("يرجى تسجيل الدخول بحساب الفريق أولاً.");return;}
-  $("applicationScrimId").value=scrimId;
-  $("teamRegistrationScrimName").textContent=title||"";
-  $("teamRegistrationForm").reset();
-  $("applicationScrimId").value=scrimId;
-  $("teamRegistrationMessage").classList.add("hidden");
-  showStandalonePage("registrationPage");
-  $("applicationTeamTag").focus();
- });
+ $("applicationScrimId").value=scrimId;
+ $("teamRegistrationScrimName").textContent=title||"";
+ $("teamRegistrationForm").reset();
+ $("applicationScrimId").value=scrimId;
+ $("teamRegistrationMessage").classList.add("hidden");
+ $("teamRegistrationForm").classList.remove("hidden");
+ showStandalonePage("registrationPage");
+ $("applicationTeamTag").focus();
 }
 window.openTeamRegistration=openTeamRegistration;
 async function submitTeamApplication(event){
  event.preventDefault();
- const tag=$("applicationTeamTag").value.trim(),phone=$("applicationContact").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
+ const tag=$("applicationTeamTag").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
  if(tag.length<2){alert("اكتب تاق الفريق الكامل.");return;}
- if(phone.replace(/\D/g,"").length<7){alert("أدخل رقم تواصل صحيحاً.");return;}
- const {data:{user}}=await client.auth.getUser();
- if(!user){alert("انتهت جلسة الدخول. سجّل الدخول ثم أعد المحاولة.");return;}
+ if(!scrimId){alert("لم يتم تحديد السكريم.");return;}
  button.disabled=true;button.textContent="جارٍ إرسال الطلب...";
- const {error}=await client.from("scrim_team_applications").insert({scrim_id:scrimId,team_tag:tag,contact_phone:phone,submitted_by:user.id,status:"pending"});
+ const {error}=await client.from("scrim_team_applications").insert({scrim_id:scrimId,team_tag:tag,status:"pending"});
  button.disabled=false;button.textContent="إرسال الطلب";
  if(error){message.textContent="تعذر إرسال الطلب: "+error.message;message.classList.remove("hidden");return;}
  $("teamRegistrationForm").classList.add("hidden");message.textContent="تم إرسال طلب الفريق بنجاح. الحالة الآن: قيد انتظار موافقة المشرفين.";message.classList.remove("hidden");
