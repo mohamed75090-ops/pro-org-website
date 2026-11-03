@@ -339,6 +339,8 @@ async function saveWeeklyMvp(publish=true){
   payload.push({week_label:week,rank_position:n,player_name:name,team_name:$("mvpTeam"+n).value.trim(),photo_url:$("mvpPhoto"+n).value.trim()||null,eliminations:Number($("mvpKills"+n).value)||0,damage:Number($("mvpDamage"+n).value)||0,is_published:publish,updated_at:new Date().toISOString()});
  }
  if(!payload.length)return $("mvpAdminStatus").textContent="أدخل اسم لاعب واحد على الأقل.";
+ const {error:hideCurrentError}=await client.from("weekly_mvp_players").update({is_published:false}).eq("week_label",week);
+ if(hideCurrentError){$("mvpAdminStatus").textContent="تعذر تحديث القائمة الحالية: "+hideCurrentError.message;return;}
  const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
  if(error){$("mvpAdminStatus").textContent="تعذر الحفظ: "+error.message;return;}
  const {error:hideError}=await client.from("weekly_mvp_players").update({is_published:false}).neq("week_label",week);
