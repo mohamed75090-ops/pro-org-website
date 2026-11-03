@@ -329,8 +329,12 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 
 async function loadWeeklyMvp(){
  const feature=$("weeklyMvpFeature"),top=$("weeklyMvpTop3");
- const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position").eq("is_published",true).order("rank_position",{ascending:true});
- if(error){feature.innerHTML='<div class="mvp-empty">تعذر تحميل بيانات MVP حالياً.</div>';top.innerHTML="";return;}
+ let data=null,error=null,timer;
+ try{
+  const result=await Promise.race([client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position").eq("is_published",true).order("rank_position",{ascending:true}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة تحميل بيانات MVP.")),12000);})]);
+  clearTimeout(timer);data=result.data;error=result.error;
+ }catch(e){clearTimeout(timer);feature.innerHTML='<div class="mvp-empty">'+esc(e?.message||"تعذر تحميل بيانات MVP حالياً.")+'</div>';top.innerHTML="";return;}
+ if(error){feature.innerHTML='<div class="mvp-empty">تعذر تحميل بيانات MVP: '+esc(error.message)+'</div>';top.innerHTML="";return;}
  const rows=data||[],solo=rows.find(x=>Number(x.rank_position)===0),leaders=rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).sort((a,b)=>Number(a.rank_position)-Number(b.rank_position));
  if(!solo&&!leaders.length){feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div>';top.innerHTML='<div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة أفضل 3 منشورة حالياً.</div>';return;}
  if(solo){
@@ -609,11 +613,15 @@ function renderAcceptedTeamsTable(accepted,emptyText){
 
 async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
- const [{data,error},{data:acceptedRows,error:acceptedError}]=await Promise.all([
-  client.from("scrims").select("id,title,description,status,registration_mode,max_teams,scheduled_at,registration_opens_at,registration_closes_at").neq("status","draft").order("scheduled_at"),
-  client.rpc("get_public_scrim_accepted_teams")
- ]);
- if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات.</div>';return;}
+ let data=null,error=null,acceptedRows=null,acceptedError=null,timer;
+ try{
+  const result=await Promise.race([Promise.all([
+   client.from("scrims").select("id,title,description,status,registration_mode,max_teams,scheduled_at,registration_opens_at,registration_closes_at").neq("status","draft").order("scheduled_at"),
+   client.rpc("get_public_scrim_accepted_teams")
+  ]),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة تحميل السكريمات. تحقق من اتصال قاعدة البيانات.")),12000);})]);
+  clearTimeout(timer);[{data,error},{data:acceptedRows,error:acceptedError}]=result;
+ }catch(e){clearTimeout(timer);el.innerHTML='<div class="card">'+esc(e?.message||"تعذر تحميل السكريمات.")+'</div>';return;}
+ if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات: '+esc(error.message)+'</div>';return;}
  const rows=data||[],acceptedByScrim=new Map();
  if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=rows.length?rows.map(s=>{
