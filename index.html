@@ -91,6 +91,8 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .accepted-team-row:nth-child(3n) .accepted-team-tag{color:#f3d18b}
 @media(max-width:600px){.scrim-countdown{align-items:flex-start}.scrim-meta-grid{grid-template-columns:1fr 1fr}}
 
+.admin-notification-badge{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 6px;margin-inline-start:5px;border-radius:999px;background:#d93636;color:#fff;font-size:12px;font-weight:800;line-height:1;box-shadow:0 0 0 2px #20232a}
+.admin-tab.active .admin-notification-badge{box-shadow:0 0 0 2px #c69b42}
 /* Admin scrim dashboard */
 .admin-scrim-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0}
 .admin-scrim-tabs .admin-tab{background:#20232a;color:#e8e8ec;border:1px solid #3a3d45;padding:12px}
@@ -276,7 +278,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <p class="small">إدارة السكريمات والفرق والرومات من مكان واحد.</p>
  <nav class="admin-scrim-tabs" aria-label="أقسام إدارة السكريمات">
   <button type="button" class="admin-tab active" data-admin-tab="scrims">السكريمات</button>
-  <button type="button" class="admin-tab" data-admin-tab="teams">الفرق</button>
+  <button type="button" class="admin-tab" data-admin-tab="teams">الفرق <span id="teamApplicationsBadge" class="admin-notification-badge" hidden>0</span></button>
   <button type="button" class="admin-tab" data-admin-tab="rooms">الرومات</button>
  </nav>
  <section class="admin-scrim-overview">
@@ -533,6 +535,17 @@ async function loadPublic(){
   msg("فشل تحميل الأقسام العامة: "+detail,"err");
  }
 }
+let teamApplicationRealtimeChannel=null;
+let teamApplicationRefreshTimer=null;
+function startTeamApplicationNotifications(){
+ if(teamApplicationRealtimeChannel)return;
+ teamApplicationRealtimeChannel=client.channel("admin-team-application-notifications")
+  .on("postgres_changes",{event:"*",schema:"public",table:"scrim_team_applications"},()=>loadTeamApplicationsAdmin())
+  .subscribe();
+ if(!teamApplicationRefreshTimer)teamApplicationRefreshTimer=window.setInterval(()=>{
+  if(["founder","admin","tournament_manager"].includes(currentRole))loadTeamApplicationsAdmin();
+ },30000);
+}
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
  if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);return;}
@@ -546,6 +559,7 @@ async function refreshAdmin(){
  show("managementPanel",["founder","admin","tournament_manager"].includes(currentRole));
  show("scrimAdmin",["founder","admin","tournament_manager"].includes(currentRole));
  if(["founder","admin","tournament_manager"].includes(currentRole)) await loadScrimAdmin();
+ if(["founder","admin","tournament_manager"].includes(currentRole)) startTeamApplicationNotifications();
  show("resultForm",["founder","admin","results_manager"].includes(currentRole));
  show("aiScanner",["founder","admin","results_manager"].includes(currentRole));
  show("weeklyMvpAdmin",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
@@ -943,11 +957,19 @@ async function toggleAcceptedTeamsVisibility(scrimId,visible){
  await loadScrimAdmin();await loadPublicScrims();
 }
 window.toggleAcceptedTeamsVisibility=toggleAcceptedTeamsVisibility;
+function updateTeamApplicationBadge(count){
+ const badge=$("teamApplicationsBadge");if(!badge)return;
+ const pending=Math.max(0,Number(count)||0);
+ badge.textContent=pending>99?"99+":String(pending);
+ badge.hidden=pending===0;
+ badge.setAttribute("aria-label",pending+" طلبات فرق تنتظر المراجعة");
+}
 async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
  const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
  const rows=data||[];
+ updateTeamApplicationBadge(rows.filter(r=>r.status==="pending").length);
  el.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"قيد الانتظار":r.status==="accepted"?"مقبول":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:""}</div>`).join(""):"لا توجد طلبات تسجيل فرق حتى الآن.";
 }
 async function reviewTeamApplication(id,status){
