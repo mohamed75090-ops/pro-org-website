@@ -406,7 +406,7 @@ async function submitTeamApplication(event){
 function renderAcceptedTeamsTable(accepted,emptyText){
  if(!accepted.length)return '<p class="scrim-public-empty">'+emptyText+'</p>';
  return '<div class="accepted-team-table-head"><span>اسم الفريق</span><span>رقم الخانة</span></div>'+
- accepted.map((r,i)=>{const slot=r.slot_number??(i+3);return '<div class="accepted-team-row" dir="rtl"><span class="accepted-team-tag">'+esc(r.teams?.name||"فريق")+'</span><b class="accepted-team-slot">'+String(slot).padStart(2,"0")+'</b></div>';}).join("");
+ accepted.map((r,i)=>{const slot=r.slot_number??(i+3);return '<div class="accepted-team-row" dir="rtl"><span class="accepted-team-tag">'+esc(r.teams?.name||"فريق")+'</span><b class="accepted-team-slot">'+String(slot)+'</b></div>';}).join("");
 }
 
 async function loadPublicScrims(){
