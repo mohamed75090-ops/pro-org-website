@@ -343,9 +343,12 @@ const bootStatus=document.getElementById("status");const bootMessage=(m)=>{if(bo
 if(window.__supabaseLoadError)throw new Error("تعذر تحميل مكتبة الاتصال: "+window.__supabaseLoadError);
 const SUPABASE_URL = "https://pjirnjvkatkyrjpbiutd.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZL68RiezkdJBIyMg_BmwlQ_VBIt1AE_";
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const $ = id => document.getElementById(id);
-msg("تم إنشاء الاتصال؛ جاري تحميل بيانات الموقع...","ok");
+const startupStatus = $("status");
+if(startupStatus) startupStatus.textContent = "وصل الموقع إلى خطوة إنشاء عميل الاتصال؛ جاري تنفيذ createClient...";
+console.log("PRO ORG: before createClient", {supabaseType:typeof window.supabase,createClientType:typeof window.supabase?.createClient});
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+if(startupStatus) startupStatus.textContent = "تم إنشاء الاتصال؛ جاري تحميل بيانات الموقع...";
 let currentRole = null, teamsCache = [], tournamentsCache = [], matchesCache = [];
 const PLACEMENT_POINTS = {1:10,2:6,3:5,4:4,5:3,6:2,7:1};
 function pointsForPlacement(place){return PLACEMENT_POINTS[Number(place)]||0;}
