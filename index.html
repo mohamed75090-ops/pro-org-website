@@ -973,7 +973,6 @@ async function refreshAdmin(){
  show("roleManagementTab",currentRole==="founder");
  document.querySelectorAll("[data-admin-main-tab]").forEach(tab=>{if(tab.dataset.adminMainTab==="results"||tab.dataset.adminMainTab==="mvp")tab.classList.toggle("hidden",currentRole==="organizer");});
  show("teamForm",["founder","admin","organizer"].includes(currentRole));
- show("teamForm",["founder","admin"].includes(currentRole));
  show("tournamentForm",["founder","admin","organizer","tournament_manager"].includes(currentRole));
  show("matchForm",["founder","admin","organizer","tournament_manager"].includes(currentRole));
  show("managementPanel",["founder","admin","organizer","tournament_manager"].includes(currentRole));
