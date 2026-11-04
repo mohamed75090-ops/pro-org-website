@@ -1023,25 +1023,35 @@ async function loadAdminTournamentManagement(){
  const allowed=["founder","admin","organizer","tournament_manager"].includes(String(currentRole||"").toLowerCase());
  panel.classList.toggle("hidden",!allowed);
  if(!allowed){host.innerHTML="<p class='notice'>لا تملك صلاحية إدارة البطولات.</p>";return;}
- host.innerHTML="<h3>إدارة البطولات</h3><p class='small'>جاري تحميل البطولات...</p>";
- const {data,error}=await client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,created_at").order("created_at",{ascending:false});
- if(error){
-  host.innerHTML='<h3>إدارة البطولات</h3><div class="notice">تعذر تحميل البطولات: <b>'+esc(error.message)+'</b></div><button class="secondary" id="retryAdminTournaments">إعادة المحاولة</button>';
-  $("retryAdminTournaments").onclick=loadAdminTournamentManagement;
-  return;
- }
+ host.innerHTML="<h3>إدارة البطولات</h3><p class='small'>جاري تحميل بيانات البطولات والتسجيل...</p>";
+ const {data,error}=await client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,accepted_teams_visible,created_at").order("created_at",{ascending:false});
+ if(error){host.innerHTML='<h3>إدارة البطولات</h3><div class="notice">تعذر تحميل البطولات: <b>'+esc(error.message)+'</b></div><button class="secondary" id="retryAdminTournaments">إعادة المحاولة</button>';$("retryAdminTournaments").onclick=loadAdminTournamentManagement;return;}
  tournamentsCache=data||[];
- const actions='<div class="row"><button data-status="published">نشر</button><button class="secondary" data-status="paused">إيقاف مؤقت</button><button class="secondary" data-status="draft">إرجاع لمسودة</button><button class="danger" data-status="completed">إنهاء البطولة</button><button class="danger" data-delete="1">حذف البطولة</button></div>';
- host.innerHTML='<div class="row" style="align-items:center;justify-content:space-between"><h3>إدارة البطولات ('+tournamentsCache.length+')</h3><button class="secondary" id="refreshAdminTournaments">تحديث القائمة</button></div>'+(tournamentsCache.length?tournamentsCache.map(x=>'<div class="card" data-tournament-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><p>الحالة: '+esc(x.status||"غير محددة")+'</p>'+actions+'</div>').join(""):'<p class="notice">لا توجد بطولات في جدول الإدارة.</p>');
+ const statRows=await Promise.all(tournamentsCache.map(async t=>{const {data:stats,error:statsError}=await client.rpc("get_public_tournament_registration_stats",{p_tournament_id:t.id});const row=Array.isArray(stats)?stats[0]:stats;return {id:t.id,stats:statsError?null:row};}));
+ const statsById=Object.fromEntries(statRows.map(x=>[x.id,x.stats||{}]));
+ const actions='<div class="row"><button data-status="published">نشر البطولة</button><button class="secondary" data-status="paused">إيقاف مؤقت</button><button class="secondary" data-status="draft">إرجاع لمسودة</button><button class="danger" data-status="completed">إنهاء البطولة</button><button class="danger" data-delete="1">حذف البطولة</button></div>';
+ host.innerHTML='<div class="row" style="align-items:center;justify-content:space-between"><h3>إدارة البطولات ('+tournamentsCache.length+')</h3><button class="secondary" id="refreshAdminTournaments">تحديث القائمة</button></div><p class="small">تحكم في الإعلان، حالة التسجيل، عدد الفرق، وظهور الفرق المقبولة للزوار.</p>'+(tournamentsCache.length?tournamentsCache.map(t=>{
+  const st=statsById[t.id]||{},count=Number(st.registered_count)||0,accepted=Number(st.accepted_count)||0,max=Math.max(1,Number(t.max_teams)||25),pct=Math.min(100,Math.round(count/max*100)),visible=t.accepted_teams_visible!==false;
+  return '<div class="card" data-tournament-id="'+esc(t.id)+'"><h3>'+esc(t.name)+'</h3><p>حالة البطولة: <b>'+esc(t.status||"غير محددة")+'</b> · التسجيل: <b>'+(t.registration_enabled?"مفعّل":"غير مفعّل")+'</b></p><div class="tournament-admin-meta"><div><small>الفرق المسجلة</small><b dir="ltr">'+count+' / '+max+'</b></div><div><small>الفرق المقبولة</small><b dir="ltr">'+accepted+'</b></div></div><div class="tournament-capacity"><div class="bar"><i style="width:'+pct+'%"></i></div><span class="small">اكتمل '+pct+'% من المقاعد</span></div><p class="small">فتح التسجيل: '+tournamentDateLabel(t.registration_opens_at)+'<br>إغلاق التسجيل: '+tournamentDateLabel(t.registration_closes_at)+'</p><div class="row"><button type="button" class="secondary" data-toggle-accepted="1">'+(visible?"إخفاء الفرق المقبولة عن العامة":"إظهار الفرق المقبولة للعامة")+'</button></div>'+actions+'</div>';
+ }).join(""):'<p class="notice">لا توجد بطولات في جدول الإدارة.</p>');
  $("refreshAdminTournaments").onclick=loadAdminTournamentManagement;
  host.querySelectorAll("[data-tournament-id]").forEach(card=>{
-  const id=card.dataset.tournamentId,name=card.querySelector("b")?.textContent||"البطولة";
+  const id=card.dataset.tournamentId,name=card.querySelector("h3")?.textContent||"البطولة";
   card.querySelectorAll("[data-status]").forEach(button=>button.addEventListener("click",()=>setTournamentStatus(id,button.dataset.status)));
+  const toggle=card.querySelector("[data-toggle-accepted]");
+  if(toggle)toggle.addEventListener("click",()=>toggleTournamentAcceptedTeams(id,toggle.textContent.includes("إخفاء")));
   const del=card.querySelector("[data-delete]");
   if(del)del.addEventListener("click",()=>deleteTournament(id,name));
  });
 }
 window.loadAdminTournamentManagement=loadAdminTournamentManagement;
+async function toggleTournamentAcceptedTeams(id,visible){
+ if(!confirm(visible?"إظهار الفرق المقبولة في صفحة البطولة للعامة؟":"إخفاء الفرق المقبولة عن زوار الموقع؟ لن يتم حذف أي فريق."))return;
+ const {error}=await client.from("tournaments").update({accepted_teams_visible:visible}).eq("id",id);
+ if(error){alert("تعذر تحديث ظهور الفرق: "+error.message);return;}
+ await loadAdminTournamentManagement();await loadPublic();
+}
+window.toggleTournamentAcceptedTeams=toggleTournamentAcceptedTeams;
 
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
