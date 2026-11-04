@@ -1630,7 +1630,7 @@ function openScrimsPage(){showStandalonePage("scrimsPage");syncPublicScrimsPage(
 function openTournamentsPage(){showStandalonePage("tournamentsPage");$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");renderTournamentPageList(tournamentsCache||[]);}
 window.openTournamentsPage=openTournamentsPage;
 window.openScrimsPage=openScrimsPage;
-function openTeamCenterPage(){showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
+function openTeamCenterPage(){closeSiteMenu();showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
 window.openTeamCenterPage=openTeamCenterPage;
 window.returnToPublicPages=returnToPublicPages;
 async function openTeamRegistration(scrimId,title){
