@@ -971,6 +971,7 @@ async function refreshAdmin(){
  $("who").innerHTML=esc(profile.display_name||user.email)+" <span class=\"role-badge "+activeRole[1]+"\">"+esc(activeRole[0])+"</span>";
  $("roleNote").innerHTML="الصلاحية الحالية: <span class=\"role-badge "+activeRole[1]+"\">"+esc(activeRole[0])+"</span>";
  show("roleManagementTab",currentRole==="founder");
+ document.querySelectorAll("[data-admin-main-tab]").forEach(tab=>{if(tab.dataset.adminMainTab==="results"||tab.dataset.adminMainTab==="mvp")tab.classList.toggle("hidden",currentRole==="organizer");});
  show("teamForm",["founder","admin","organizer"].includes(currentRole));
  show("teamForm",["founder","admin"].includes(currentRole));
  show("tournamentForm",["founder","admin","organizer","tournament_manager"].includes(currentRole));
