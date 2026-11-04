@@ -1056,6 +1056,7 @@ async function refreshAdmin(){
  show("matchForm",["founder","admin","organizer","tournament_manager"].includes(currentRole));
  show("managementPanel",["founder","admin","organizer","tournament_manager"].includes(currentRole));
  show("tournamentApplicationsSection",["founder","admin","organizer","tournament_manager"].includes(currentRole));
+ if(["founder","admin","organizer","tournament_manager"].includes(currentRole)) loadTournamentApplicationsAdmin();
  show("scrimAdmin",["founder","admin","organizer","tournament_manager"].includes(currentRole));
  if(["founder","admin","organizer","tournament_manager"].includes(currentRole)){ await loadTeamApplicationsAdmin(); await loadScrimAdmin(); }
  if(["founder","admin","organizer","tournament_manager"].includes(currentRole)) startTeamApplicationNotifications();
@@ -1077,7 +1078,6 @@ async function refreshAdmin(){
  $("aiMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join("");
  await loadAdminTournamentManagement();
- await loadTournamentApplicationsAdmin();
  $("matchManagement").innerHTML="<h3>الرومات والمباريات</h3>"+(matchesCache.length?matchesCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setMatchStatus('${x.id}','published')">فتح الروم</button><button class="secondary" onclick="setMatchStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setMatchStatus('${x.id}','draft')">مسودة</button><button class="danger" onclick="setMatchStatus('${x.id}','completed')">إنهاء</button></div></div>`).join(""):"لا توجد مباريات.");
  const canReview=["founder","admin","results_manager"].includes(currentRole);
  const pendingCount=(rs.data||[]).length,quickResults=$("adminPendingResults");
