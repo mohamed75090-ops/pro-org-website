@@ -874,13 +874,13 @@ async function loadSiteMonitoring(){
  $("siteAnonymousToday").textContent="اليوم: "+Number(stats.anonymous_visits_today||0).toLocaleString("en-US");
  const rows=Array.isArray(stats.accounts)?stats.accounts:[];
  if(!rows.length){host.innerHTML='<div class="notice">لا توجد حسابات مسجلة حتى الآن.</div>';return;}
- host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم الحساب</th><th>البريد</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th></tr></thead><tbody>'+
+ host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم المستخدم</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th></tr></thead><tbody>'+
  rows.map(account=>{
   const phone=String(account.whatsapp_number||"");
   const digits=phone.replace(/[^0-9]/g,"");
   const verified=account.whatsapp_verified?'<span class="success">موثّق</span>':'<span class="muted">غير موثّق</span>';
   const contact=digits?'<a class="secondary" style="display:inline-block;padding:8px 12px;text-decoration:none" href="https://wa.me/'+esc(digits)+'" target="_blank" rel="noopener noreferrer">فتح واتساب</a>':'<span class="muted">لا يوجد رقم</span>';
-  return '<tr><td>'+esc(account.display_name||"مستخدم")+'</td><td>'+esc(account.email||"—")+'</td><td dir="ltr">'+esc(phone||"—")+'</td><td>'+verified+'</td><td>'+contact+'</td></tr>';
+  return '<tr><td>'+esc(account.username||account.display_name||"مستخدم")+'</td><td dir="ltr">'+esc(phone||"—")+'</td><td>'+verified+'</td><td>'+contact+'</td></tr>';
  }).join("")+'</tbody></table></div>';
 }
 function recordAnonymousSiteVisit(){
@@ -898,7 +898,9 @@ async function refreshAdmin(){
  if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);return;}
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
- currentRole=String(profile.role||"").trim().toLowerCase();showStandalonePage("admin");
+ currentRole=String(profile.role||"").trim().toLowerCase();
+ if(!["founder","admin","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);returnToPublicPages();return;}
+ showStandalonePage("admin");
  show("siteMonitoringMenu",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  $("who").textContent=`${profile.display_name||user.email} · ${currentRole}`;$("roleNote").textContent=`الصلاحية الحالية: ${currentRole}`;
  show("teamForm",["founder","admin"].includes(currentRole));
