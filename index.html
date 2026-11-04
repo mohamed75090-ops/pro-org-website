@@ -1307,9 +1307,10 @@ async function loadTeamApplicationsAdmin(){
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
  const rows=data||[],pending=rows.filter(r=>r.status==="pending"),accepted=rows.filter(r=>r.status==="accepted"),reserve=rows.filter(r=>r.status==="reserve");
  updateTeamApplicationBadge(pending.length);
- $("teamAcceptedCount").textContent=String(accepted.length);
- $("teamPendingCount").textContent=String(pending.length);
- $("teamReserveCount").textContent=String(reserve.length);
+ const acceptedCountEl=$("teamAcceptedCount"),pendingCountEl=$("teamPendingCount"),reserveCountEl=$("teamReserveCount");
+ if(acceptedCountEl)acceptedCountEl.textContent=String(accepted.length);
+ if(pendingCountEl)pendingCountEl.textContent=String(pending.length);
+ if(reserveCountEl)reserveCountEl.textContent=String(reserve.length);
  const card=r=>`<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"في الانتظار":r.status==="accepted"?"مقبول":r.status==="reserve"?"احتياط":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">إضافة للاحتياط</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:r.status==="reserve"?`<button onclick="reviewTeamApplication('${r.id}','accepted')">تحويل إلى مقبول</button>`:r.status==="accepted"?`<button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">تحويل إلى الاحتياط</button>`:""}</div>`;
  const rejected=rows.filter(r=>r.status==="rejected");
  const rejectedCount=$("teamRejectedCount");if(rejectedCount)rejectedCount.textContent=String(rejected.length);
