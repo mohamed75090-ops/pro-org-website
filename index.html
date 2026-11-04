@@ -985,7 +985,7 @@ async function refreshAdmin(){
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
  currentRole=String(profile.role||"").trim().toLowerCase();
- if(!["founder","admin","organizer","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);returnToPublicPages();return;}
+ if(!["founder","admin","organizer","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);returnToPublicPages();return;}
  showStandalonePage("admin");
  show("siteMonitoringMenu",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  show("roleManagementMenu",currentRole==="founder");
@@ -1104,8 +1104,8 @@ $("refreshRoleDirectory").onclick=loadRoleManagement;
 $("refreshSiteMonitoring").onclick=loadSiteMonitoring;
 $("closeLogin").onclick=returnToPublicPages;
 $("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
-$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
-$("playerSignOutButton").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();};
+$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
+$("playerSignOutButton").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();};
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
 $("addTournament").onclick=createTournamentAnnouncement;
 $("tournamentRegistrationForm").addEventListener("submit",submitTournamentApplication);
