@@ -773,7 +773,7 @@ async function loadPublic(){
    msg("تعذر تحميل البيانات العامة من قاعدة البيانات.","err");return;
   }
   tournamentsCache=t.data||[];teamsCache=tm.data||[];
-  $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>"<p>🏆 "+esc(x.name)+"</p>").join(""):"لا توجد بطولات منشورة حالياً."; renderPublicTournaments(tournamentsCache); 
+  $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>"<p>🏆 "+esc(x.name)+"</p>").join(""):"لا توجد بطولات منشورة حالياً."; renderPublicTournaments(tournamentsCache); renderTournamentPageList(tournamentsCache); 
   $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>"<p><b>"+esc(x.tag)+"</b> — "+esc(x.name)+"</p>").join(""):"لا توجد فرق مسجلة حالياً."; 
   $("results").innerHTML=(r.data||[]).length?'<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>'+r.data.map(x=>'<tr><td>'+esc(x.teams?.name||"-")+'</td><td>'+esc(x.matches?.name||"-")+'</td><td>'+x.placement+'</td><td>'+x.kills+'</td><td>'+(x.total_points??((x.placement_points||0)+(x.kills||0)))+'</td></tr>').join("")+"</table>":"لا توجد نتائج معتمدة بعد."; 
  }catch(e){
