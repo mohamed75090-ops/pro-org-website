@@ -1239,7 +1239,7 @@ function setupAdminMainTabs(){
  function activate(name){
   buttons.forEach(b=>b.classList.toggle("active",b.dataset.adminMainTab===name));
   Object.entries(panels).forEach(([key,panel])=>{if(panel)panel.classList.toggle("hidden",key!==name);});
-  if(name==="rooms"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();}
+  if(name==="rooms"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();if(roomPanel)roomPanel.classList.remove("hidden");}
   if(name==="scrims"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();}
   window.scrollTo({top:0,behavior:"smooth"});
  }
