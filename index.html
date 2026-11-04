@@ -819,7 +819,7 @@ async function refreshAdmin(){
  show("matchForm",["founder","admin","tournament_manager"].includes(currentRole));
  show("managementPanel",["founder","admin","tournament_manager"].includes(currentRole));
  show("scrimAdmin",["founder","admin","tournament_manager"].includes(currentRole));
- if(["founder","admin","tournament_manager"].includes(currentRole)) await loadScrimAdmin();
+ if(["founder","admin","tournament_manager"].includes(currentRole)){ await loadTeamApplicationsAdmin(); await loadScrimAdmin(); }
  if(["founder","admin","tournament_manager"].includes(currentRole)) startTeamApplicationNotifications();
  show("resultForm",["founder","admin","results_manager"].includes(currentRole));
  show("aiScanner",["founder","admin","results_manager"].includes(currentRole));
@@ -1279,7 +1279,7 @@ async function loadScrimAdmin(){
    <div class="row"><button class="secondary" onclick="toggleAcceptedTeamsVisibility('${s.id}',true)">إظهار الفرق للمستخدمين</button><button class="secondary" onclick="toggleAcceptedTeamsVisibility('${s.id}',false)">إخفاء الفرق</button></div><p class="small">ظهور قائمة الفرق للعامة: <b>${s.accepted_teams_visible?"مفعّل":"مخفي"}</b></p><div class="row">${s.status==="draft"?`<button onclick="publishScrim('${s.id}')">نشر الإعلان</button>`:""}<button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
   </div>`;
  }).join(""):"لا توجد سكريمات بعد.";
- await loadScrimRequests();await loadTeamApplicationsAdmin();await loadScrimMatchAdmin();
+ await loadScrimRequests();await loadScrimMatchAdmin();
 }
 async function toggleAcceptedTeamsVisibility(scrimId,visible){
  if(!confirm(visible?"إظهار قائمة الفرق للمستخدمين؟":"إخفاء قائمة الفرق عن المستخدمين؟"))return;
@@ -1303,6 +1303,7 @@ function setTeamApplicationFilter(status){
 window.setTeamApplicationFilter=setTeamApplicationFilter;
 async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
+ try{
  const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
  const rows=data||[],pending=rows.filter(r=>r.status==="pending"),accepted=rows.filter(r=>r.status==="accepted"),reserve=rows.filter(r=>r.status==="reserve");
