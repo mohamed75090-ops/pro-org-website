@@ -1,9 +1,41 @@
 -- PROFESSIONAL ESPORTS: Site monitoring and WhatsApp profile groundwork
 -- Additive only. WhatsApp verification will be connected in a later phase.
 
-alter table public.profiles
-  add column if not exists whatsapp_number text,
-  add column if not exists whatsapp_verified_at timestamptz;
+create table if not exists public.user_contact_details (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  whatsapp_number text not null unique,
+  whatsapp_verified_at timestamptz,
+  updated_at timestamptz not null default now(),
+  constraint user_contact_details_whatsapp_length check (length(whatsapp_number) between 8 and 15)
+);
+alter table public.user_contact_details enable row level security;
+revoke all on public.user_contact_details from anon, authenticated;
+
+create or replace function public.save_my_whatsapp_number(p_number text)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $
+declare v_number text;
+begin
+  if auth.uid() is null then raise exception 'يجب تسجيل الدخول أولاً'; end if;
+  v_number := regexp_replace(coalesce(p_number,''), '[^0-9]', '', 'g');
+  if length(v_number) < 8 or length(v_number) > 15 then
+    raise exception 'أدخل رقم واتساب دولياً مع مفتاح الدولة';
+  end if;
+  insert into public.user_contact_details(user_id, whatsapp_number, whatsapp_verified_at, updated_at)
+  values(auth.uid(), v_number, null, now())
+  on conflict(user_id) do update
+    set whatsapp_number=excluded.whatsapp_number,
+        whatsapp_verified_at=null,
+        updated_at=now();
+exception when unique_violation then
+  raise exception 'رقم الواتساب مرتبط بحساب آخر';
+end;
+$;
+revoke all on function public.save_my_whatsapp_number(text) from public, anon;
+grant execute on function public.save_my_whatsapp_number(text) to authenticated;
 
 create table if not exists public.site_login_events (
   id uuid primary key default gen_random_uuid(),
@@ -95,12 +127,13 @@ begin
         'id', u.id,
         'email', u.email,
         'display_name', coalesce(nullif(trim(p.display_name),''), nullif(split_part(coalesce(u.email,''),'@',1),''), 'مستخدم'),
-        'whatsapp_number', p.whatsapp_number,
-        'whatsapp_verified', p.whatsapp_verified_at is not null,
+        'whatsapp_number', c.whatsapp_number,
+        'whatsapp_verified', c.whatsapp_verified_at is not null,
         'created_at', u.created_at
       ) order by u.created_at desc)
       from auth.users u
       left join public.profiles p on p.id=u.id
+      left join public.user_contact_details c on c.user_id=u.id
     ), '[]'::jsonb)
   ) into v_result;
 
