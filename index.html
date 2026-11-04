@@ -427,9 +427,11 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <div class="auth-card">
   <div class="auth-brand"><div class="brand-mark">PRO</div><div><h2>PROFESSIONAL ESPORTS</h2><p>PRO ORG · PUBG MOBILE</p></div></div>
   <div class="auth-heading"><h3>دخول المشرفين</h3><p>سجّل الدخول للوصول إلى لوحة إدارة المنظمة</p></div>
-  <label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="username" placeholder="name@example.com">
-  <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" placeholder="أدخل كلمة المرور">
-  <div class="auth-actions"><button id="signIn">تسجيل الدخول</button><button type="button" class="secondary" id="cancelAdminLogin" onclick="returnToPublicPages()">إلغاء</button></div>
+  <form id="adminLoginForm" autocomplete="on">
+   <label for="email">البريد الإلكتروني</label><input id="email" name="username" type="email" autocomplete="username" inputmode="email" required placeholder="name@example.com">
+   <label for="password">كلمة المرور</label><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="أدخل كلمة المرور">
+   <div class="auth-actions"><button id="signIn" type="submit">تسجيل الدخول</button><button type="button" class="secondary" id="cancelAdminLogin" onclick="returnToPublicPages()">إلغاء</button></div>
+  </form>
   <p class="auth-note">منطقة مخصصة للمشرفين والحسابات المعتمدة فقط</p>
  </div>
 </section>
@@ -1181,7 +1183,7 @@ $("roleManagementMenu").onclick=()=>{closeSiteMenu();openRoleManagementPage();};
 $("refreshRoleDirectory").onclick=loadRoleManagement;
 $("refreshSiteMonitoring").onclick=loadSiteMonitoring;
 $("closeLogin").onclick=returnToPublicPages;
-$("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
+$("adminLoginForm").addEventListener("submit",async(event)=>{event.preventDefault();const button=$("signIn");button.disabled=true;button.textContent="جاري تسجيل الدخول...";try{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");}finally{button.disabled=false;button.textContent="تسجيل الدخول";}});
 $("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
 $("playerSignOutButton").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();};
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
