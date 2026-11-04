@@ -342,6 +342,19 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  .monitoring-user-action{background:#1b2938;border:1px solid #49627a;color:#eaf2fb;padding:7px 10px;border-radius:8px;font-weight:700}
  #siteMonitoringRoleEditor{border:1px solid #80612e;background:#211b11;border-radius:12px;padding:14px;margin:12px 0}
  #siteMonitoringRoleEditor .row{align-items:end}
+
+/* Homepage structure refresh — preserves existing sections and navigation */
+.home-intro{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:28px;min-height:270px;margin:22px 0 34px;padding:clamp(24px,5vw,48px);border:1px solid #806a3c;border-radius:22px;background:radial-gradient(circle at 82% 25%,#c89c4a2b,transparent 32%),linear-gradient(115deg,#10141c 0%,#171b24 58%,#241c10 100%);box-shadow:0 20px 55px #0008}
+.home-intro-copy{position:relative;z-index:2;max-width:680px}
+.home-intro-kicker{color:#e7c77f;font-size:11px;font-weight:900;letter-spacing:2.5px}
+.home-intro h2{margin:12px 0;color:#fff;font-size:clamp(30px,5vw,48px);line-height:1.2}
+.home-intro p{max-width:590px;margin:0 0 20px;color:#c4c8d0;font-size:15px;line-height:1.9}
+.home-intro-actions{display:flex;gap:10px;flex-wrap:wrap}
+.home-intro-mark{flex:0 0 min(31%,280px);min-height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #d0a85a55;border-radius:20px;background:linear-gradient(145deg,#d8b15b18,#10141c 72%);box-shadow:inset 0 0 35px #d8b15b0d}
+.home-intro-mark span{color:#e8c77f;font-size:clamp(64px,10vw,108px);font-weight:1000;line-height:1;text-shadow:0 8px 35px #d8b15b44}
+.home-intro-mark small{margin-top:12px;color:#aeb5c0;font-size:9px;font-weight:800;letter-spacing:2px;direction:ltr}
+.site-status{display:none!important}
+@media(max-width:650px){.home-intro{min-height:0;padding:24px 20px}.home-intro-mark{flex-basis:105px;min-height:110px;border-radius:14px}.home-intro-mark span{font-size:48px}.home-intro-mark small{font-size:7px;letter-spacing:1px}.home-intro p{font-size:13px}.home-intro-actions button{flex:1;min-width:135px}}
 </style>
 </head>
 <body>
@@ -372,18 +385,6 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 </header>
 
 <main>
-<section id="scrimPublic" class="section">
- <div class="section-heading"><div><span class="pill">PRO SCRIMS</span><h2>السكريمات القادمة</h2><p>فعاليات مستقلة عن البطولات.</p></div></div>
- <div id="publicScrims" class="grid"><div class="card">جاري تحميل السكريمات...</div></div>
- <div id="teamScrimPanel" class="card hidden">
-  <h2>منطقة تسجيل الفريق</h2>
-  <p class="small">سجّل فريقك في السكريمات المتاحة، تابع حالة الطلب، واطّلع على بيانات الروم بعد قبولك.</p>
-  <label for="teamScrimSelect">الفريق المرتبط بحسابك</label>
-  <select id="teamScrimSelect"></select>
-  <label for="teamScrimPhone">رقم التواصل للفريق</label><input id="teamScrimPhone" type="tel" placeholder="مثال: 01xxxxxxxxx">
-  <div id="teamScrimStatus" class="notice">جاري تحميل طلبات فريقك...</div>
- </div>
-</section>
 <section id="scrimsPage" class="section hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button>
  <div class="section-heading"><div><span class="pill">PRO SCRIMS</span><h2>السكريمات والإعلانات</h2><p>جميع إعلانات السكريمات المنشورة ومواعيد التسجيل والفرق المقبولة.</p></div></div>
@@ -421,22 +422,49 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <div id="scrimCenterResult" class="notice">ستظهر هنا بيانات الروم بعد التحقق من الكود ونشرها من الإدارة.</div>
 </section>
 <section id="public">
- <section id="home" class="mvp-feature">
-  <div id="weeklyMvpFeature" class="mvp-feature-inner"><div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div></div>
+<section id="homeIntro" class="home-intro">
+  <div class="home-intro-copy">
+   <span class="home-intro-kicker">WELCOME TO PROFESSIONAL ESPORTS</span>
+   <h2>المنافسة تبدأ من هنا</h2>
+   <p>منصة واحدة تجمع البطولات والسكريمات والنتائج، وتمنح الفرق واللاعبين تجربة منافسة منظمة واحترافية.</p>
+   <div class="home-intro-actions">
+    <button type="button" onclick="openTournamentsPage()">استعرض البطولات</button>
+    <button type="button" class="secondary" onclick="openScrimsPage()">استعرض السكريمات</button>
+   </div>
+  </div>
+  <div class="home-intro-mark" aria-hidden="true"><span>PRO</span><small>COMPETE · PERFORM · WIN</small></div>
  </section>
- <div class="section-heading"><div><span class="pill">WEEKLY LEADERS</span><h2>أفضل 3 لاعبين في الأسبوع</h2><p>ترتيب اللاعبين وفق البيانات التي تعتمدها إدارة النتائج.</p></div></div>
- <div id="weeklyMvpTop3" class="mvp-top3"><div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة MVP منشورة حالياً.</div></div>
+
  <div class="card team-center-entry" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:18px 0"><div><h3 style="margin:0 0 6px">مركز الفريق</h3><p class="small" style="margin:0">تابع حالة تسجيل فريقك وبيانات المباريات باستخدام كود الفريق، حتى بعد انتهاء السكريم.</p></div><button type="button" onclick="openTeamCenterPage()">فتح مركز الفريق</button></div>
  <div id="tournaments" class="hidden"></div><div id="teams" class="hidden"></div>
  <div class="section-heading" id="tournamentSection"><div><span class="pill">OFFICIAL TOURNAMENTS</span><h2>البطولات</h2><p>إعلانات البطولات الرسمية. افتح أي بطولة لمعرفة التفاصيل والتسجيل.</p></div></div>
  <div id="publicTournaments" class="grid"><div class="card">جاري تحميل البطولات...</div></div>
- <div class="section-heading" id="resultsSection"><div><span class="pill">OFFICIAL LEADERBOARD</span><h2>النتائج المعتمدة</h2><p>آخر النتائج التي تمت مراجعتها واعتمادها.</p></div></div>
+ <section id="scrimPublic" class="section">
+ <div class="section-heading"><div><span class="pill">PRO SCRIMS</span><h2>السكريمات القادمة</h2><p>فعاليات مستقلة عن البطولات.</p></div></div>
+ <div id="publicScrims" class="grid"><div class="card">جاري تحميل السكريمات...</div></div>
+ <div id="teamScrimPanel" class="card hidden">
+  <h2>منطقة تسجيل الفريق</h2>
+  <p class="small">سجّل فريقك في السكريمات المتاحة، تابع حالة الطلب، واطّلع على بيانات الروم بعد قبولك.</p>
+  <label for="teamScrimSelect">الفريق المرتبط بحسابك</label>
+  <select id="teamScrimSelect"></select>
+  <label for="teamScrimPhone">رقم التواصل للفريق</label><input id="teamScrimPhone" type="tel" placeholder="مثال: 01xxxxxxxxx">
+  <div id="teamScrimStatus" class="notice">جاري تحميل طلبات فريقك...</div>
+ </div>
+</section>
+
+<section id="home" class="mvp-feature">
+  <div id="weeklyMvpFeature" class="mvp-feature-inner"><div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div></div>
+ </section>
+ <div class="section-heading"><div><span class="pill">WEEKLY LEADERS</span><h2>أفضل 3 لاعبين في الأسبوع</h2><p>ترتيب اللاعبين وفق البيانات التي تعتمدها إدارة النتائج.</p></div></div>
+ <div id="weeklyMvpTop3" class="mvp-top3"><div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة MVP منشورة حالياً.</div></div>
+
+<div class="section-heading" id="resultsSection"><div><span class="pill">OFFICIAL LEADERBOARD</span><h2>النتائج المعتمدة</h2><p>آخر النتائج التي تمت مراجعتها واعتمادها.</p></div></div>
  <div class="card"><h2>آخر النتائج المعتمدة</h2><div id="results" class="muted">جاري التحميل...</div></div>
  <section class="card about-professional-esports" style="margin-top:24px;border:1px solid #705b91;background:linear-gradient(135deg,#171528,#202033);padding:22px">
   <span class="pill">ABOUT US</span><h2 style="margin:10px 0;color:#d8c4ff">من نحن | PROFESSIONAL ESPORTS</h2>
   <h3 style="margin:0 0 10px;color:#f0d58d">بوابتك الرسمية لعالم المنافسات الإلكترونية</h3>
   <p class="muted" style="line-height:1.9;margin:0">منصة احترافية لإدارة البطولات والسكريمات، متابعة النتائج، تسجيل الفرق، وتنظيم المنافسات تحت إشراف Professional eSports.</p>
-  <div id="status" class="notice" style="margin-top:14px">جاري الاتصال بقاعدة البيانات...</div>
+  <div id="status" class="notice site-status" aria-live="polite">جاري الاتصال بقاعدة البيانات...</div>
  </section>
 </section>
 
