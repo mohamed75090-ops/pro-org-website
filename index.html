@@ -410,37 +410,37 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 }
 
 
-/* MVP compact centered layout — compact card with centered player image */
-.mvp-feature{min-height:0!important;margin:16px 0 22px!important}
-.mvp-feature-inner{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;gap:8px!important;min-height:0!important;padding:18px!important;max-width:760px!important;margin:0 auto!important}
-.mvp-kicker{grid-column:1!important;grid-row:1!important;position:static!important;top:auto!important;left:auto!important;right:auto!important;text-align:center!important;font-size:8px!important;letter-spacing:1.8px!important;margin:0!important}
-.mvp-kicker:before{width:18px!important;margin-right:6px!important}
-.mvp-title{grid-column:1!important;grid-row:2!important;position:static!important;top:auto!important;left:auto!important;right:auto!important;text-align:center!important;font-size:clamp(27px,4vw,38px)!important;letter-spacing:-.7px!important;line-height:1!important;margin:0!important}
-.mvp-title:after{width:54px!important;margin:7px auto 0!important}
-.mvp-photo-wrap{grid-column:1!important;grid-row:3!important;position:relative!important;inset:auto!important;width:100%!important;height:205px!important;min-height:0!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;border-radius:15px!important;background:radial-gradient(ellipse at 50% 45%,#754426 0%,#1c1b1c 48%,#090c12 80%)!important}
-.mvp-photo{display:block!important;width:auto!important;height:100%!important;max-width:58%!important;max-height:100%!important;object-fit:contain!important;object-position:center center!important;-webkit-mask-image:linear-gradient(180deg,#000 0%,#000 86%,transparent 100%)!important;mask-image:linear-gradient(180deg,#000 0%,#000 86%,transparent 100%)!important}
-.mvp-feature-copy{grid-column:1!important;grid-row:4!important;position:static!important;bottom:auto!important;align-self:auto!important;width:100%!important;max-width:560px!important;margin:0 auto!important;padding:7px 8px 2px!important;text-align:center!important}
-.mvp-feature-copy:before{position:static!important;display:inline-flex!important;margin:0 auto 7px!important;padding:5px 10px!important;font-size:7px!important}
-.mvp-player-name{font-size:clamp(24px,3.5vw,34px)!important;line-height:1.05!important;margin:0 0 4px!important}
-.mvp-player-team{font-size:9px!important;letter-spacing:1px!important}
-.mvp-stats{margin:8px auto 6px!important;gap:7px!important;max-width:340px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
-.mvp-stat{padding:6px 8px!important;text-align:center!important}
-.mvp-stat b{font-size:clamp(19px,2.5vw,25px)!important}
-.mvp-stat span{font-size:7px!important}
+/* MVP compact centered layout — reduced overall card size */
+.mvp-feature{height:auto!important;min-height:0!important;max-width:720px!important;width:100%!important;margin:12px auto 18px!important;border-radius:17px!important}
+.mvp-feature-inner{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:repeat(4,auto)!important;gap:5px!important;height:auto!important;min-height:0!important;padding:11px 14px!important;max-width:100%!important;margin:0 auto!important;overflow:hidden!important}
+.mvp-kicker{grid-column:1!important;grid-row:1!important;position:static!important;top:auto!important;left:auto!important;right:auto!important;text-align:center!important;font-size:7px!important;letter-spacing:1.4px!important;margin:0!important}
+.mvp-kicker:before{width:16px!important;margin-right:5px!important}
+.mvp-title{grid-column:1!important;grid-row:2!important;position:static!important;top:auto!important;left:auto!important;right:auto!important;text-align:center!important;font-size:clamp(24px,3.5vw,32px)!important;letter-spacing:-.6px!important;line-height:1!important;margin:0!important}
+.mvp-title:after{width:42px!important;margin:5px auto 0!important}
+.mvp-photo-wrap{grid-column:1!important;grid-row:3!important;position:relative!important;inset:auto!important;width:100%!important;height:145px!important;min-height:0!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;border-radius:13px!important;background:radial-gradient(ellipse at 50% 45%,#754426 0%,#1c1b1c 48%,#090c12 80%)!important}
+.mvp-photo{display:block!important;width:auto!important;height:100%!important;max-width:48%!important;max-height:100%!important;object-fit:contain!important;object-position:center center!important;-webkit-mask-image:linear-gradient(180deg,#000 0%,#000 88%,transparent 100%)!important;mask-image:linear-gradient(180deg,#000 0%,#000 88%,transparent 100%)!important}
+.mvp-feature-copy{grid-column:1!important;grid-row:4!important;position:static!important;bottom:auto!important;align-self:auto!important;width:100%!important;max-width:500px!important;margin:0 auto!important;padding:3px 6px 1px!important;text-align:center!important}
+.mvp-feature-copy:before{position:static!important;display:inline-flex!important;margin:0 auto 4px!important;padding:4px 8px!important;font-size:6px!important}
+.mvp-player-name{font-size:clamp(21px,3vw,28px)!important;line-height:1.05!important;margin:0 0 3px!important}
+.mvp-player-team{font-size:8px!important;letter-spacing:.8px!important}
+.mvp-stats{margin:5px auto 3px!important;gap:5px!important;max-width:300px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.mvp-stat{padding:4px 6px!important;text-align:center!important}
+.mvp-stat b{font-size:clamp(17px,2vw,21px)!important}
+.mvp-stat span{font-size:6px!important}
 @media(max-width:700px){
- .mvp-feature{margin:12px 0 18px!important}
- .mvp-feature-inner{padding:13px 11px!important;gap:7px!important}
- .mvp-kicker{font-size:7px!important;letter-spacing:1.2px!important}
- .mvp-title{font-size:clamp(25px,7vw,32px)!important}
- .mvp-photo-wrap{height:170px!important}
- .mvp-photo{max-width:64%!important}
- .mvp-feature-copy{padding:5px 5px 1px!important}
- .mvp-player-name{font-size:clamp(22px,6vw,29px)!important}
- .mvp-player-team{font-size:8px!important;letter-spacing:.7px!important}
- .mvp-stats{margin:6px auto 4px!important;gap:5px!important;max-width:290px!important}
- .mvp-stat{padding:5px 4px!important}
- .mvp-stat b{font-size:19px!important}
- .mvp-stat span{font-size:6px!important}
+ .mvp-feature{max-width:100%!important;margin:10px 0 15px!important}
+ .mvp-feature-inner{padding:9px 9px!important;gap:4px!important}
+ .mvp-kicker{font-size:6px!important;letter-spacing:1px!important}
+ .mvp-title{font-size:clamp(22px,6vw,28px)!important}
+ .mvp-photo-wrap{height:120px!important}
+ .mvp-photo{max-width:54%!important}
+ .mvp-feature-copy{padding:2px 4px 0!important}
+ .mvp-player-name{font-size:clamp(20px,5.5vw,25px)!important}
+ .mvp-player-team{font-size:7px!important;letter-spacing:.6px!important}
+ .mvp-stats{margin:4px auto 2px!important;gap:4px!important;max-width:260px!important}
+ .mvp-stat{padding:4px 3px!important}
+ .mvp-stat b{font-size:17px!important}
+ .mvp-stat span{font-size:5px!important}
 }
 </style>
 </head>
