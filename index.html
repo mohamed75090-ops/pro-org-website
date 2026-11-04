@@ -1038,6 +1038,7 @@ async function refreshAdmin(){
  currentRole=String(profile.role||"").trim().toLowerCase();
  if(!["founder","admin","organizer","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);returnToPublicPages();return;}
  showStandalonePage("admin");
+ if(typeof window.activateAdminMainTab==="function")window.activateAdminMainTab("tournaments");
  show("siteMonitoringMenu",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  show("roleManagementMenu",currentRole==="founder");
  const roleMeta={founder:["المؤسس","role-founder"],admin:["المشرف العام","role-admin"],organizer:["المنظّم","role-organizer"],results_manager:["مدير النتائج","role-results"],tournament_manager:["مدير البطولات","role-tournament"],player:["لاعب","role-player"]};
@@ -1070,7 +1071,6 @@ async function refreshAdmin(){
  $("resultMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("aiMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join("");
- if(!ts.error) $("tournamentManagement").innerHTML="<h3>البطولات</h3>"+(tournamentsCache.length?tournamentsCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setTournamentStatus('${x.id}','published')">نشر</button><button class="secondary" onclick="setTournamentStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setTournamentStatus('${x.id}','draft')">إرجاع لمسودة</button><button class="danger" onclick="setTournamentStatus('${x.id}','completed')">إنهاء البطولة</button><button class="danger" onclick="deleteTournament('${x.id}','${esc(x.name)}')">حذف البطولة</button></div></div>`).join(""):"لا توجد بطولات.");
  await loadAdminTournamentManagement();
  await loadTournamentApplicationsAdmin();
  $("matchManagement").innerHTML="<h3>الرومات والمباريات</h3>"+(matchesCache.length?matchesCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setMatchStatus('${x.id}','published')">فتح الروم</button><button class="secondary" onclick="setMatchStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setMatchStatus('${x.id}','draft')">مسودة</button><button class="danger" onclick="setMatchStatus('${x.id}','completed')">إنهاء</button></div></div>`).join(""):"لا توجد مباريات.");
@@ -1562,6 +1562,7 @@ function setupAdminMainTabs(){
   if(name==="tournaments"&&currentRole)loadAdminTournamentManagement();
   window.scrollTo({top:0,behavior:"smooth"});
  }
+ window.activateAdminMainTab=activate;
  buttons.forEach(b=>b.addEventListener("click",()=>activate(b.dataset.adminMainTab)));
  activate("tournaments");
 }
