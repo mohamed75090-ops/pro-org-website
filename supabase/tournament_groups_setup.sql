@@ -19,7 +19,7 @@ alter table public.tournament_team_applications
   add constraint tournament_team_applications_group_name_check
   check (
     (group_name is null or group_name in ('A','B','C','D'))
-    and (status <> 'accepted' or group_name in ('A','B','C','D'))
+    and (status <> 'accepted' or coalesce(group_name in ('A','B','C','D'), false))
   );
 
 create index if not exists tournament_team_apps_group_idx
