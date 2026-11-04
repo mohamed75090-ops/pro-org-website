@@ -308,7 +308,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
    <button type="button" class="menu-toggle" id="siteMenuToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="siteDropdown"><span></span></button>
    <nav class="header-dropdown" id="siteDropdown" aria-label="القائمة الرئيسية">
     <a href="#home"><span>⌂</span> الرئيسية</a>
-    <a href="#scrims"><span>◈</span> السكريمات</a>
+    <button type="button" onclick="openScrimsPage();closeSiteMenu()"><span>◈</span> السكريمات</button>
     <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
     <a href="#teamsSection"><span>♧</span> الفرق</a>
     <a href="#resultsSection"><span>▤</span> النتائج</a>
@@ -337,6 +337,11 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <label for="teamScrimPhone">رقم التواصل للفريق</label><input id="teamScrimPhone" type="tel" placeholder="مثال: 01xxxxxxxxx">
   <div id="teamScrimStatus" class="notice">جاري تحميل طلبات فريقك...</div>
  </div>
+</section>
+<section id="scrimsPage" class="section hidden">
+ <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button>
+ <div class="section-heading"><div><span class="pill">PRO SCRIMS</span><h2>السكريمات والإعلانات</h2><p>جميع إعلانات السكريمات المنشورة ومواعيد التسجيل والفرق المقبولة.</p></div></div>
+ <div id="publicScrimsPage" class="grid"><div class="card">جاري تحميل السكريمات...</div></div>
 </section>
 <section id="registrationPage" class="card hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
@@ -795,14 +800,16 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","registrationPage","teamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","registrationPage","teamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
- ["registrationPage","teamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","registrationPage","teamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
+function openScrimsPage(){showStandalonePage("scrimsPage");syncPublicScrimsPage();}
+window.openScrimsPage=openScrimsPage;
 function openTeamCenterPage(){showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
 window.openTeamCenterPage=openTeamCenterPage;
 window.returnToPublicPages=returnToPublicPages;
@@ -857,6 +864,7 @@ function renderAcceptedTeamsTable(accepted,emptyText){
  accepted.map((r,i)=>{const slot=r.slot_number??(i+3);return '<div class="accepted-team-row" dir="rtl"><span class="accepted-team-tag">'+esc(r.teams?.name||"فريق")+'</span><b class="accepted-team-slot">'+String(slot)+'</b></div>';}).join("");
 }
 
+function syncPublicScrimsPage(){const source=$("publicScrims"),target=$("publicScrimsPage");if(source&&target)target.innerHTML=source.innerHTML;}
 async function loadPublicScrims(){
  const el=$("publicScrims");if(!el)return;
  let data=null,error=null,acceptedRows=null,acceptedError=null,timer;
@@ -866,8 +874,8 @@ async function loadPublicScrims(){
    client.rpc("get_public_scrim_accepted_teams")
   ]),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة تحميل السكريمات. تحقق من اتصال قاعدة البيانات.")),12000);})]);
   clearTimeout(timer);[{data,error},{data:acceptedRows,error:acceptedError}]=result;
- }catch(e){clearTimeout(timer);el.innerHTML='<div class="card">'+esc(e?.message||"تعذر تحميل السكريمات.")+'</div>';return;}
- if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات: '+esc(error.message)+'</div>';return;}
+ }catch(e){clearTimeout(timer);el.innerHTML='<div class="card">'+esc(e?.message||"تعذر تحميل السكريمات.")+'</div>';syncPublicScrimsPage();return;}
+ if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات: '+esc(error.message)+'</div>';syncPublicScrimsPage();return;}
  const rows=data||[],acceptedByScrim=new Map();
  if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=rows.length?rows.map(s=>{
@@ -895,6 +903,7 @@ async function loadPublicScrims(){
    <div class="scrim-public-actions">${scrimRegistrationIsOpen(s)?`<button onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">تسجيل الفريق</button>`:`<button class="secondary" disabled>التسجيل غير متاح حالياً</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button></div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
+ syncPublicScrimsPage();
  // The legacy account-linked panel is intentionally not auto-loaded here.
 }
 async function loadTeamScrimPanel(){
