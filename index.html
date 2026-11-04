@@ -892,7 +892,7 @@ function startTeamApplicationNotifications(){
   .on("postgres_changes",{event:"*",schema:"public",table:"scrim_team_applications"},()=>loadTeamApplicationsAdmin())
   .subscribe();
  if(!teamApplicationRefreshTimer)teamApplicationRefreshTimer=window.setInterval(()=>{
-  if(["founder","admin","tournament_manager"].includes(currentRole))loadTeamApplicationsAdmin();
+  if(["founder","admin","organizer","tournament_manager"].includes(currentRole))loadTeamApplicationsAdmin();
  },30000);
 }
 async function loadSiteMonitoring(){
