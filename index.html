@@ -311,7 +311,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
     <button type="button" onclick="returnToPublicPages();closeSiteMenu()"><span>⌂</span> الرئيسية</button>
     <button type="button" onclick="openScrimsPage();closeSiteMenu()"><span>◈</span> السكريمات</button>
     <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
-    <a href="#tournamentSection"><span>🏆</span> البطولات</a>
+    <button type="button" onclick="openTournamentsPage();closeSiteMenu()"><span>🏆</span> البطولات</button>
     <a href="#resultsSection"><span>▤</span> النتائج</a>
     <div class="menu-divider"></div>
     <button type="button" class="admin-menu-link" id="loginToggle"><span>♙</span> دخول المشرفين</button>
@@ -344,6 +344,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <div class="section-heading"><div><span class="pill">PRO SCRIMS</span><h2>السكريمات والإعلانات</h2><p>جميع إعلانات السكريمات المنشورة ومواعيد التسجيل والفرق المقبولة.</p></div></div>
  <div id="publicScrimsPage" class="grid"><div class="card">جاري تحميل السكريمات...</div></div>
 </section>
+<section id="tournamentsPage" class="section hidden"><button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button><div class="section-heading"><div><span class="pill">OFFICIAL TOURNAMENTS</span><h2>البطولات</h2><p>جميع إعلانات البطولات المنشورة. اختر بطولة لعرض تفاصيلها والتسجيل فيها.</p></div></div><div id="tournamentsPageList" class="grid"></div><div id="tournamentsPageDetail" class="hidden"></div></section>
 <section id="registrationPage" class="card hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
  <h2 id="teamRegistrationTitle">تسجيل الفريق في السكريم</h2>
@@ -663,22 +664,25 @@ function tournamentRegistrationState(t){
  if(close&&now>close)return {open:false,label:"انتهى التسجيل"};
  return {open:true,label:close?"التسجيل مفتوح حتى "+tournamentDateLabel(t.registration_closes_at):"التسجيل مفتوح"};
 }
-function renderPublicTournaments(rows){
- const el=$("publicTournaments");if(!el)return;
- el.innerHTML=rows.length?rows.map(t=>{
-  const state=tournamentRegistrationState(t);
-  const poster=t.poster_url?'<img src="'+esc(t.poster_url)+'" alt="إعلان '+esc(t.name)+'" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-bottom:12px">':'<div class="mvp-empty" style="aspect-ratio:16/9;display:grid;place-items:center;margin-bottom:12px">🏆 إعلان البطولة</div>';
-  return '<article class="card tournament-public-card">'+poster+'<h3>'+esc(t.name)+'</h3><p class="small">'+esc((t.description||"").slice(0,180))+'</p><p class="notice">'+esc(state.label)+'</p><button type="button" onclick="openTournamentDetails(\''+t.id+'\')">عرض تفاصيل البطولة</button></article>';
- }).join(""):'<div class="card">لا توجد إعلانات بطولات منشورة حالياً.</div>';
+function tournamentCardHTML(t){
+ const state=tournamentRegistrationState(t);
+ const poster=t.poster_url?'<img src="'+esc(t.poster_url)+'" alt="إعلان '+esc(t.name)+'" data-open-tournament="'+t.id+'" style="cursor:pointer;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-bottom:12px">':'<div class="mvp-empty" data-open-tournament="'+t.id+'" style="cursor:pointer;aspect-ratio:16/9;display:grid;place-items:center;margin-bottom:12px">🏆 إعلان البطولة</div>';
+ return '<article class="card tournament-public-card">'+poster+'<h3>'+esc(t.name)+'</h3><p class="small">'+esc((t.description||"").slice(0,180))+'</p><p class="notice">'+esc(state.label)+'</p><button type="button" data-open-tournament="'+t.id+'">عرض تفاصيل البطولة</button></article>';
 }
+function renderTournamentPageList(rows){const el=$("tournamentsPageList");if(!el)return;el.innerHTML=rows.length?rows.map(tournamentCardHTML).join(""):'<div class="card">لا توجد إعلانات بطولات منشورة حالياً.</div>';}
+function renderPublicTournaments(rows){const el=$("publicTournaments");if(el)el.innerHTML=rows.length?rows.map(tournamentCardHTML).join(""):'<div class="card">لا توجد إعلانات بطولات منشورة حالياً.</div>';}
+document.addEventListener("click",event=>{const target=event.target.closest("[data-open-tournament]");if(target)openTournamentDetails(target.dataset.openTournament);});
+
 async function openTournamentDetails(id){
- activeTournamentId=id;showStandalonePage("tournamentDetailsPage");
- const el=$("tournamentDetailsContent");el.innerHTML="جاري تحميل تفاصيل البطولة...";
+ activeTournamentId=id;showStandalonePage("tournamentsPage");$("tournamentsPageList").classList.add("hidden");const detail=$("tournamentsPageDetail");detail.classList.remove("hidden");detail.innerHTML='<button type="button" class="secondary" onclick="showTournamentList()">العودة إلى قائمة البطولات</button><div id="tournamentDetailsContent">جاري تحميل تفاصيل البطولة...</div>';
+ const el=$("tournamentDetailsContent");
  const {data,error}=await client.from("tournaments").select("id,name,description,status,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled").eq("id",id).maybeSingle();
  if(error||!data){el.innerHTML='<div class="notice">تعذر تحميل البطولة: '+esc(error?.message||"غير موجودة")+'</div>';return;}
  const state=tournamentRegistrationState(data),poster=data.poster_url?'<img src="'+esc(data.poster_url)+'" alt="إعلان البطولة" style="width:100%;max-height:420px;object-fit:contain;border-radius:14px">':"";
  el.innerHTML=poster+'<h2>'+esc(data.name)+'</h2><p>'+esc(data.description||"لا توجد تفاصيل إضافية حالياً.")+'</p><div class="notice"><b>'+esc(state.label)+'</b><p class="small">فتح التسجيل: '+tournamentDateLabel(data.registration_opens_at)+'<br>إغلاق التسجيل: '+tournamentDateLabel(data.registration_closes_at)+'<br>الحد الأقصى للفرق: '+Number(data.max_teams||25)+'</p></div><div class="row" style="flex-wrap:wrap"><button type="button" '+(state.open?"":"disabled")+' onclick="openTournamentRegistration(\''+id+'\')">تسجيل فريق في البطولة</button><button type="button" class="secondary" onclick="openTournamentTeamCenter(\''+id+'\')">مركز الفريق لهذه البطولة</button></div>';
 }
+function showTournamentList(){$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"});}
+window.showTournamentList=showTournamentList;
 window.openTournamentDetails=openTournamentDetails;
 function openTournamentRegistration(id){
  activeTournamentId=id;showStandalonePage("tournamentRegistrationPage");
@@ -905,15 +909,17 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","scrimsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
- ["scrimsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function openScrimsPage(){showStandalonePage("scrimsPage");syncPublicScrimsPage();}
+function openTournamentsPage(){showStandalonePage("tournamentsPage");$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");renderTournamentPageList(tournamentsCache||[]);}
+window.openTournamentsPage=openTournamentsPage;
 window.openScrimsPage=openScrimsPage;
 function openTeamCenterPage(){showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
 window.openTeamCenterPage=openTeamCenterPage;
