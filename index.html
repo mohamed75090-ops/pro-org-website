@@ -864,7 +864,7 @@ async function loadTournamentApplicationsAdmin(){
   const groupSelect=(a)=>'<label style="display:block;margin:10px 0 5px">المجموعة التي سيلعب فيها الفريق</label><select id="tournamentGroup-'+a.id+'" style="border-color:#64748b"><option value="">اختر المجموعة</option>'+groups.map(g=>'<option value="'+g.id+'" '+(a.group_name===g.id?'selected':'')+'>'+g.name+'</option>').join("")+'</select>';
   const appCards=rows.filter(a=>a.status!=="accepted").map(a=>{
    const t=tournamentsCache.find(x=>x.id===a.tournament_id);
-   return '<div class="card"><b>'+esc(t?.name||"بطولة")+'</b><p>'+esc(a.team_name)+' · '+esc(a.team_tag)+'<br>الممثل: '+esc(a.team_representative)+'<br>الحالة: <b>'+esc(status[a.status]||a.status||"غير محددة")+'</b> · كود الفريق: <code>'+esc(a.access_code||"—")+'</code></p>'+(a.status==="pending"?groupSelect(a):"")+'<div class="row">'+(a.status==="pending"?'<button onclick="reviewTournamentApplication(\''+a.id+'\',\'accepted\')">قبول وتحديد المجموعة</button>':"")+'<button class="secondary" onclick="reviewTournamentApplication(\''+a.id+'\',\'backup\')">احتياط</button><button class="danger" onclick="reviewTournamentApplication(\''+a.id+'\',\'rejected\')">رفض</button></div></div>';
+   return '<div class="card"><b>'+esc(t?.name||"بطولة")+'</b><p>'+esc(a.team_name)+' · '+esc(a.team_tag)+'<br>الممثل: '+esc(a.team_representative)+'<br>الحالة: <b>'+esc(status[a.status]||a.status||"غير محددة")+'</b> · كود الفريق: <code>'+esc(a.access_code||"—")+'</code></p>'+(a.status==="pending"?'<div id="group-picker-'+a.id+'" class="hidden" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:12px"><b>اختار المجموعة لقبول الفريق:</b><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" style="background:#2787ff" onclick="reviewTournamentApplication(\\''+a.id+'\\',\\'accepted\\',\\'A\\')">المجموعة A</button><button type="button" style="background:#20b77a" onclick="reviewTournamentApplication(\\''+a.id+'\\',\\'accepted\\',\\'B\\')">المجموعة B</button><button type="button" style="background:#a477ff" onclick="reviewTournamentApplication(\\''+a.id+'\\',\\'accepted\\',\\'C\\')">المجموعة C</button><button type="button" style="background:#f39a36" onclick="reviewTournamentApplication(\\''+a.id+'\\',\\'accepted\\',\\'D\\')">المجموعة D</button></div></div>':"")+'<div class="row">'+(a.status==="pending"?'<button type="button" onclick="showTournamentGroupOptions(\\''+a.id+'\\')">قبول وتحديد المجموعة</button>':"")+'<button class="secondary" onclick="reviewTournamentApplication(\''+a.id+'\',\'backup\')">احتياط</button><button class="danger" onclick="reviewTournamentApplication(\''+a.id+'\',\'rejected\')">رفض</button></div></div>';
   }).join("");
   const accepted=rows.filter(a=>a.status==="accepted");
   const groupBoards=groups.map(g=>{
@@ -878,10 +878,17 @@ async function loadTournamentApplicationsAdmin(){
   host.innerHTML='<div class="notice">تعذر تحميل طلبات البطولات: '+esc(e?.message||String(e))+'</div><p class="small">اضغط تحديث الطلبات بعد التأكد من اتصال الإنترنت. لم يتم حذف أو تعديل أي طلب.</p>';
  }
 }
-async function reviewTournamentApplication(id,status){
+function showTournamentGroupOptions(id){
+ const picker=$("group-picker-"+id);
+ if(!picker)return;
+ picker.classList.toggle("hidden");
+}
+window.showTournamentGroupOptions=showTournamentGroupOptions;
+
+async function reviewTournamentApplication(id,status,chosenGroup){
  if(!["accepted","backup","rejected","move"].includes(status))return;
  const select=$("tournamentGroup-"+id);
- const group=status==="accepted"||status==="move"?String(select?.value||"").trim():null;
+ const group=status==="accepted"||status==="move"?String(chosenGroup||select?.value||"").trim():null;
  if((status==="accepted"||status==="move")&& !["A","B","C","D"].includes(group)){alert("اختار المجموعة A أو B أو C أو D أولاً.");return;}
  const {error}=await client.rpc("review_tournament_team_application",{
   p_application_id:id,
