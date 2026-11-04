@@ -745,7 +745,8 @@ async function loadTournamentApplicationsAdmin(){
  }).join(""):'<p class="small">لا توجد طلبات تسجيل حتى الآن.</p>');
 }
 async function reviewTournamentApplication(id,status){
- let slot=null;if(status==="accepted"){const {count,error}=await client.from("tournament_team_applications").select("id",{count:"exact",head:true}).eq("status","accepted");if(error){alert(error.message);return;}slot=(count||0)+1;}
+ const {data:application,error:readError}=await client.from("tournament_team_applications").select("tournament_id").eq("id",id).maybeSingle();if(readError||!application){alert("تعذر العثور على طلب التسجيل.");return;}
+ let slot=null;if(status==="accepted"){const {count,error}=await client.from("tournament_team_applications").select("id",{count:"exact",head:true}).eq("tournament_id",application.tournament_id).eq("status","accepted");if(error){alert(error.message);return;}slot=(count||0)+1;}
  const {error}=await client.from("tournament_team_applications").update({status,slot_number:slot,updated_at:new Date().toISOString()}).eq("id",id);
  if(error){alert("تعذر تحديث الطلب: "+error.message);return;}await loadTournamentApplicationsAdmin();
 }
