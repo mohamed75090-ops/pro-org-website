@@ -872,7 +872,7 @@ function recordAnonymousSiteVisit(){
 }
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
- if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);return;}
+ if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);return;}
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
  currentRole=String(profile.role||"").trim().toLowerCase();showStandalonePage("admin");
