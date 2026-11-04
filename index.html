@@ -1004,6 +1004,23 @@ async function saveMonitoringUserRole(){
 }
 window.openMonitoringRoleEditor=openMonitoringRoleEditor;window.closeMonitoringRoleEditor=closeMonitoringRoleEditor;window.saveMonitoringUserRole=saveMonitoringUserRole;
 
+async function loadAdminTournamentManagement(){
+ const host=$("tournamentManagement"),panel=$("managementPanel");
+ if(!host||!panel)return;
+ const allowed=["founder","admin","organizer","tournament_manager"].includes(String(currentRole||"").toLowerCase());
+ panel.classList.toggle("hidden",!allowed);
+ if(!allowed){host.innerHTML="<p class='notice'>لا تملك صلاحية إدارة البطولات.</p>";return;}
+ host.innerHTML="<h3>إدارة البطولات</h3><p class='small'>جاري تحميل البطولات...</p>";
+ const {data,error}=await client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,created_at").order("created_at",{ascending:false});
+ if(error){
+  host.innerHTML='<h3>إدارة البطولات</h3><div class="notice">تعذر تحميل البطولات: <b>'+esc(error.message)+'</b></div><button class="secondary" onclick="loadAdminTournamentManagement()">إعادة المحاولة</button>';
+  return;
+ }
+ tournamentsCache=data||[];
+ host.innerHTML='<div class="row" style="align-items:center;justify-content:space-between"><h3>إدارة البطولات ('+tournamentsCache.length+')</h3><button class="secondary" onclick="loadAdminTournamentManagement()">تحديث القائمة</button></div>'+(tournamentsCache.length?tournamentsCache.map(x=>'<div class="card"><b>'+esc(x.name)+'</b><p>الحالة: '+esc(x.status||"غير محددة")+'</p><div class="row"><button onclick="setTournamentStatus(\\''+x.id+'\\',\\'published\\')">نشر</button><button class="secondary" onclick="setTournamentStatus(\\''+x.id+'\\',\\'paused\\')">إيقاف مؤقت</button><button class="secondary" onclick="setTournamentStatus(\\''+x.id+'\\',\\'draft\\')">إرجاع لمسودة</button><button class="danger" onclick="setTournamentStatus(\\''+x.id+'\\',\\'completed\\')">إنهاء البطولة</button><button class="danger" onclick="deleteTournament(\\''+x.id+'\\',\\''+esc(x.name)+'\\')">حذف البطولة</button></div></div>').join(""):'<p class="notice">لا توجد بطولات في جدول الإدارة.</p>');
+}
+window.loadAdminTournamentManagement=loadAdminTournamentManagement;
+
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
  if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);return;}
@@ -1045,6 +1062,7 @@ async function refreshAdmin(){
  $("aiMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
  $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join("");
  if(!ts.error) $("tournamentManagement").innerHTML="<h3>البطولات</h3>"+(tournamentsCache.length?tournamentsCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setTournamentStatus('${x.id}','published')">نشر</button><button class="secondary" onclick="setTournamentStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setTournamentStatus('${x.id}','draft')">إرجاع لمسودة</button><button class="danger" onclick="setTournamentStatus('${x.id}','completed')">إنهاء البطولة</button><button class="danger" onclick="deleteTournament('${x.id}','${esc(x.name)}')">حذف البطولة</button></div></div>`).join(""):"لا توجد بطولات.");
+ await loadAdminTournamentManagement();
  await loadTournamentApplicationsAdmin();
  $("matchManagement").innerHTML="<h3>الرومات والمباريات</h3>"+(matchesCache.length?matchesCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setMatchStatus('${x.id}','published')">فتح الروم</button><button class="secondary" onclick="setMatchStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setMatchStatus('${x.id}','draft')">مسودة</button><button class="danger" onclick="setMatchStatus('${x.id}','completed')">إنهاء</button></div></div>`).join(""):"لا توجد مباريات.");
  const canReview=["founder","admin","results_manager"].includes(currentRole);
@@ -1532,6 +1550,7 @@ function setupAdminMainTabs(){
   Object.entries(panels).forEach(([key,panel])=>{if(panel)panel.classList.toggle("hidden",key!==name);});
   if(name==="rooms"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();if(roomPanel)roomPanel.classList.remove("hidden");}
   if(name==="scrims"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();}
+  if(name==="tournaments"&&currentRole)loadAdminTournamentManagement();
   window.scrollTo({top:0,behavior:"smooth"});
  }
  buttons.forEach(b=>b.addEventListener("click",()=>activate(b.dataset.adminMainTab)));
