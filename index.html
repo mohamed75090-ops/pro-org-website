@@ -318,6 +318,14 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  .role-user-row select{margin:0}.role-user-row button{white-space:nowrap}
  @media(max-width:600px){.role-user-row{grid-template-columns:1fr 1fr}.role-user-row .role-user-meta{grid-column:1/-1}.role-user-row button{grid-column:1/-1}}
  .tournament-public-card{display:flex;flex-direction:column;gap:10px}.tournament-public-card .notice{margin:0}
+ .role-directory-card{border:1px solid #3a414d;background:linear-gradient(145deg,#171a20,#101216);border-radius:15px;padding:17px;min-width:0}
+ .role-directory-card h3{margin:0;color:var(--gold2);display:flex;justify-content:space-between;gap:10px;align-items:center}
+ .role-directory-count{font-size:13px;padding:4px 10px;border-radius:20px;background:#ffffff10;color:#fff}
+ .role-directory-names{display:grid;gap:8px;margin-top:13px}
+ .role-directory-name{padding:9px 11px;border:1px solid #ffffff12;border-radius:9px;background:#ffffff08;overflow-wrap:anywhere}
+ .monitoring-user-action{background:#1b2938;border:1px solid #49627a;color:#eaf2fb;padding:7px 10px;border-radius:8px;font-weight:700}
+ #siteMonitoringRoleEditor{border:1px solid #80612e;background:#211b11;border-radius:12px;padding:14px;margin:12px 0}
+ #siteMonitoringRoleEditor .row{align-items:end}
 </style>
 </head>
 <body>
@@ -338,6 +346,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
     <button type="button" onclick="openTournamentsPage();closeSiteMenu()"><span>🏆</span> البطولات</button>
     <a href="#resultsSection"><span>▤</span> النتائج</a>
     <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
+    <button type="button" class="admin-menu-link hidden" id="roleManagementMenu"><span>♙</span> إدارة الرولات والصلاحيات</button>
     <div class="menu-divider"></div>
     <button type="button" id="playerRegisterMenu"><span>＋</span> إنشاء حساب لاعب</button>
     <button type="button" class="admin-menu-link" id="loginToggle"><span>♙</span> دخول المشرفين</button>
@@ -460,8 +469,13 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="card"><div class="muted">مرات تسجيل الدخول</div><h2 id="siteLoginTotal">—</h2><small id="siteLoginToday" class="muted">اليوم: —</small></div>
   <div class="card"><div class="muted">زيارات بدون تسجيل دخول</div><h2 id="siteAnonymousTotal">—</h2><small id="siteAnonymousToday" class="muted">اليوم: —</small></div>
  </div>
- <div class="card"><h3>حسابات المستخدمين</h3><p class="small">رقم الواتساب يظهر هنا بعد إضافته للحساب. التحقق عبر واتساب سيتم تفعيله في مرحلة الربط القادمة.</p><div id="siteMonitoringAccounts" class="muted">اضغط تحديث البيانات لتحميل الحسابات.</div></div>
+ <div class="card"><h3>حسابات المستخدمين</h3><p class="small">اضغط على المستخدم لعرض خيار إعطائه رول. إدارة الصلاحيات متاحة للمالك فقط.</p><div id="siteMonitoringRoleEditor" class="hidden"></div><div id="siteMonitoringAccounts" class="muted">اضغط تحديث البيانات لتحميل الحسابات.</div></div>
  <div class="notice small">الزيارات بدون تسجيل دخول تُحسب كمتصفح فريد في اليوم، باستخدام معرّف عشوائي محفوظ على جهاز الزائر. لا يتم جمع عنوان IP أو عرض هوية الزوار المجهولين.</div>
+</section>
+<section id="roleManagementPage" class="section hidden">
+ <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الموقع</button>
+ <div class="section-heading"><div><span class="pill">FOUNDER CONTROL</span><h2>إدارة الرولات والصلاحيات</h2><p>عرض جميع الرولات وعدد الحسابات والأسماء المسجلة تحت كل رول. إدارة الصلاحيات متاحة من متابعة الموقع للمالك فقط.</p></div><button type="button" class="secondary" id="refreshRoleDirectory">تحديث القائمة</button></div>
+ <div id="roleDirectoryStatus" class="notice">جاري تحميل الرولات...</div><div id="roleDirectoryList" class="grid"></div>
 </section>
 <section id="admin" class="hidden">
  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
@@ -472,7 +486,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <button type="button" class="admin-tab" data-admin-main-tab="tournaments">البطولات</button>
   <button type="button" class="admin-tab" data-admin-main-tab="results">النتائج</button>
   <button type="button" class="admin-tab" data-admin-main-tab="mvp">MVP</button>
-  <button type="button" class="admin-tab hidden" id="roleManagementTab" data-admin-main-tab="roles">إدارة الرولات والصلاحيات</button>
+  
  </nav>
  <div id="adminMainScrims" class="admin-main-panel">
  <div id="teamForm" class="card hidden"><h2>إضافة فريق</h2><label>اسم الفريق</label><input id="teamName"><label>اختصار الفريق (TAG)</label><input id="teamTag"><button id="addTeam">حفظ الفريق</button></div>
@@ -578,12 +592,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
    <div id="top3MvpStatus" class="notice">حفظ ونشر قائمة أفضل 3 بشكل مستقل عن لاعب MVP.</div>
   </div>
  </div>
- <div id="adminMainRoles" class="admin-main-panel hidden">
-  <div class="card role-management-hero"><span class="pill">FOUNDER CONTROL</span><h2>إدارة الرولات والصلاحيات</h2><p class="small">هذه الصفحة للمؤسس فقط. تغيير أي صلاحية يتم التحقق منه داخل قاعدة البيانات، وليس من واجهة الموقع فقط.</p><div class="role-legend">
-   <span class="role-chip role-founder">المؤسس</span><span class="role-chip role-admin">المشرف العام</span><span class="role-chip role-organizer">المنظّم</span><span class="role-chip role-results">مدير النتائج</span><span class="role-chip role-tournament">مدير البطولات</span><span class="role-chip role-player">لاعب</span>
-  </div></div>
-  <div class="card"><div class="row" style="justify-content:space-between"><h3>حسابات المستخدمين</h3><button type="button" class="secondary" id="refreshRoleUsers">تحديث القائمة</button></div><p class="small">اختر الرول المناسب لكل حساب ثم اضغط حفظ. لا يمكن لأي رول غير المؤسس تغيير الصلاحيات.</p><div id="roleManagementStatus" class="notice">جاري تحميل الحسابات...</div><div id="roleManagementUsers"></div></div>
- </div>
+
 
  </div>
 
@@ -896,8 +905,8 @@ function startTeamApplicationNotifications(){
  },30000);
 }
 async function loadSiteMonitoring(){
- const host=$("siteMonitoringAccounts");
- host.textContent="جاري تحميل إحصائيات الموقع...";
+ const host=$("siteMonitoringAccounts");host.textContent="جاري تحميل إحصائيات الموقع...";
+ $("siteMonitoringRoleEditor").classList.add("hidden");
  const {data,error}=await client.rpc("get_site_analytics");
  if(error){host.textContent="تعذر تحميل المتابعة: "+error.message+" — تأكد من تنفيذ ملف إعداد متابعة الموقع في Supabase.";return;}
  const stats=data||{};
@@ -908,15 +917,16 @@ async function loadSiteMonitoring(){
  $("siteAnonymousToday").textContent="اليوم: "+Number(stats.anonymous_visits_today||0).toLocaleString("en-US");
  const rows=Array.isArray(stats.accounts)?stats.accounts:[];
  if(!rows.length){host.innerHTML='<div class="notice">لا توجد حسابات مسجلة حتى الآن.</div>';return;}
- host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم المستخدم</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th></tr></thead><tbody>'+
+ host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم المستخدم</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th><th>إدارة</th></tr></thead><tbody>'+
  rows.map(account=>{
-  const phone=String(account.whatsapp_number||"");
-  const digits=phone.replace(/[^0-9]/g,"");
+  const phone=String(account.whatsapp_number||""),digits=phone.replace(/[^0-9]/g,"");
   const verified=account.whatsapp_verified?'<span class="success">موثّق</span>':'<span class="muted">غير موثّق</span>';
   const contact=digits?'<a class="secondary" style="display:inline-block;padding:8px 12px;text-decoration:none" href="https://wa.me/'+esc(digits)+'" target="_blank" rel="noopener noreferrer">فتح واتساب</a>':'<span class="muted">لا يوجد رقم</span>';
-  return '<tr><td>'+esc(account.username||account.display_name||"مستخدم")+'</td><td dir="ltr">'+esc(phone||"—")+'</td><td>'+verified+'</td><td>'+contact+'</td></tr>';
+  const action=currentRole==="founder"?'<button type="button" class="monitoring-user-action" onclick="openMonitoringRoleEditor(\''+esc(account.id)+'\',\''+esc(account.display_name||account.username||"مستخدم")+'\')">إعطاء رول</button>':'<span class="muted">—</span>';
+  return '<tr><td>'+esc(account.display_name||account.username||"مستخدم")+'</td><td dir="ltr">'+esc(phone||"—")+'</td><td>'+verified+'</td><td>'+contact+'</td><td>'+action+'</td></tr>';
  }).join("")+'</tbody></table></div>';
 }
+
 function recordAnonymousSiteVisit(){
  try{
   const key="pro_org_visitor_id_v1";
@@ -927,50 +937,63 @@ function recordAnonymousSiteVisit(){
   });
  }catch(error){console.warn("Anonymous visit tracking unavailable:",error?.message||error);}
 }
+let roleManagementCache=[];
+const ROLE_DEFINITIONS=[["founder","المؤسس","role-founder"],["admin","المشرف العام","role-admin"],["organizer","المنظّم","role-organizer"],["results_manager","مدير النتائج","role-results"],["tournament_manager","مدير البطولات","role-tournament"],["player","لاعب","role-player"]];
+async function fetchRoleUsers(){
+ if(currentRole!=="founder")throw new Error("هذه الصفحة للمؤسس فقط.");
+ const {data,error}=await client.rpc("get_role_management_users");if(error)throw error;
+ roleManagementCache=Array.isArray(data)?data:[];return roleManagementCache;
+}
 async function loadRoleManagement(){
- const host=$("roleManagementUsers"),status=$("roleManagementStatus");
- if(currentRole!=="founder"){if(host)host.innerHTML="";if(status)status.textContent="غير مصرح.";return;}
- status.textContent="جاري تحميل الحسابات...";
- const {data,error}=await client.rpc("get_role_management_users");
- if(error){status.textContent="تعذر تحميل الحسابات: "+error.message+" — تأكد من تنفيذ ملف role_management_setup.sql في Supabase.";host.innerHTML="";return;}
- const users=Array.isArray(data)?data:[];
- if(!users.length){status.textContent="لا توجد حسابات لعرضها.";host.innerHTML="";return;}
- status.textContent="عدد الحسابات: "+users.length;
- const roles=[["player","لاعب"],["organizer","المنظّم"],["results_manager","مدير النتائج"],["tournament_manager","مدير البطولات"],["admin","المشرف العام"],["founder","المؤسس"]];
- const cls={player:"role-player",organizer:"role-organizer",results_manager:"role-results",tournament_manager:"role-tournament",admin:"role-admin",founder:"role-founder"};
- host.innerHTML=users.map((u,i)=>{
-  const role=String(u.role||"player");
-  const opts=roles.map(([v,label])=>'<option value="'+v+'" '+(role===v?"selected":"")+'>'+label+'</option>').join("");
-  return '<div class="role-user-row"><div class="role-user-meta"><div class="role-user-name">'+esc(u.display_name||"مستخدم")+'</div><div class="role-user-id">'+esc(u.id)+'</div><span class="role-chip '+(cls[role]||"role-player")+'">'+esc(roles.find(x=>x[0]===role)?.[1]||role)+'</span></div><select id="roleSelect_'+i+'" aria-label="الصلاحية الجديدة">'+opts+'</select><button type="button" onclick="saveManagedRole('+i+')">حفظ الصلاحية</button><input type="hidden" id="roleUser_'+i+'" value="'+esc(u.id)+'"></div>';
- }).join("");
+ const status=$("roleDirectoryStatus"),host=$("roleDirectoryList");
+ if(currentRole!=="founder"){status.textContent="غير مصرح.";host.innerHTML="";return;}
+ status.textContent="جاري تحميل الرولات والحسابات...";
+ try{
+  const users=await fetchRoleUsers();status.textContent="إجمالي الحسابات: "+users.length+" · عدد الرولات: "+ROLE_DEFINITIONS.length;
+  host.innerHTML=ROLE_DEFINITIONS.map(([key,label,cls])=>{
+   const members=users.filter(u=>String(u.role||"player").toLowerCase()===key);
+   return '<article class="role-directory-card"><h3><span class="role-chip '+cls+'">'+label+'</span><span class="role-directory-count">'+members.length+' شخص</span></h3><div class="role-directory-names">'+(members.length?members.map(u=>'<div class="role-directory-name">'+esc(u.display_name||u.username||"مستخدم")+'</div>').join(""):'<div class="small">لا يوجد أشخاص بهذا الرول حالياً.</div>')+'</div></article>';
+  }).join("");
+ }catch(error){status.textContent="تعذر تحميل الرولات: "+(error.message||error);host.innerHTML="";}
 }
-async function saveManagedRole(index){
- if(currentRole!=="founder"){alert("هذه الصلاحية للمؤسس فقط.");return;}
- const userId=$("roleUser_"+index)?.value,role=$("roleSelect_"+index)?.value;
- if(!userId||!role)return;
- if(!confirm("تأكيد تغيير صلاحية هذا الحساب؟"))return;
+function openRoleManagementPage(){if(currentRole!=="founder"){alert("إدارة الرولات متاحة للمالك فقط.");return;}showStandalonePage("roleManagementPage");loadRoleManagement();}
+async function openMonitoringRoleEditor(userId,displayName){
+ if(currentRole!=="founder"){alert("إعطاء الرولات متاح للمالك فقط.");return;}
+ const panel=$("siteMonitoringRoleEditor");
+ try{
+  const users=roleManagementCache.length?roleManagementCache:await fetchRoleUsers(),user=users.find(u=>String(u.id)===String(userId));
+  if(!user){alert("لم يتم العثور على حساب المستخدم. حدّث متابعة الموقع وحاول مرة أخرى.");return;}
+  const role=String(user.role||"player"),options=ROLE_DEFINITIONS.map(([key,label])=>'<option value="'+key+'" '+(key===role?"selected":"")+'>'+label+'</option>').join("");
+  panel.innerHTML='<div class="row" style="justify-content:space-between"><b>تغيير رول المستخدم: '+esc(displayName||user.display_name||"مستخدم")+'</b><button type="button" class="secondary" onclick="closeMonitoringRoleEditor()">إغلاق</button></div><input type="hidden" id="monitoringRoleUserId" value="'+esc(userId)+'"><label for="monitoringRoleSelect">الرول الجديد</label><select id="monitoringRoleSelect">'+options+'</select><button type="button" onclick="saveMonitoringUserRole()">حفظ الرول</button>';
+  panel.classList.remove("hidden");panel.scrollIntoView({behavior:"smooth",block:"nearest"});
+ }catch(error){alert("تعذر تحميل بيانات المستخدم: "+(error.message||error));}
+}
+function closeMonitoringRoleEditor(){$("siteMonitoringRoleEditor").classList.add("hidden");}
+async function saveMonitoringUserRole(){
+ if(currentRole!=="founder"){alert("هذه الصلاحية للمالك فقط.");return;}
+ const userId=$("monitoringRoleUserId")?.value,role=$("monitoringRoleSelect")?.value;if(!userId||!role)return;
+ if(!confirm("تأكيد تغيير رول المستخدم؟"))return;
  const {error}=await client.rpc("set_user_role",{p_user_id:userId,p_role:role});
- if(error){alert("تعذر تغيير الصلاحية: "+error.message);return;}
- alert("تم تحديث الصلاحية بنجاح.");
- await loadRoleManagement();
+ if(error){alert("تعذر تغيير الرول: "+error.message);return;}
+ alert("تم تحديث رول المستخدم بنجاح.");roleManagementCache=[];await loadSiteMonitoring();await loadRoleManagement();
 }
-window.saveManagedRole=saveManagedRole;
-$("refreshRoleUsers").onclick=loadRoleManagement;
+window.openMonitoringRoleEditor=openMonitoringRoleEditor;window.closeMonitoringRoleEditor=closeMonitoringRoleEditor;window.saveMonitoringUserRole=saveMonitoringUserRole;
 
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
- if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);return;}
+ if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);return;}
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
  currentRole=String(profile.role||"").trim().toLowerCase();
  if(!["founder","admin","organizer","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);returnToPublicPages();return;}
  showStandalonePage("admin");
  show("siteMonitoringMenu",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
+ show("roleManagementMenu",currentRole==="founder");
  const roleMeta={founder:["المؤسس","role-founder"],admin:["المشرف العام","role-admin"],organizer:["المنظّم","role-organizer"],results_manager:["مدير النتائج","role-results"],tournament_manager:["مدير البطولات","role-tournament"],player:["لاعب","role-player"]};
  const activeRole=roleMeta[currentRole]||[currentRole,"role-player"];
  $("who").innerHTML=esc(profile.display_name||user.email)+" <span class=\"role-badge "+activeRole[1]+"\">"+esc(activeRole[0])+"</span>";
  $("roleNote").innerHTML="الصلاحية الحالية: <span class=\"role-badge "+activeRole[1]+"\">"+esc(activeRole[0])+"</span>";
- show("roleManagementTab",currentRole==="founder");
+
  document.querySelectorAll("[data-admin-main-tab]").forEach(tab=>{if(tab.dataset.adminMainTab==="results"||tab.dataset.adminMainTab==="mvp")tab.classList.toggle("hidden",currentRole==="organizer");});
  show("teamForm",["founder","admin","organizer"].includes(currentRole));
  show("tournamentForm",["founder","admin","organizer","tournament_manager"].includes(currentRole));
@@ -1076,6 +1099,8 @@ $("playerRegisterForm").onsubmit=async(event)=>{
  finally{button.disabled=false;button.textContent="إنشاء الحساب";}
 };
 $("siteMonitoringMenu").onclick=()=>{closeSiteMenu();showStandalonePage("siteMonitoringPage");loadSiteMonitoring();};
+$("roleManagementMenu").onclick=()=>{closeSiteMenu();openRoleManagementPage();};
+$("refreshRoleDirectory").onclick=loadRoleManagement;
 $("refreshSiteMonitoring").onclick=loadSiteMonitoring;
 $("closeLogin").onclick=returnToPublicPages;
 $("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
@@ -1145,11 +1170,11 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
- ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1441,7 +1466,7 @@ function setupAdminScrimTabs(){
 setupAdminScrimTabs();
 function setupAdminMainTabs(){
  const buttons=document.querySelectorAll("[data-admin-main-tab]");
- const panels={scrims:$("adminMainScrims"),rooms:$("adminMainRooms"),tournaments:$("adminMainTournaments"),results:$("adminMainResults"),mvp:$("adminMainMvp"),roles:$("adminMainRoles")};
+ const panels={scrims:$("adminMainScrims"),rooms:$("adminMainRooms"),tournaments:$("adminMainTournaments"),results:$("adminMainResults"),mvp:$("adminMainMvp")};
  const roomPanel=$("adminTabRooms");
  const roomHost=$("adminRoomsContent");
  if(roomPanel&&roomHost&&roomPanel.parentElement!==roomHost){roomHost.appendChild(roomPanel);roomPanel.classList.remove("hidden");}
