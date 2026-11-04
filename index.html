@@ -799,9 +799,9 @@ function tournamentRegistrationState(t){
 function tournamentCardHTML(t){
  const state=tournamentRegistrationState(t),max=Math.max(1,Number(t.max_teams)||25);
  const poster=t.poster_url?'<img src="'+esc(t.poster_url)+'" alt="إعلان '+esc(t.name)+'" data-open-tournament="'+t.id+'" class="tournament-promo-poster">':'<div class="tournament-promo-poster tournament-promo-placeholder" data-open-tournament="'+t.id+'">🏆</div>';
- const close=t.registration_closes_at?new Date(t.registration_closes_at).getTime():0;
- const badge=state.open?'<span class="tournament-state-open">● OPEN</span>':'<span class="tournament-state-closed">● CLOSED</span>';
- return '<article class="tournament-promo-card" data-tournament-card="'+t.id+'">'+poster+'<div class="tournament-promo-body"><div class="tournament-promo-top">'+badge+'<span class="tournament-promo-kicker">OFFICIAL TOURNAMENT</span></div><h3>'+esc(t.name)+'</h3><p class="tournament-promo-description">'+esc((t.description||"").slice(0,180))+'</p><div class="tournament-countdown-wrap"><span>REGISTRATION CLOSES IN</span><b data-tournament-countdown="'+t.id+'" data-close-at="'+(close||"")+'">'+(close? "Calculating..." : "No closing date")+'</b></div><div class="tournament-capacity"><div><span>REGISTERED TEAMS</span><b><span data-registered-count="'+t.id+'">0</span> / '+max+'</b></div><span data-team-percent="'+t.id+'">0%</span></div><div class="tournament-progress"><i data-team-progress="'+t.id+'" style="width:0%"></i></div><div class="tournament-promo-actions"><button type="button" data-open-tournament="'+t.id+'">عرض البطولة</button><button type="button" class="secondary" data-register-tournament="'+t.id+'" '+(state.open?"":"disabled")+'>'+(state.open?"سجل فريقك الآن":"التسجيل مغلق")+'</button></div><div class="tournament-public-teams" data-public-teams="'+t.id+'"></div></div></article>';
+ const close=t.registration_closes_at?new Date(t.registration_closes_at).getTime():0,opens=t.registration_opens_at?new Date(t.registration_opens_at).getTime():0;
+ const badge=state.open?'<span class="tournament-state-open" data-tournament-state="'+t.id+'">● OPEN</span>':'<span class="tournament-state-closed" data-tournament-state="'+t.id+'">● CLOSED</span>';
+ return '<article class="tournament-promo-card" data-tournament-card="'+t.id+'">'+poster+'<div class="tournament-promo-body"><div class="tournament-promo-top">'+badge+'<span class="tournament-promo-kicker">OFFICIAL TOURNAMENT</span></div><h3>'+esc(t.name)+'</h3><p class="tournament-promo-description">'+esc((t.description||"").slice(0,180))+'</p><div class="tournament-countdown-wrap"><span data-tournament-countdown-label="'+t.id+'">REGISTRATION CLOSES IN</span><b data-tournament-countdown="'+t.id+'" data-open-at="'+(opens||"")+'" data-close-at="'+(close||"")+'">'+(close? "Calculating..." : "No closing date")+'</b></div><div class="tournament-capacity"><div><span>REGISTERED TEAMS</span><b><span data-registered-count="'+t.id+'">0</span> / '+max+'</b></div><span data-team-percent="'+t.id+'">0%</span></div><div class="tournament-progress"><i data-team-progress="'+t.id+'" style="width:0%"></i></div><div class="tournament-promo-actions"><button type="button" data-open-tournament="'+t.id+'">عرض البطولة</button><button type="button" class="secondary" data-register-tournament="'+t.id+'" '+(state.open?"":"disabled")+'>'+(state.open?"سجل فريقك الآن":"التسجيل مغلق")+'</button></div><div class="tournament-public-teams" data-public-teams="'+t.id+'"></div></div></article>';
 }
 async function loadPublicTournamentStats(rows){
  await Promise.all((rows||[]).map(async t=>{
@@ -824,14 +824,18 @@ async function loadPublicTournamentStats(rows){
  }));
 }
 function updateTournamentCountdowns(){
- document.querySelectorAll("[data-tournament-countdown]").forEach(el=>{
-  const end=Number(el.dataset.closeAt);if(!end){el.textContent="No closing date";return;}
-  let left=Math.max(0,end-Date.now());
-  if(left<=0){el.textContent="REGISTRATION CLOSED";const id=el.dataset.tournamentCountdown;document.querySelectorAll('[data-tournament-card="'+id+'"] [data-register-tournament]').forEach(b=>{b.disabled=true;b.textContent="التسجيل مغلق";});return;}
-  const days=Math.floor(left/86400000);left%=86400000;const hours=Math.floor(left/3600000);left%=3600000;const mins=Math.floor(left/60000);const secs=Math.floor((left%60000)/1000);
-  el.textContent=[days,hours,mins,secs].map(v=>String(v).padStart(2,"0")).join(" : ");
+ document.querySelectorAll('[data-tournament-countdown]').forEach(el=>{
+  const now=Date.now(),id=el.dataset.tournamentCountdown,openAt=Number(el.dataset.openAt),end=Number(el.dataset.closeAt);
+  const state=document.querySelector('[data-tournament-state="'+id+'"]),label=document.querySelector('[data-tournament-countdown-label="'+id+'"]');
+  const card=document.querySelector('[data-tournament-card="'+id+'"]),button=card?.querySelector('[data-register-tournament]');
+  if(openAt&&now<openAt){if(state){state.className='tournament-state-closed';state.textContent='● UPCOMING';}if(label)label.textContent='REGISTRATION OPENS IN';el.textContent=formatTournamentCountdown(openAt-now);if(button){button.disabled=true;button.textContent='يفتح التسجيل قريباً';}return;}
+  if(state){state.className='tournament-state-open';state.textContent='● OPEN';}if(label)label.textContent='REGISTRATION CLOSES IN';
+  if(end&&now>=end){el.textContent='REGISTRATION CLOSED';if(state){state.className='tournament-state-closed';state.textContent='● CLOSED';}if(button){button.disabled=true;button.textContent='التسجيل مغلق';}return;}
+  if(end)el.textContent=formatTournamentCountdown(end-now);else if(!el.textContent||el.textContent==='Calculating...')el.textContent='No closing date';
+  if(button&&button.textContent==='يفتح التسجيل قريباً'){button.disabled=false;button.textContent='سجل فريقك الآن';}
  });
 }
+function formatTournamentCountdown(ms){let left=Math.max(0,ms),days=Math.floor(left/86400000);left%=86400000;const hours=Math.floor(left/3600000);left%=3600000;const mins=Math.floor(left/60000),secs=Math.floor((left%60000)/1000);return [days,hours,mins,secs].map(v=>String(v).padStart(2,'0')).join(' : ');}
 if(!window.tournamentCountdownTimer)window.tournamentCountdownTimer=window.setInterval(updateTournamentCountdowns,1000);
 document.addEventListener("click",event=>{
  const register=event.target.closest("[data-register-tournament]");
