@@ -463,20 +463,32 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
     <h2 style="margin:0">إدخال النتائج بالذكاء الاصطناعي</h2>
     <p class="small" style="margin:6px 0 0">أولاً: ارفع صور نتائج الروم لتحليلها ومراجعتها قبل الحفظ.</p>
    </div>
-   <div id="aiScanner" class="card hidden">
-    <h2>AI ROOM SCANNER</h2>
-    <p class="muted">ارفع صور نتائج الروم، وسيقرأ الذكاء الاصطناعي المراكز وأسماء اللاعبين وKills كل لاعب.</p>
-    <label>المباراة</label><select id="aiMatch"></select>
-    <label>صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
-    <div class="small">كل صورة يفترض أن تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع كل صور المباراة معاً.</div>
-    <button id="scanImages">تحليل الصور بالذكاء الاصطناعي</button>
-    <div id="aiStatus" class="notice">النتائج المستخرجة ستظهر هنا للمراجعة.</div><div id="aiOutput"></div>
+   <div id="aiScanner" class="card hidden" style="border:1px solid #45647d;background:linear-gradient(145deg,#142333,#10151d);padding:22px">
+    <h2>AI ROOM SCANNER — تحليل نتائج الروم</h2>
+    <p class="small">ارفع صور شاشة النتائج للمباراة، وسيستخرج النظام المراكز وأسماء اللاعبين وعدد Kills لكل لاعب. راجع البيانات المستخرجة قبل اعتمادها.</p>
+    <label>1) اختر المباراة</label><select id="aiMatch"></select>
+    <label>2) ارفع صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
+    <div class="notice">إرشادات الصور: كل صورة تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع جميع صور المباراة معاً وبجودة واضحة.</div>
+    <button id="scanImages">بدء تحليل الصور بالذكاء الاصطناعي</button>
+    <div id="aiStatus" class="notice">بانتظار الصور — ستظهر هنا حالة التحليل، ثم تظهر النتائج المستخرجة للمراجعة.</div>
+    <div id="aiOutput"></div>
    </div>
    <div class="card" style="border:1px solid var(--line);margin:18px 0 14px">
     <h2 style="margin:0">إدخال النتائج يدوياً</h2>
     <p class="small" style="margin:6px 0 0">ثانياً: أدخل نتيجة الفريق مباشرةً باختيار المباراة والفريق والمركز وعدد الإقصاءات.</p>
    </div>
-   <div id="resultForm" class="card hidden"><h2>بيانات النتيجة اليدوية</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
+   <div id="resultForm" class="card hidden" style="border:1px solid #66532d;background:linear-gradient(145deg,#211b11,#111318);padding:22px">
+    <h2>إدخال النتائج يدوياً — Manual Results</h2>
+    <p class="small">أدخل نتيجة كل فريق في المباراة، وسيحسب النظام نقاط المركز وKills والمجموع تلقائياً.</p>
+    <label>1) المباراة</label><select id="resultMatch"></select>
+    <label>2) الفريق</label><select id="resultTeam"></select>
+    <label>3) المركز النهائي</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1">
+    <label>4) عدد Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات">
+    <label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly>
+    <div class="notice" id="scorePreview">نقاط الترتيب: 0 + نقاط Kills: 0 = المجموع النهائي: 0 نقطة</div>
+    <div class="small">جدول نقاط الترتيب: المركز 1 = 10، المركز 2 = 6، المركز 3 = 5، المركز 4 = 4، المركز 5 = 3، المركز 6 = 2، المركز 7 = 1، ومن المركز 8 فما فوق = 0. كل Kill = نقطة واحدة.</div>
+    <button id="addResult">حفظ النتيجة كمعلّقة للمراجعة</button>
+   </div>
    <div class="card"><h2>مراجعة النتائج المعلّقة</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
   </div>
  <div id="adminMainMvp" class="admin-main-panel hidden">
@@ -828,8 +840,8 @@ async function refreshAdmin(){
  show("scrimAdmin",["founder","admin","tournament_manager"].includes(currentRole));
  if(["founder","admin","tournament_manager"].includes(currentRole)){ await loadTeamApplicationsAdmin(); await loadScrimAdmin(); }
  if(["founder","admin","tournament_manager"].includes(currentRole)) startTeamApplicationNotifications();
- show("resultForm",["founder","admin","results_manager"].includes(currentRole));
- show("aiScanner",["founder","admin","results_manager"].includes(currentRole));
+ show("resultForm",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
+ show("aiScanner",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  show("weeklyMvpAdmin",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  if(["founder","admin","results_manager","tournament_manager"].includes(currentRole)) await loadWeeklyMvpAdmin();
  const [ts,ms,tm,rs]=await Promise.all([
