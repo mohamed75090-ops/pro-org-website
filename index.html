@@ -355,6 +355,60 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .home-intro-mark small{margin-top:12px;color:#aeb5c0;font-size:9px;font-weight:800;letter-spacing:2px;direction:ltr}
 .site-status{display:none!important}
 @media(max-width:650px){.home-intro{min-height:0;padding:24px 20px}.home-intro-mark{flex-basis:105px;min-height:110px;border-radius:14px}.home-intro-mark span{font-size:48px}.home-intro-mark small{font-size:7px;letter-spacing:1px}.home-intro p{font-size:13px}.home-intro-actions button{flex:1;min-width:135px}}
+
+/* Homepage layout refinement: compact intro/MVP and requested section order */
+.home-intro{min-height:0;margin:14px 0 22px;padding:clamp(18px,3vw,30px);gap:18px}
+.home-intro h2{font-size:clamp(25px,4vw,38px);margin:7px 0}
+.home-intro p{font-size:13px;line-height:1.7;margin-bottom:13px}
+.home-intro-mark{flex-basis:min(24%,210px);min-height:125px}
+.home-intro-mark span{font-size:clamp(48px,7vw,78px)}
+.home-intro-mark small{margin-top:7px;font-size:8px}
+.team-center-entry{border-color:#42617f!important;background:linear-gradient(120deg,#142536,#111923)!important;padding:14px 17px!important}
+.team-center-entry h3{color:#8fd8ff}
+#scrimPublic{margin-bottom:0}
+#tournamentSection{margin-top:22px}
+.mvp-feature{min-height:440px!important;margin:22px 0 24px!important;border-radius:19px}
+.mvp-feature-inner{min-height:440px!important}
+.mvp-feature:after{inset:7px;border-radius:13px}
+.mvp-kicker{top:22px;left:clamp(20px,4vw,42px);font-size:9px}
+.mvp-title{top:48px;left:clamp(20px,4vw,42px);font-size:clamp(34px,5vw,58px)}
+.mvp-photo-wrap{height:440px}
+.mvp-feature-copy{bottom:16px;padding-bottom:5px}
+.mvp-player-name{font-size:clamp(28px,4vw,46px)}
+.mvp-stats{margin:11px auto 8px;gap:8px}
+.mvp-stat{padding:9px 12px}
+.mvp-stat b{font-size:clamp(23px,3vw,32px)}
+.mvp-top3{gap:10px;margin:12px 0 20px}
+.mvp-rank-card{grid-template-columns:82px minmax(0,1fr);gap:9px;padding:9px}
+.mvp-rank-card img{height:96px}
+.mvp-rank-card b{font-size:14px}
+.mvp-rank-stats{gap:8px;font-size:10px}
+@media(max-width:700px){
+ .home-intro{min-height:0;padding:17px 15px;gap:12px;margin:10px 0 18px}
+ .home-intro h2{font-size:25px}
+ .home-intro p{font-size:12px;line-height:1.65;margin-bottom:10px}
+ .home-intro-mark{flex-basis:88px;min-height:88px}
+ .home-intro-mark span{font-size:40px}
+ .home-intro-mark small{font-size:6px;letter-spacing:.6px}
+ .home-intro-actions button{padding:9px 11px;font-size:12px}
+ .mvp-feature{min-height:450px!important;margin:17px 0 20px!important}
+ .mvp-feature-inner{min-height:450px!important}
+ .mvp-kicker{top:19px;font-size:7px}
+ .mvp-title{top:43px;font-size:clamp(32px,9vw,45px)}
+ .mvp-photo-wrap{inset:92px 0 118px;height:auto}
+ .mvp-feature-copy{bottom:13px;width:96%;padding:0 8px 5px}
+ .mvp-feature-copy:before{margin-bottom:7px;padding:6px 9px;font-size:7px}
+ .mvp-player-name{font-size:clamp(25px,7vw,35px)}
+ .mvp-player-team{font-size:9px}
+ .mvp-stats{margin:9px auto 7px;gap:6px}
+ .mvp-stat{padding:7px 5px}
+ .mvp-stat b{font-size:22px}
+ .mvp-stat span{font-size:7px}
+ .mvp-top3{grid-template-columns:1fr;gap:8px}
+ .mvp-rank-card{grid-template-columns:76px 1fr;padding:8px}
+ .mvp-rank-card img{height:84px}
+}
+
 </style>
 </head>
 <body>
@@ -435,10 +489,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="home-intro-mark" aria-hidden="true"><span>PRO</span><small>COMPETE · PERFORM · WIN</small></div>
  </section>
 
- <div class="card team-center-entry" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:18px 0"><div><h3 style="margin:0 0 6px">مركز الفريق</h3><p class="small" style="margin:0">تابع حالة تسجيل فريقك وبيانات المباريات باستخدام كود الفريق، حتى بعد انتهاء السكريم.</p></div><button type="button" onclick="openTeamCenterPage()">فتح مركز الفريق</button></div>
  <div id="tournaments" class="hidden"></div><div id="teams" class="hidden"></div>
- <div class="section-heading" id="tournamentSection"><div><span class="pill">OFFICIAL TOURNAMENTS</span><h2>البطولات</h2><p>إعلانات البطولات الرسمية. افتح أي بطولة لمعرفة التفاصيل والتسجيل.</p></div></div>
- <div id="publicTournaments" class="grid"><div class="card">جاري تحميل البطولات...</div></div>
  <section id="scrimPublic" class="section">
  <div class="section-heading"><div><span class="pill">PRO SCRIMS</span><h2>السكريمات القادمة</h2><p>فعاليات مستقلة عن البطولات.</p></div></div>
  <div id="publicScrims" class="grid"><div class="card">جاري تحميل السكريمات...</div></div>
@@ -451,6 +502,10 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div id="teamScrimStatus" class="notice">جاري تحميل طلبات فريقك...</div>
  </div>
 </section>
+
+ <div class="card team-center-entry" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:16px 0"><div><h3 style="margin:0 0 6px">مركز الفريق</h3><p class="small" style="margin:0">تابع حالة تسجيل فريقك وبيانات المباريات باستخدام كود الفريق، حتى بعد انتهاء السكريم.</p></div><button type="button" onclick="openTeamCenterPage()">فتح مركز الفريق</button></div>
+ <div class="section-heading" id="tournamentSection"><div><span class="pill">OFFICIAL TOURNAMENTS</span><h2>البطولات</h2><p>إعلانات البطولات الرسمية. افتح أي بطولة لمعرفة التفاصيل والتسجيل.</p></div></div>
+ <div id="publicTournaments" class="grid"><div class="card">جاري تحميل البطولات...</div></div>
 
 <section id="home" class="mvp-feature">
   <div id="weeklyMvpFeature" class="mvp-feature-inner"><div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div></div>
