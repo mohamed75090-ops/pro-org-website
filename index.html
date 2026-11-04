@@ -541,6 +541,80 @@ body.gold-mode input,body.gold-mode select,body.gold-mode textarea{background:#1
 .notification-count{top:-6px!important;right:-6px!important;min-width:18px!important;height:18px!important;font-size:10px!important;font-weight:900!important;box-shadow:0 0 0 2px #111318}
 @keyframes proBellRing{0%,68%,100%{transform:rotate(0)}72%{transform:rotate(16deg)}76%{transform:rotate(-14deg)}80%{transform:rotate(10deg)}84%{transform:rotate(-7deg)}88%{transform:rotate(3deg)}92%{transform:rotate(0)}}
 @media(max-width:600px){.quick-icon-btn,.quick-language-btn{width:35px!important;height:35px!important;min-width:35px!important;border-radius:10px!important}.notification-bell{width:21px;height:21px}.header-quick-controls{gap:5px!important}}
+
+/* Distinct premium gold theme treatment */
+body.gold-mode{
+ background:radial-gradient(ellipse at 50% -15%,#80602b 0%,#382817 34%,#17120c 72%,#100e0a 100%)!important;
+ color:#fff4d6!important;
+ --bg:#17120c;--panel:#2a2115;--panel2:#382a18;--muted:#ddc99f;--line:#98743a;
+}
+body.gold-mode .site-header{
+ background:linear-gradient(100deg,#21170b 0%,#493316 48%,#21170b 100%)!important;
+ border-bottom:2px solid #d6ad54!important;
+ box-shadow:0 5px 24px #0008,0 1px 0 #f7d98a55!important;
+}
+body.gold-mode .brand h1,body.gold-mode .section-heading h2,body.gold-mode .card h2{
+ color:#ffdf86!important;text-shadow:0 1px 12px #d99c3540!important;
+}
+body.gold-mode .section-heading{
+ border-bottom:1px solid #9e783b!important;
+}
+body.gold-mode .card,body.gold-mode .scrim-public-card,body.gold-mode .scrim-public-details,
+body.gold-mode .tournament-public-card,body.gold-mode .mvp-rank-card,
+body.gold-mode .team-center-section,body.gold-mode .admin-overview-card{
+ background:linear-gradient(145deg,#49351d 0%,#302315 58%,#211a11 100%)!important;
+ color:#fff3d4!important;border:1px solid #a9823e!important;
+ box-shadow:0 8px 22px #0005,inset 0 1px 0 #f9dc9850!important;
+}
+body.gold-mode .card p,body.gold-mode td,body.gold-mode .small,
+body.gold-mode .mvp-player-team,body.gold-mode .mvp-stat{
+ color:#e6d5b2!important;
+}
+body.gold-mode button:not(.menu-toggle):not(.notification-count),
+body.gold-mode .hero-actions a,body.gold-mode .tournament-register-btn{
+ border-color:#d2a64d!important;
+}
+body.gold-mode .hero-actions a,body.gold-mode .tournament-register-btn,
+body.gold-mode button.primary,body.gold-mode .btn-primary{
+ background:linear-gradient(135deg,#ffe6a0 0%,#d5a33e 48%,#a87522 100%)!important;
+ color:#241707!important;font-weight:900!important;
+ box-shadow:0 4px 14px #d49a3438,inset 0 1px #fff4c9!important;
+}
+body.gold-mode .quick-icon-btn,body.gold-mode .quick-language-btn{
+ background:linear-gradient(145deg,#f2d27f,#9b6c24)!important;
+ color:#241707!important;border:1px solid #ffe6a0!important;
+ box-shadow:0 0 0 2px #d7aa4a30,0 4px 13px #0007!important;
+}
+body.gold-mode .header-dropdown{
+ background:linear-gradient(155deg,#49351d,#21170d 85%)!important;
+ border:1px solid #c49a4c!important;
+}
+body.gold-mode .header-dropdown a,body.gold-mode .header-dropdown button{color:#ffedc2!important}
+body.gold-mode .header-dropdown a:hover,body.gold-mode .header-dropdown button:not(.admin-menu-link):hover{background:#735326!important}
+body.gold-mode input,body.gold-mode select,body.gold-mode textarea{
+ background:#21180e!important;color:#fff2d1!important;border:1px solid #98743a!important;
+}
+body.gold-mode footer{
+ background:linear-gradient(100deg,#21170b,#493316,#21170b)!important;
+ color:#ead6aa!important;border-top:2px solid #a9823e!important;
+}
+body.gold-mode .mvp-feature{
+ background:linear-gradient(125deg,#62451e,#302214 65%,#21170d)!important;
+ border:1px solid #d0a34c!important;box-shadow:0 8px 24px #0006,inset 0 1px #ffe5a055!important;
+}
+body.gold-mode .mvp-kicker,body.gold-mode .mvp-title,body.gold-mode .mvp-player-name,
+body.gold-mode .mvp-rank-number{color:#ffdf86!important}
+body.gold-mode .scrim-state,body.gold-mode .role-badge{
+ border-color:#c69a45!important;background:#61471f!important;color:#ffe6a5!important;
+}
+body.gold-mode table th,body.gold-mode .accepted-team-table-head{
+ background:#59401d!important;color:#ffe5a0!important;border-color:#a9823e!important;
+}
+@media(max-width:600px){
+ body.gold-mode .site-header{background:linear-gradient(100deg,#21170b,#493316,#21170b)!important}
+ body.gold-mode .card,body.gold-mode .scrim-public-card,body.gold-mode .tournament-public-card{box-shadow:0 5px 16px #0005,inset 0 1px 0 #f9dc9840!important}
+}
+
 </style>
 </head>
 <body>
