@@ -316,6 +316,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
     <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
     <button type="button" onclick="openTournamentsPage();closeSiteMenu()"><span>🏆</span> البطولات</button>
     <a href="#resultsSection"><span>▤</span> النتائج</a>
+    <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
     <div class="menu-divider"></div>
     <button type="button" class="admin-menu-link" id="loginToggle"><span>♙</span> دخول المشرفين</button>
    </nav>
@@ -400,6 +401,17 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="auth-actions"><button id="signIn">تسجيل الدخول</button><button type="button" class="secondary" id="cancelAdminLogin" onclick="returnToPublicPages()">إلغاء</button></div>
   <p class="auth-note">منطقة مخصصة للمشرفين والحسابات المعتمدة فقط</p>
  </div>
+</section>
+<section id="siteMonitoringPage" class="section hidden">
+ <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الموقع</button>
+ <div class="section-heading"><div><span class="pill">SITE MONITORING</span><h2>متابعة الموقع</h2><p>إحصائيات الحسابات وتسجيلات الدخول والزيارات بدون تسجيل دخول.</p></div><button type="button" class="secondary" id="refreshSiteMonitoring">تحديث البيانات</button></div>
+ <div id="siteMonitoringStats" class="grid">
+  <div class="card"><div class="muted">الحسابات المسجلة</div><h2 id="siteRegisteredCount">—</h2></div>
+  <div class="card"><div class="muted">مرات تسجيل الدخول</div><h2 id="siteLoginTotal">—</h2><small id="siteLoginToday" class="muted">اليوم: —</small></div>
+  <div class="card"><div class="muted">زيارات بدون تسجيل دخول</div><h2 id="siteAnonymousTotal">—</h2><small id="siteAnonymousToday" class="muted">اليوم: —</small></div>
+ </div>
+ <div class="card"><h3>حسابات المستخدمين</h3><p class="small">رقم الواتساب يظهر هنا بعد إضافته للحساب. التحقق عبر واتساب سيتم تفعيله في مرحلة الربط القادمة.</p><div id="siteMonitoringAccounts" class="muted">اضغط تحديث البيانات لتحميل الحسابات.</div></div>
+ <div class="notice small">الزيارات بدون تسجيل دخول تُحسب كمتصفح فريد في اليوم، باستخدام معرّف عشوائي محفوظ على جهاز الزائر. لا يتم جمع عنوان IP أو عرض هوية الزوار المجهولين.</div>
 </section>
 <section id="admin" class="hidden">
  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
@@ -826,12 +838,45 @@ function startTeamApplicationNotifications(){
   if(["founder","admin","tournament_manager"].includes(currentRole))loadTeamApplicationsAdmin();
  },30000);
 }
+async function loadSiteMonitoring(){
+ const host=$("siteMonitoringAccounts");
+ host.textContent="جاري تحميل إحصائيات الموقع...";
+ const {data,error}=await client.rpc("get_site_analytics");
+ if(error){host.textContent="تعذر تحميل المتابعة: "+error.message+" — تأكد من تنفيذ ملف إعداد متابعة الموقع في Supabase.";return;}
+ const stats=data||{};
+ $("siteRegisteredCount").textContent=Number(stats.registered_accounts||0).toLocaleString("en-US");
+ $("siteLoginTotal").textContent=Number(stats.login_total||0).toLocaleString("en-US");
+ $("siteLoginToday").textContent="اليوم: "+Number(stats.login_today||0).toLocaleString("en-US");
+ $("siteAnonymousTotal").textContent=Number(stats.anonymous_visits_total||0).toLocaleString("en-US");
+ $("siteAnonymousToday").textContent="اليوم: "+Number(stats.anonymous_visits_today||0).toLocaleString("en-US");
+ const rows=Array.isArray(stats.accounts)?stats.accounts:[];
+ if(!rows.length){host.innerHTML='<div class="notice">لا توجد حسابات مسجلة حتى الآن.</div>';return;}
+ host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم الحساب</th><th>البريد</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th></tr></thead><tbody>'+
+ rows.map(account=>{
+  const phone=String(account.whatsapp_number||"");
+  const digits=phone.replace(/[^0-9]/g,"");
+  const verified=account.whatsapp_verified?'<span class="success">موثّق</span>':'<span class="muted">غير موثّق</span>';
+  const contact=digits?'<a class="secondary" style="display:inline-block;padding:8px 12px;text-decoration:none" href="https://wa.me/'+esc(digits)+'" target="_blank" rel="noopener noreferrer">فتح واتساب</a>':'<span class="muted">لا يوجد رقم</span>';
+  return '<tr><td>'+esc(account.display_name||"مستخدم")+'</td><td>'+esc(account.email||"—")+'</td><td dir="ltr">'+esc(phone||"—")+'</td><td>'+verified+'</td><td>'+contact+'</td></tr>';
+ }).join("")+'</tbody></table></div>';
+}
+function recordAnonymousSiteVisit(){
+ try{
+  const key="pro_org_visitor_id_v1";
+  let visitorId=localStorage.getItem(key);
+  if(!visitorId){visitorId=crypto.randomUUID();localStorage.setItem(key,visitorId);}
+  client.rpc("record_anonymous_site_visit",{p_visitor_id:visitorId}).then(({error})=>{
+   if(error)console.warn("Anonymous visit tracking:",error.message);
+  });
+ }catch(error){console.warn("Anonymous visit tracking unavailable:",error?.message||error);}
+}
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
  if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);return;}
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
  currentRole=String(profile.role||"").trim().toLowerCase();showStandalonePage("admin");
+ show("siteMonitoringMenu",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  $("who").textContent=`${profile.display_name||user.email} · ${currentRole}`;$("roleNote").textContent=`الصلاحية الحالية: ${currentRole}`;
  show("teamForm",["founder","admin"].includes(currentRole));
  show("tournamentForm",["founder","admin","tournament_manager"].includes(currentRole));
@@ -874,9 +919,12 @@ $("siteMenuToggle").onclick=()=>{const menu=$("siteDropdown"),toggle=$("siteMenu
 document.addEventListener("click",event=>{if(!event.target.closest(".header-menu"))closeSiteMenu();});
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSiteMenu();});
 $("siteDropdown").querySelectorAll("a").forEach(link=>link.addEventListener("click",closeSiteMenu));
-$("loginToggle").onclick=()=>{closeSiteMenu();showStandalonePage("login");$("email").focus();};$("closeLogin").onclick=returnToPublicPages;
-$("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
-$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;returnToPublicPages();msg("تم تسجيل الخروج.");};
+$("loginToggle").onclick=()=>{closeSiteMenu();showStandalonePage("login");$("email").focus();};
+$("siteMonitoringMenu").onclick=()=>{closeSiteMenu();showStandalonePage("siteMonitoringPage");loadSiteMonitoring();};
+$("refreshSiteMonitoring").onclick=loadSiteMonitoring;
+$("closeLogin").onclick=returnToPublicPages;
+$("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
+$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
 $("addTournament").onclick=createTournamentAnnouncement;
 $("tournamentRegistrationForm").addEventListener("submit",submitTournamentApplication);
@@ -941,11 +989,11 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
- ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1446,7 +1494,7 @@ setInterval(()=>{loadWeeklyMvp();},60000);
  try{
   const {data:{session}}=await client.auth.getSession();
   if(session)await refreshAdmin();
-  else msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");
+  else {recordAnonymousSiteVisit();msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");}
  }catch(e){msg("تعذر إكمال الاتصال: "+esc(e?.message||e),"err");}
 })();
  }catch(e){
