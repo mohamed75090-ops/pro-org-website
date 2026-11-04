@@ -871,22 +871,15 @@ async function reviewTournamentApplication(id,status){
  if(!["accepted","backup","rejected","move"].includes(status))return;
  const select=$("tournamentGroup-"+id);
  const group=status==="accepted"||status==="move"?String(select?.value||"").trim():null;
- if((status==="accepted"||status==="move")&&!["A","B","C","D"].includes(group)){alert("اختار المجموعة A أو B أو C أو D أولاً.");return;}
- const {data:application,error:readError}=await client.from("tournament_team_applications").select("tournament_id,status").eq("id",id).maybeSingle();
- if(readError||!application){alert("تعذر العثور على طلب التسجيل.");return;}
- let slot=null;
- if(status==="accepted"){
-  const {count,error}=await client.from("tournament_team_applications").select("id",{count:"exact",head:true}).eq("tournament_id",application.tournament_id).eq("status","accepted");
-  if(error){alert(error.message);return;}slot=(count||0)+1;
- }
- const update=status==="move"?{group_name:group,updated_at:new Date().toISOString()}:{status,group_name:status==="accepted"?group:null,slot_number:status==="accepted"?slot:null,updated_at:new Date().toISOString()};
- let query=client.from("tournament_team_applications").update(update).eq("id",id);
- if(status==="accepted")query=query.in("status",["pending","backup"]);
- const {error}=await query;
+ if((status==="accepted"||status==="move")&& !["A","B","C","D"].includes(group)){alert("اختار المجموعة A أو B أو C أو D أولاً.");return;}
+ const {error}=await client.rpc("review_tournament_team_application",{
+  p_application_id:id,
+  p_action:status,
+  p_group_name:group
+ });
  if(error){alert("تعذر تحديث الطلب: "+error.message);return;}
  await loadTournamentApplicationsAdmin();
-}
-window.reviewTournamentApplication=reviewTournamentApplication;
+}window.reviewTournamentApplication=reviewTournamentApplication;
 
 async function loadPublic(){
  const targets=["tournaments","teams","results"];
