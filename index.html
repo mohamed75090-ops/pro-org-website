@@ -2236,6 +2236,35 @@ function coalesceRefresh(fn){
 loadPublicScrims=coalesceRefresh(loadPublicScrims);
 loadWeeklyMvp=coalesceRefresh(loadWeeklyMvp);
 loadPublic=coalesceRefresh(loadPublic);
+
+// Refresh public data shortly after the visitor returns to the site.
+// This avoids a full page reload and prevents duplicate requests on mobile browsers.
+let lastResumeRefreshAt=0;
+let resumeRefreshInProgress=false;
+async function refreshSiteAfterReturn(){
+ if(document.visibilityState!=="visible"||!navigator.onLine||resumeRefreshInProgress)return;
+ const now=Date.now();
+ if(now-lastResumeRefreshAt<1200)return;
+ lastResumeRefreshAt=now;
+ resumeRefreshInProgress=true;
+ try{
+  await new Promise(resolve=>setTimeout(resolve,150));
+  await Promise.allSettled([
+   loadPublic(),
+   loadPublicScrims(),
+   loadWeeklyMvp(),
+   window.refreshPlayerNotifications?.()
+  ]);
+ }finally{
+  resumeRefreshInProgress=false;
+ }
+}
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible")refreshSiteAfterReturn();
+});
+window.addEventListener("pageshow",refreshSiteAfterReturn);
+window.addEventListener("focus",refreshSiteAfterReturn);
+
 client.auth.onAuthStateChange((event,session)=>{
  if(!["SIGNED_IN","SIGNED_OUT","USER_UPDATED","PASSWORD_RECOVERY"].includes(event))return;
  setTimeout(async()=>{await syncPlayerMenu(session?.user||null);await refreshAdmin();await loadPublicScrims();},0);
