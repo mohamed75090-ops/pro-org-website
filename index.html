@@ -1104,7 +1104,13 @@ $("playerRegisterForm").onsubmit=async(event)=>{
   $("playerAuthMessage").textContent="تم إنشاء حسابك بنجاح. جاري فتح الموقع...";
   $("playerAuthMessage").classList.remove("hidden");
   await syncPlayerMenu(data.user);
-  setTimeout(()=>returnToPublicPages(),450);
+  const pendingScrim=window.__pendingScrimRegistration;
+  if(pendingScrim){
+   window.__pendingScrimRegistration=null;
+   setTimeout(()=>openTeamRegistration(pendingScrim.scrimId,pendingScrim.title),450);
+  }else{
+   setTimeout(()=>returnToPublicPages(),450);
+  }
  }catch(error){$("playerAuthMessage").textContent="تعذر إنشاء الحساب: "+(error.message||error);$("playerAuthMessage").classList.remove("hidden");}
  finally{button.disabled=false;button.textContent="إنشاء الحساب";}
 };
@@ -1196,6 +1202,14 @@ function openTeamCenterPage(){showStandalonePage("teamCenterPage");$("scrimCente
 window.openTeamCenterPage=openTeamCenterPage;
 window.returnToPublicPages=returnToPublicPages;
 async function openTeamRegistration(scrimId,title){
+ const {data:{user}}=await client.auth.getUser();
+ if(!user){
+  window.__pendingScrimRegistration={scrimId,title:title||""};
+  openPlayerAuth("register");
+  $("playerAuthMessage").textContent="عشان تسجل في السكريم، أنشئ حساب أولاً. ما مطلوب تأكيد رقم الواتساب؛ تقدر تسجل بعد إنشاء الحساب مباشرة.";
+  $("playerAuthMessage").classList.remove("hidden");
+  return;
+ }
  $("applicationScrimId").value=scrimId;
  $("teamRegistrationScrimName").textContent=title||"";
  $("teamRegistrationForm").reset();
@@ -1224,6 +1238,14 @@ async function openTeamRegistration(scrimId,title){
 window.openTeamRegistration=openTeamRegistration;
 async function submitTeamApplication(event){
  event.preventDefault();
+ const {data:{user}}=await client.auth.getUser();
+ if(!user){
+  window.__pendingScrimRegistration={scrimId:$("applicationScrimId").value,title:$("teamRegistrationScrimName").textContent||""};
+  openPlayerAuth("register");
+  $("playerAuthMessage").textContent="أنشئ حساب أولاً لإكمال التسجيل في السكريم. لا يشترط تأكيد الواتساب.";
+  $("playerAuthMessage").classList.remove("hidden");
+  return;
+ }
  const teamName=$("applicationTeamName").value.trim(),tag=$("applicationTeamTag").value.trim(),representative=$("applicationTeamRepresentative").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
  if(teamName.length<2||tag.length<2||representative.length<2){alert("أكمل اسم الفريق واختصاره واسم ممثله.");return;}
  if(!scrimId){alert("لم يتم تحديد السكريم.");return;}
