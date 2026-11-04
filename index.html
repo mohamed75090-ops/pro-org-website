@@ -311,6 +311,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="header-menu">
    <button type="button" class="menu-toggle" id="siteMenuToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="siteDropdown"><span></span></button>
    <nav class="header-dropdown" id="siteDropdown" aria-label="القائمة الرئيسية">
+    <button type="button" id="playerProfileMenu" class="hidden" onclick="openPlayerProfile();closeSiteMenu()"><span>♙</span> الملف الشخصي <b id="playerMenuUsername"></b></button>
     <button type="button" onclick="returnToPublicPages();closeSiteMenu()"><span>⌂</span> الرئيسية</button>
     <button type="button" onclick="openScrimsPage();closeSiteMenu()"><span>◈</span> السكريمات</button>
     <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
@@ -318,7 +319,6 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
     <a href="#resultsSection"><span>▤</span> النتائج</a>
     <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
     <div class="menu-divider"></div>
-    <button type="button" id="playerLoginMenu"><span>♙</span> دخول اللاعبين</button>
     <button type="button" id="playerRegisterMenu"><span>＋</span> إنشاء حساب لاعب</button>
     <button type="button" class="admin-menu-link" id="loginToggle"><span>♙</span> دخول المشرفين</button>
    </nav>
@@ -423,6 +423,13 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div id="playerAuthMessage" class="notice hidden" style="margin-top:14px"></div>
   <p class="auth-note">لا نطلب بريداً إلكترونياً من اللاعب. تأكيد الواتساب سيتم ربطه في مرحلة لاحقة.</p>
   <div class="auth-actions"><button type="button" class="secondary" id="switchPlayerAuth">إنشاء حساب جديد</button></div>
+ </div>
+</section>
+<section id="playerProfilePage" class="section hidden">
+ <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الموقع</button>
+ <div class="auth-card"><div class="auth-heading"><h3>الملف الشخصي</h3><p>بيانات حساب اللاعب</p></div>
+  <div class="card"><p>اسم المستخدم: <b id="playerProfileUsername">—</b></p><p>رقم الواتساب: <b id="playerProfileWhatsapp">—</b></p><p>حالة التحقق: <span class="small">غير موثّق حالياً</span></p></div>
+  <button type="button" class="danger" id="playerSignOutButton">تسجيل الخروج</button>
  </div>
 </section>
 <section id="siteMonitoringPage" class="section hidden">
@@ -945,6 +952,23 @@ document.addEventListener("click",event=>{if(!event.target.closest(".header-menu
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSiteMenu();});
 $("siteDropdown").querySelectorAll("a").forEach(link=>link.addEventListener("click",closeSiteMenu));
 $("loginToggle").onclick=()=>{closeSiteMenu();showStandalonePage("login");$("email").focus();};
+async function syncPlayerMenu(userArg){
+ let user=userArg;
+ if(typeof userArg==="undefined"){const result=await client.auth.getUser();user=result.data?.user||null;}
+ const isPlayer=!!user&&(user.user_metadata?.account_type==="player"||String(user.email||"").endsWith("@players.professionalesports.com"));
+ const profile=$("playerProfileMenu"),create=$("playerRegisterMenu"),name=user?.user_metadata?.username||String(user?.email||"").split("@")[0]||"لاعب";
+ if(profile){profile.classList.toggle("hidden",!isPlayer);$("playerMenuUsername").textContent=isPlayer?name:"";$("playerProfileUsername").textContent=isPlayer?name:"—";}
+ if(create)create.classList.toggle("hidden",isPlayer);
+}
+async function openPlayerProfile(){
+ const {data:{user}}=await client.auth.getUser();
+ if(!user){openPlayerAuth("register");return;}
+ const username=user.user_metadata?.username||String(user.email||"").split("@")[0];
+ $("playerProfileUsername").textContent=username;
+ $("playerProfileWhatsapp").textContent="مسجل في بيانات الحساب";
+ showStandalonePage("playerProfilePage");
+}
+window.openPlayerProfile=openPlayerProfile;
 function openPlayerAuth(mode){
  closeSiteMenu();showStandalonePage("playerAuthPage");
  const registering=mode==="register";
@@ -955,7 +979,6 @@ function openPlayerAuth(mode){
  $("switchPlayerAuth").textContent=registering?"لديك حساب؟ تسجيل الدخول":"ليس لديك حساب؟ إنشاء حساب";
  $("playerAuthMessage").classList.add("hidden");
 }
-$("playerLoginMenu").onclick=()=>openPlayerAuth("login");
 $("playerRegisterMenu").onclick=()=>openPlayerAuth("register");
 $("playerAuthBack").onclick=returnToPublicPages;
 $("switchPlayerAuth").onclick=()=>openPlayerAuth($("playerRegisterForm").classList.contains("hidden")?"register":"login");
@@ -982,10 +1005,10 @@ $("playerRegisterForm").onsubmit=async(event)=>{
   if(saved.error)throw saved.error;
   const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);
   $("playerRegisterForm").reset();
-  $("playerAuthMessage").textContent="تم إنشاء حسابك بنجاح. يمكنك الآن تسجيل الدخول باسم المستخدم وكلمة المرور.";
+  $("playerAuthMessage").textContent="تم إنشاء حسابك بنجاح. جاري فتح الموقع...";
   $("playerAuthMessage").classList.remove("hidden");
-  $("playerAuthTitle").textContent="تم إنشاء الحساب";
-  $("playerLoginFields").classList.remove("hidden");$("playerRegisterForm").classList.add("hidden");
+  await syncPlayerMenu(data.user);
+  setTimeout(()=>returnToPublicPages(),450);
  }catch(error){$("playerAuthMessage").textContent="تعذر إنشاء الحساب: "+(error.message||error);$("playerAuthMessage").classList.remove("hidden");}
  finally{button.disabled=false;button.textContent="إنشاء الحساب";}
 };
@@ -993,7 +1016,8 @@ $("siteMonitoringMenu").onclick=()=>{closeSiteMenu();showStandalonePage("siteMon
 $("refreshSiteMonitoring").onclick=loadSiteMonitoring;
 $("closeLogin").onclick=returnToPublicPages;
 $("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
-$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
+$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
+$("playerSignOutButton").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();};
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
 $("addTournament").onclick=createTournamentAnnouncement;
 $("tournamentRegistrationForm").addEventListener("submit",submitTournamentApplication);
@@ -1058,11 +1082,11 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
- ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1553,7 +1577,7 @@ window.setScrimMatchStatus=setScrimMatchStatus;
 window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview=scrimReview;window.deleteTournament=deleteTournament;
  $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAccess;$("sendScrimInvite").onclick=inviteScrimTeam;$("addScrimMatch").onclick=addScrimMatch;
 
-client.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAdmin();await loadPublicScrims();},0));
+client.auth.onAuthStateChange((_event,session)=>setTimeout(async()=>{await syncPlayerMenu(session?.user||null);await refreshAdmin();await loadPublicScrims();},0));
 setInterval(()=>{refreshScrimCountdowns();},1000);
 setInterval(()=>{document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
 setInterval(()=>{loadPublicScrims();},60000);
@@ -1562,8 +1586,8 @@ setInterval(()=>{loadWeeklyMvp();},60000);
  await Promise.allSettled([loadPublic(),loadWeeklyMvp(),loadPublicScrims()]);
  try{
   const {data:{session}}=await client.auth.getSession();
-  if(session)await refreshAdmin();
-  else {recordAnonymousSiteVisit();msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");}
+  if(session){await syncPlayerMenu(session.user);await refreshAdmin();}
+  else {await syncPlayerMenu(null);recordAnonymousSiteVisit();msg("تم الاتصال بخدمة Supabase. النتائج العامة ستظهر بعد اعتمادها.","ok");}
  }catch(e){msg("تعذر إكمال الاتصال: "+esc(e?.message||e),"err");}
 })();
  }catch(e){
