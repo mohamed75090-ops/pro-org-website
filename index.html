@@ -300,14 +300,14 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 
 <header class="site-header">
  <div class="header-inner">
-  <a class="brand" href="#home" aria-label="Professional eSports - الرئيسية">
+  <a class="brand" href="#home" onclick="returnToPublicPages();closeSiteMenu()" aria-label="Professional eSports - الرئيسية">
    <div class="brand-mark">PRO</div>
    <div><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE</p></div>
   </a>
   <div class="header-menu">
    <button type="button" class="menu-toggle" id="siteMenuToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="siteDropdown"><span></span></button>
    <nav class="header-dropdown" id="siteDropdown" aria-label="القائمة الرئيسية">
-    <a href="#home"><span>⌂</span> الرئيسية</a>
+    <button type="button" onclick="returnToPublicPages();closeSiteMenu()"><span>⌂</span> الرئيسية</button>
     <button type="button" onclick="openScrimsPage();closeSiteMenu()"><span>◈</span> السكريمات</button>
     <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
     <a href="#teamsSection"><span>♧</span> الفرق</a>
