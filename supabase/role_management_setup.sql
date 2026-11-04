@@ -217,6 +217,16 @@ create policy "Organizers manage scrim rooms" on public.scrim_matches for all to
 using (exists(select 1 from public.profiles p where p.id=auth.uid() and lower(trim(coalesce(p.role,'')))='organizer'))
 with check (exists(select 1 from public.profiles p where p.id=auth.uid() and lower(trim(coalesce(p.role,'')))='organizer'));
 
+drop policy if exists "Organizers manage scrim room records" on public.scrim_rooms;
+create policy "Organizers manage scrim room records" on public.scrim_rooms for all to authenticated
+using (exists(select 1 from public.profiles p where p.id=auth.uid() and lower(trim(coalesce(p.role,'')))='organizer'))
+with check (exists(select 1 from public.profiles p where p.id=auth.uid() and lower(trim(coalesce(p.role,'')))='organizer'));
+
+drop policy if exists "Organizers manage scrim invitations" on public.scrim_invitations;
+create policy "Organizers manage scrim invitations" on public.scrim_invitations for all to authenticated
+using (exists(select 1 from public.profiles p where p.id=auth.uid() and lower(trim(coalesce(p.role,'')))='organizer'))
+with check (exists(select 1 from public.profiles p where p.id=auth.uid() and lower(trim(coalesce(p.role,'')))='organizer'));
+
 drop policy if exists "Organizers manage scrim team access" on public.scrim_team_access;
 create policy "Organizers manage scrim team access" on public.scrim_team_access for all to authenticated
 using (exists(select 1 from public.profiles p where p.id=auth.uid() and lower(trim(coalesce(p.role,'')))='organizer'))
