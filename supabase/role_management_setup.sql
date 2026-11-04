@@ -15,21 +15,25 @@ declare
   v_founders integer;
 begin
   if tg_op = 'INSERT' then
-    -- Signup may create an ordinary player profile; elevated roles require an existing founder.
+    -- Permit normal signup profiles, but never let a client create an elevated role.
     if auth.uid() is null then
-      if coalesce(auth.role(),'') in ('anon','authenticated') then
-        raise exception 'إنشاء صلاحيات إدارية غير مسموح';
+      if coalesce(auth.role(),'') in ('anon','authenticated')
+         and lower(trim(coalesce(new.role,''))) in
+           ('founder','admin','organizer','results_manager','tournament_manager') then
+        raise exception 'إنشاء صلاحيات إدارية متاح للمؤسس فقط';
       end if;
       return new;
     end if;
     select lower(trim(coalesce(p.role,''))) into v_actor_role
     from public.profiles p where p.id = auth.uid();
-    if lower(trim(coalesce(new.role,''))) <> 'player'
+    if lower(trim(coalesce(new.role,''))) in
+       ('founder','admin','organizer','results_manager','tournament_manager')
        and coalesce(v_actor_role,'') <> 'founder' then
       raise exception 'إنشاء صلاحيات إدارية متاح للمؤسس فقط';
     end if;
-    if lower(trim(coalesce(new.role,''))) not in
-      ('founder','admin','organizer','results_manager','tournament_manager','player') then
+    if coalesce(v_actor_role,'') = 'founder'
+       and lower(trim(coalesce(new.role,''))) not in
+         ('founder','admin','organizer','results_manager','tournament_manager','player') then
       raise exception 'الرول المحدد غير معتمد';
     end if;
     return new;
