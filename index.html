@@ -107,6 +107,9 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .admin-notification-badge{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 6px;margin-inline-start:5px;border-radius:999px;background:#d93636;color:#fff;font-size:12px;font-weight:800;line-height:1;box-shadow:0 0 0 2px #20232a}
 .admin-tab.active .admin-notification-badge{box-shadow:0 0 0 2px #c69b42}
 /* Admin scrim dashboard */
+.admin-main-tabs{grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 20px;position:sticky;top:72px;z-index:8;background:#0b0c10;padding:8px 0}
+.admin-main-panel{min-width:0}
+@media(max-width:650px){.admin-main-tabs{grid-template-columns:repeat(3,minmax(0,1fr));top:65px}}
 .admin-scrim-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0}
 .admin-scrim-tabs .admin-tab{background:#20232a;color:#e8e8ec;border:1px solid #3a3d45;padding:12px}
 .admin-scrim-tabs .admin-tab.active{background:linear-gradient(135deg,#f0d58d,#c69b42);color:#17120a;border-color:#d8b15b}
@@ -400,20 +403,16 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 </section>
 <section id="admin" class="hidden">
  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
+
+ <nav class="admin-scrim-tabs admin-main-tabs" aria-label="أقسام لوحة الإدارة">
+  <button type="button" class="admin-tab active" data-admin-main-tab="scrims">السكريمات</button>
+  <button type="button" class="admin-tab" data-admin-main-tab="rooms">الرومات</button>
+  <button type="button" class="admin-tab" data-admin-main-tab="tournaments">البطولات</button>
+  <button type="button" class="admin-tab" data-admin-main-tab="results">النتائج</button>
+  <button type="button" class="admin-tab" data-admin-main-tab="mvp">MVP</button>
+ </nav>
+ <div id="adminMainScrims" class="admin-main-panel">
  <div id="teamForm" class="card hidden"><h2>إضافة فريق</h2><label>اسم الفريق</label><input id="teamName"><label>اختصار الفريق (TAG)</label><input id="teamTag"><button id="addTeam">حفظ الفريق</button></div>
- <div id="tournamentForm" class="card hidden"><h2>إنشاء إعلان بطولة</h2><label>اسم البطولة</label><input id="tournamentName" maxlength="120" required><label>وصف وتفاصيل البطولة</label><textarea id="tournamentDesc" rows="4"></textarea><label>صورة إعلان البطولة</label><input id="tournamentPoster" type="file" accept="image/jpeg,image/png,image/webp"><label>موعد فتح التسجيل</label><input id="tournamentOpensAt" type="datetime-local"><label>موعد إغلاق التسجيل</label><input id="tournamentClosesAt" type="datetime-local"><label>الحد الأقصى للفرق</label><input id="tournamentMaxTeams" type="number" min="1" max="500" value="25"><label><input id="tournamentRegistrationEnabled" type="checkbox" style="width:auto"> تفعيل التسجيل لهذه البطولة</label><button id="addTournament">إنشاء إعلان البطولة كمسودة</button><p class="small">بعد الإنشاء يمكنك نشر الإعلان وإدارة طلبات الفرق من قسم إدارة البطولات.</p></div>
- <div id="managementPanel" class="card hidden"><h2>إدارة البطولات والرومات</h2><p class="small">انشر البطولة، أوقفها مؤقتاً، أو أعد فتحها. ويمكنك التحكم في حالة كل روم من هنا.</p><div id="tournamentManagement"></div><div id="tournamentApplicationsManagement"></div><div id="matchManagement"></div></div>
- <div id="matchForm" class="card hidden"><h2>إنشاء روم / مباراة</h2><label>البطولة</label><select id="matchTournament"></select><label>اسم المباراة</label><input id="matchName" placeholder="مثال: Room 1"><label>رقم المباراة</label><input id="matchNumber" type="number" min="1"><button id="addMatch">إنشاء المباراة</button></div>
- <div id="aiScanner" class="card hidden">
-  <h2>AI ROOM SCANNER</h2>
-  <p class="muted">ارفع صور نتائج الروم، وسيقرأ الذكاء الاصطناعي المراكز وأسماء اللاعبين وKills كل لاعب.</p>
-  <label>المباراة</label><select id="aiMatch"></select>
-  <label>صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
-  <div class="small">كل صورة يفترض أن تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع كل صور المباراة معاً.</div>
-  <button id="scanImages">تحليل الصور بالذكاء الاصطناعي</button>
-  <div id="aiStatus" class="notice">النتائج المستخرجة ستظهر هنا للمراجعة.</div><div id="aiOutput"></div>
- </div>
- 
 <div id="scrimAdmin" class="card hidden">
  <h2>لوحة إدارة السكريمات</h2>
  <p class="small">إدارة السكريمات والفرق والرومات من مكان واحد.</p>
@@ -459,7 +458,33 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  </div>
 </div>
 
+
+ </div>
+ <div id="adminMainRooms" class="admin-main-panel hidden">
+  <div class="card"><h3>إدارة الرومات</h3><p class="small">إضافة المباريات ونشر بيانات الرومات والتحكم فيها.</p></div>
+  <div id="adminRoomsContent"></div>
+ </div>
+ <div id="adminMainTournaments" class="admin-main-panel hidden">
+ <div id="tournamentForm" class="card hidden"><h2>إنشاء إعلان بطولة</h2><label>اسم البطولة</label><input id="tournamentName" maxlength="120" required><label>وصف وتفاصيل البطولة</label><textarea id="tournamentDesc" rows="4"></textarea><label>صورة إعلان البطولة</label><input id="tournamentPoster" type="file" accept="image/jpeg,image/png,image/webp"><label>موعد فتح التسجيل</label><input id="tournamentOpensAt" type="datetime-local"><label>موعد إغلاق التسجيل</label><input id="tournamentClosesAt" type="datetime-local"><label>الحد الأقصى للفرق</label><input id="tournamentMaxTeams" type="number" min="1" max="500" value="25"><label><input id="tournamentRegistrationEnabled" type="checkbox" style="width:auto"> تفعيل التسجيل لهذه البطولة</label><button id="addTournament">إنشاء إعلان البطولة كمسودة</button><p class="small">بعد الإنشاء يمكنك نشر الإعلان وإدارة طلبات الفرق من قسم إدارة البطولات.</p></div>
+ <div id="managementPanel" class="card hidden"><h2>إدارة البطولات والرومات</h2><p class="small">انشر البطولة، أوقفها مؤقتاً، أو أعد فتحها. ويمكنك التحكم في حالة كل روم من هنا.</p><div id="tournamentManagement"></div><div id="tournamentApplicationsManagement"></div><div id="matchManagement"></div></div>
+ <div id="matchForm" class="card hidden"><h2>إنشاء روم / مباراة</h2><label>البطولة</label><select id="matchTournament"></select><label>اسم المباراة</label><input id="matchName" placeholder="مثال: Room 1"><label>رقم المباراة</label><input id="matchNumber" type="number" min="1"><button id="addMatch">إنشاء المباراة</button></div>
+
+ </div>
+ <div id="adminMainResults" class="admin-main-panel hidden">
+ <div id="aiScanner" class="card hidden">
+  <h2>AI ROOM SCANNER</h2>
+  <p class="muted">ارفع صور نتائج الروم، وسيقرأ الذكاء الاصطناعي المراكز وأسماء اللاعبين وKills كل لاعب.</p>
+  <label>المباراة</label><select id="aiMatch"></select>
+  <label>صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
+  <div class="small">كل صورة يفترض أن تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع كل صور المباراة معاً.</div>
+  <button id="scanImages">تحليل الصور بالذكاء الاصطناعي</button>
+  <div id="aiStatus" class="notice">النتائج المستخرجة ستظهر هنا للمراجعة.</div><div id="aiOutput"></div>
+ </div>
+ 
 <div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
+ <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
+ </div>
+ <div id="adminMainMvp" class="admin-main-panel hidden">
  <div id="weeklyMvpAdmin" class="card hidden">
   <h2>إدارة MVP الأسبوعي</h2>
   <div id="mvpAdminStatus" class="notice">جاري تحميل بيانات MVP الأسبوعي...</div>
@@ -483,7 +508,9 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
    <div id="top3MvpStatus" class="notice">حفظ ونشر قائمة أفضل 3 بشكل مستقل عن لاعب MVP.</div>
   </div>
  </div>
- <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
+
+ </div>
+
 </section>
 </main>
 <footer><div class="footer-brand">PROFESSIONAL ESPORTS</div><div>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</div><p class="small">© PROFESSIONAL ESPORTS. جميع الحقوق محفوظة.</p></footer>
@@ -1201,6 +1228,25 @@ function setupAdminScrimTabs(){
  }));
 }
 setupAdminScrimTabs();
+function setupAdminMainTabs(){
+ const buttons=document.querySelectorAll("[data-admin-main-tab]");
+ const panels={scrims:$("adminMainScrims"),rooms:$("adminMainRooms"),tournaments:$("adminMainTournaments"),results:$("adminMainResults"),mvp:$("adminMainMvp")};
+ const roomPanel=$("adminTabRooms");
+ const roomHost=$("adminRoomsContent");
+ if(roomPanel&&roomHost&&roomPanel.parentElement!==roomHost){roomHost.appendChild(roomPanel);roomPanel.classList.remove("hidden");}
+ const roomSubTab=document.querySelector('[data-admin-tab="rooms"]');
+ if(roomSubTab)roomSubTab.remove();
+ function activate(name){
+  buttons.forEach(b=>b.classList.toggle("active",b.dataset.adminMainTab===name));
+  Object.entries(panels).forEach(([key,panel])=>{if(panel)panel.classList.toggle("hidden",key!==name);});
+  if(name==="rooms"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();}
+  if(name==="scrims"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();}
+  window.scrollTo({top:0,behavior:"smooth"});
+ }
+ buttons.forEach(b=>b.addEventListener("click",()=>activate(b.dataset.adminMainTab)));
+ activate("scrims");
+}
+setupAdminMainTabs();
 async function loadScrimAdmin(){
  const [a,b,c,d]=await Promise.all([
   client.from("scrims").select("*").order("created_at",{ascending:false}),
