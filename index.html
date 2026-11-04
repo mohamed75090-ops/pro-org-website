@@ -828,6 +828,7 @@ function updateTournamentCountdowns(){
   const now=Date.now(),id=el.dataset.tournamentCountdown,openAt=Number(el.dataset.openAt),end=Number(el.dataset.closeAt);
   const state=document.querySelector('[data-tournament-state="'+id+'"]),label=document.querySelector('[data-tournament-countdown-label="'+id+'"]');
   const card=document.querySelector('[data-tournament-card="'+id+'"]),button=card?.querySelector('[data-register-tournament]');
+  if(card&&(card.dataset.registrationEnabled!=='1'||card.dataset.registrationStatus!=='published')){if(state){state.className='tournament-state-closed';state.textContent='● CLOSED';}if(label)label.textContent='REGISTRATION STATUS';el.textContent='REGISTRATION NOT AVAILABLE';if(button){button.disabled=true;button.textContent='التسجيل غير متاح';}return;}
   if(openAt&&now<openAt){if(state){state.className='tournament-state-closed';state.textContent='● UPCOMING';}if(label)label.textContent='REGISTRATION OPENS IN';el.textContent=formatTournamentCountdown(openAt-now);if(button){button.disabled=true;button.textContent='يفتح التسجيل قريباً';}return;}
   if(state){state.className='tournament-state-open';state.textContent='● OPEN';}if(label)label.textContent='REGISTRATION CLOSES IN';
   if(end&&now>=end){el.textContent='REGISTRATION CLOSED';if(state){state.className='tournament-state-closed';state.textContent='● CLOSED';}if(button){button.disabled=true;button.textContent='التسجيل مغلق';}return;}
