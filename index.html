@@ -12,8 +12,21 @@ html{scroll-behavior:smooth}
 body{margin:0;background:radial-gradient(ellipse at 50% -20%,#29200e 0%,#0b0c10 42%,var(--bg) 75%);color:#f5f1e8;font-family:Arial,Tahoma,sans-serif;line-height:1.6}
 a{color:inherit;text-decoration:none}
 .site-header{position:sticky;top:0;z-index:20;padding:14px max(5%,calc((100% - 1180px)/2));border-bottom:1px solid #383020;background:rgba(8,9,12,.94);backdrop-filter:blur(14px)}
-.header-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:12px}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;direction:ltr}
+.brand{display:flex;align-items:center;gap:12px;direction:ltr;text-align:left}
+.header-menu{position:relative;direction:rtl}
+.menu-toggle{width:46px;height:46px;padding:0;display:grid;place-items:center;border:1px solid #52677d;border-radius:12px;background:linear-gradient(145deg,#1c344b,#101a27);color:#f0d58d;box-shadow:0 5px 18px #0005}
+.menu-toggle span{display:block;width:20px;height:2px;border-radius:3px;background:#f0d58d;position:relative}
+.menu-toggle span:before,.menu-toggle span:after{content:"";position:absolute;right:0;width:20px;height:2px;border-radius:3px;background:#f0d58d}
+.menu-toggle span:before{top:-6px}.menu-toggle span:after{top:6px}
+.header-dropdown{position:absolute;top:calc(100% + 12px);right:0;width:min(285px,calc(100vw - 32px));padding:10px;border:1px solid #344b61;border-radius:15px;background:linear-gradient(155deg,#172b40,#0d141e 75%);box-shadow:0 18px 45px #0009;z-index:50;display:none}
+.header-dropdown.open{display:block}
+.header-dropdown a,.header-dropdown button{width:100%;display:flex;align-items:center;gap:11px;text-align:right;text-decoration:none;padding:12px 13px;margin:2px 0;border-radius:9px;background:transparent;color:#e8edf4;border:1px solid transparent;font-size:14px;font-weight:700}
+.header-dropdown a:hover,.header-dropdown button:not(.admin-menu-link):hover{background:#28445d;border-color:#49627a;color:#fff}
+.header-dropdown .menu-divider{height:1px;background:#344b61;margin:8px 4px}
+.header-dropdown .admin-menu-link{justify-content:center;background:linear-gradient(120deg,#f0d58d,#c69b42);color:#17120a;border:0;margin-top:5px}
+.header-dropdown .admin-menu-link:hover{filter:brightness(1.08)}
+@media(max-width:600px){.site-header{padding:10px 4%}.brand-mark{width:40px;height:40px}.brand h1{font-size:15px}.brand p{font-size:9px}}
 .brand-mark{width:46px;height:46px;border:1px solid var(--gold);border-radius:12px;display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:19px;background:linear-gradient(145deg,#2b2416,#101114);box-shadow:0 0 24px #d8b15b20}
 .brand h1{margin:0;color:var(--gold2);font-size:clamp(17px,3vw,23px);letter-spacing:1px}
 .brand p{margin:0;color:var(--muted);font-size:10px;letter-spacing:2px}
@@ -267,20 +280,28 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 
 <header class="site-header">
  <div class="header-inner">
-  <a class="brand" href="#">
+  <a class="brand" href="#home" aria-label="Professional eSports - الرئيسية">
    <div class="brand-mark">PRO</div>
    <div><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE</p></div>
   </a>
-  <nav class="nav-links" aria-label="القائمة الرئيسية">
-   <a href="#home">الرئيسية</a><a href="#scrims">السكريمات</a><a href="#teamsSection">الفرق</a><a href="#resultsSection">النتائج</a>
-   <button class="secondary" id="loginToggle">دخول المشرفين</button>
-  </nav>
+  <div class="header-menu">
+   <button type="button" class="menu-toggle" id="siteMenuToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="siteDropdown"><span></span></button>
+   <nav class="header-dropdown" id="siteDropdown" aria-label="القائمة الرئيسية">
+    <a href="#home"><span>⌂</span> الرئيسية</a>
+    <a href="#scrims"><span>◈</span> السكريمات</a>
+    <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
+    <a href="#teamsSection"><span>♧</span> الفرق</a>
+    <a href="#resultsSection"><span>▤</span> النتائج</a>
+    <div class="menu-divider"></div>
+    <button type="button" class="admin-menu-link" id="loginToggle"><span>♙</span> دخول المشرفين</button>
+   </nav>
+  </div>
  </div>
 </header>
 
 <main>
 <section class="card">
- <div class="row" style="justify-content:space-between"><div><h2>PROFESSIONAL ESPORTS</h2><div class="muted">بوابتك الرسمية لعالم المنافسات الإلكترونية</div><p class="muted">منصة احترافية لإدارة البطولات والسكريمات، متابعة النتائج، تسجيل الفرق، وتنظيم المنافسات تحت إشراف Professional eSports.</p></div><button class="secondary" id="loginToggle">دخول المشرفين</button></div>
+ <div class="row" style="justify-content:space-between"><div><h2>PROFESSIONAL ESPORTS</h2><div class="muted">بوابتك الرسمية لعالم المنافسات الإلكترونية</div><p class="muted">منصة احترافية لإدارة البطولات والسكريمات، متابعة النتائج، تسجيل الفرق، وتنظيم المنافسات تحت إشراف Professional eSports.</p></div></div>
  <div id="status" class="notice">جاري الاتصال بقاعدة البيانات...</div>
 </section>
 
@@ -680,6 +701,11 @@ window.setTournamentStatus=setTournamentStatus;window.setMatchStatus=setMatchSta
 async function approveResult(id){const {error}=await client.from("match_results").update({status:"approved"}).eq("id",id);if(error)alert(error.message);else{await refreshAdmin();await loadPublic();}}
 async function rejectResult(id){const {error}=await client.from("match_results").update({status:"rejected"}).eq("id",id);if(error)alert(error.message);else await refreshAdmin();}
 window.approveResult=approveResult;window.rejectResult=rejectResult;
+function closeSiteMenu(){const menu=$("siteDropdown"),toggle=$("siteMenuToggle");if(menu)menu.classList.remove("open");if(toggle)toggle.setAttribute("aria-expanded","false");}
+$("siteMenuToggle").onclick=()=>{const menu=$("siteDropdown"),toggle=$("siteMenuToggle");if(!menu||!toggle)return;const opened=menu.classList.toggle("open");toggle.setAttribute("aria-expanded",String(opened));};
+document.addEventListener("click",event=>{if(!event.target.closest(".header-menu"))closeSiteMenu();});
+document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSiteMenu();});
+$("siteDropdown").querySelectorAll("a").forEach(link=>link.addEventListener("click",closeSiteMenu));
 $("loginToggle").onclick=()=>show("login");$("closeLogin").onclick=()=>show("login",false);
 $("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
 $("signOut").onclick=async()=>{await client.auth.signOut();show("admin",false);msg("تم تسجيل الخروج.");};
