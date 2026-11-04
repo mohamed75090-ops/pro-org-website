@@ -16,7 +16,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, auth
-as $
+as $function$
 declare v_number text;
 begin
   if auth.uid() is null then raise exception 'يجب تسجيل الدخول أولاً'; end if;
@@ -33,7 +33,7 @@ begin
 exception when unique_violation then
   raise exception 'رقم الواتساب مرتبط بحساب آخر';
 end;
-$;
+$function$;
 revoke all on function public.save_my_whatsapp_number(text) from public, anon;
 grant execute on function public.save_my_whatsapp_number(text) to authenticated;
 
