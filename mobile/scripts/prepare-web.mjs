@@ -23,7 +23,7 @@ html = html.replace(
 );
 
 if (!/<meta name="theme-color"/i.test(html)) {
-  html = html.replace('</head>', '<meta name="theme-color" content="#08090c">\\n</head>');
+  html = html.replace('</head>', '<meta name="theme-color" content="#08090c">\n</head>');
 }
 
 const nativeStyle = `
@@ -77,7 +77,7 @@ const nativeStyle = `
 `;
 
 if (!html.includes('id="pro-native-shell"')) {
-  html = html.replace('</head>', nativeStyle + '\\n</head>');
+  html = html.replace('</head>', nativeStyle + '\n</head>');
 }
 
 fs.writeFileSync(output, html, 'utf8');
