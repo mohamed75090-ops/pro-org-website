@@ -1468,6 +1468,7 @@ async function approveResult(id){const {error}=await client.from("match_results"
 async function rejectResult(id){const {error}=await client.from("match_results").update({status:"rejected"}).eq("id",id);if(error)alert(error.message);else await refreshAdmin();}
 window.approveResult=approveResult;window.rejectResult=rejectResult;
 function closeSiteMenu(){const menu=$("siteDropdown"),toggle=$("siteMenuToggle");if(menu)menu.classList.remove("open");if(toggle)toggle.setAttribute("aria-expanded","false");}
+$("siteDropdown").addEventListener("click",event=>{if(event.target.closest("a,button"))closeSiteMenu();},true);
 $("siteMenuToggle").onclick=()=>{const menu=$("siteDropdown"),toggle=$("siteMenuToggle");if(!menu||!toggle)return;const opened=menu.classList.toggle("open");toggle.setAttribute("aria-expanded",String(opened));};
 document.addEventListener("click",event=>{if(!event.target.closest(".header-menu"))closeSiteMenu();});
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSiteMenu();});
