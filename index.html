@@ -301,6 +301,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
  <h2 id="teamRegistrationTitle">تسجيل الفريق في السكريم</h2>
  <p class="small" id="teamRegistrationScrimName"></p>
+ <div id="teamRegistrationCountdown" class="scrim-countdown" aria-live="polite"><span class="scrim-countdown-status">جاري تحميل حالة التسجيل...</span></div>
  <form id="teamRegistrationForm">
   <input type="hidden" id="applicationScrimId">
   <label for="applicationTeamName">اسم الفريق الكامل</label>
@@ -755,15 +756,31 @@ function returnToPublicPages(){
 function openTeamCenterPage(){showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
 window.openTeamCenterPage=openTeamCenterPage;
 window.returnToPublicPages=returnToPublicPages;
-function openTeamRegistration(scrimId,title){
+async function openTeamRegistration(scrimId,title){
  $("applicationScrimId").value=scrimId;
  $("teamRegistrationScrimName").textContent=title||"";
  $("teamRegistrationForm").reset();
  $("applicationScrimId").value=scrimId;
  $("teamRegistrationMessage").classList.add("hidden");
- $("teamRegistrationForm").classList.remove("hidden");
+ $("teamRegistrationForm").classList.add("hidden");
+ $("teamRegistrationCountdown").innerHTML='<span class="scrim-countdown-status">جاري تحميل حالة التسجيل...</span>';
  showStandalonePage("registrationPage");
- $("applicationTeamName").focus();
+ try{
+  const {data,error}=await client.from("scrims").select("id,title,status,registration_opens_at,registration_closes_at").eq("id",scrimId).maybeSingle();
+  if(error||!data)throw new Error(error?.message||"تعذر العثور على بيانات السكريم.");
+  const box=$("teamRegistrationCountdown");
+  box.dataset.countdown="true";box.dataset.status=data.status||"";box.dataset.opens=data.registration_opens_at||"";box.dataset.closes=data.registration_closes_at||"";
+  box.innerHTML='<span class="scrim-countdown-title">حالة التسجيل</span><div class="scrim-countdown-content" data-countdown-content></div>';
+  refreshScrimCountdowns();
+  if(scrimRegistrationIsOpen(data))$("teamRegistrationForm").classList.remove("hidden");
+  else $("teamRegistrationMessage").textContent=scrimCountdownLabel(data).label+" — لا يمكن إرسال طلب لهذا السكريم حالياً.";
+  if(!scrimRegistrationIsOpen(data))$("teamRegistrationMessage").classList.remove("hidden");
+  else $("applicationTeamName").focus();
+ }catch(e){
+  $("teamRegistrationCountdown").innerHTML='<span class="scrim-countdown-status">تعذر تحميل حالة التسجيل.</span>';
+  $("teamRegistrationMessage").textContent=e?.message||"تعذر التحقق من حالة التسجيل. حاول مرة أخرى.";
+  $("teamRegistrationMessage").classList.remove("hidden");
+ }
 }
 window.openTeamRegistration=openTeamRegistration;
 async function submitTeamApplication(event){
@@ -983,6 +1000,13 @@ function refreshScrimCountdowns(){
   else label="التسجيل مفتوح";
   const content=el.querySelector('[data-countdown-content]');
   if(content)content.innerHTML=`<span class="scrim-countdown-status">${label}</span>${target?countdownUnitsHTML(target-now):""}`;
+  if(el.id==="teamRegistrationCountdown"){
+   const form=$("teamRegistrationForm"),message=$("teamRegistrationMessage");
+   const open=status==="registration_open"&&(!open||now>=open)&&(!close||now<close);
+   if(form)form.classList.toggle("hidden",!open);
+   if(!open&&message&&message.classList.contains("hidden")){message.textContent=label+" — لا يمكن إرسال طلب لهذا السكريم حالياً.";message.classList.remove("hidden");}
+   if(open&&message&&message.textContent.includes("لا يمكن إرسال طلب"))message.classList.add("hidden");
+  }
  });
 }
 function countdownParts(ms){
