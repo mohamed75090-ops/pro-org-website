@@ -14,12 +14,36 @@ declare
   v_actor_role text;
   v_founders integer;
 begin
+  if tg_op = 'INSERT' then
+    -- Signup may create an ordinary player profile; elevated roles require an existing founder.
+    if auth.uid() is null then
+      if coalesce(current_setting('request.jwt.claim.role',true),'') in ('anon','authenticated') then
+        raise exception 'إنشاء صلاحيات إدارية غير مسموح';
+      end if;
+      return new;
+    end if;
+    select lower(trim(coalesce(p.role,''))) into v_actor_role
+    from public.profiles p where p.id = auth.uid();
+    if lower(trim(coalesce(new.role,''))) <> 'player'
+       and coalesce(v_actor_role,'') <> 'founder' then
+      raise exception 'إنشاء صلاحيات إدارية متاح للمؤسس فقط';
+    end if;
+    if lower(trim(coalesce(new.role,''))) not in
+      ('founder','admin','organizer','results_manager','tournament_manager','player') then
+      raise exception 'الرول المحدد غير معتمد';
+    end if;
+    return new;
+  end if;
+
   if new.role is not distinct from old.role then
     return new;
   end if;
 
-  -- Trusted server-side maintenance calls may have no auth.uid().
+  -- Trusted server-side maintenance calls may have no auth.uid(); API clients may not bypass this.
   if auth.uid() is null then
+    if coalesce(current_setting('request.jwt.claim.role',true),'') in ('anon','authenticated') then
+      raise exception 'تغيير الرولات متاح للمؤسس فقط';
+    end if;
     return new;
   end if;
 
@@ -51,6 +75,10 @@ $$;
 drop trigger if exists profiles_guard_role_changes on public.profiles;
 create trigger profiles_guard_role_changes
 before update of role on public.profiles
+for each row execute function public.guard_profile_role_changes();
+drop trigger if exists profiles_guard_role_inserts on public.profiles;
+create trigger profiles_guard_role_inserts
+before insert on public.profiles
 for each row execute function public.guard_profile_role_changes();
 
 create table if not exists public.role_change_audit (
