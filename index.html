@@ -459,19 +459,26 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 
  </div>
  <div id="adminMainResults" class="admin-main-panel hidden">
- <div id="aiScanner" class="card hidden">
-  <h2>AI ROOM SCANNER</h2>
-  <p class="muted">ارفع صور نتائج الروم، وسيقرأ الذكاء الاصطناعي المراكز وأسماء اللاعبين وKills كل لاعب.</p>
-  <label>المباراة</label><select id="aiMatch"></select>
-  <label>صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
-  <div class="small">كل صورة يفترض أن تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع كل صور المباراة معاً.</div>
-  <button id="scanImages">تحليل الصور بالذكاء الاصطناعي</button>
-  <div id="aiStatus" class="notice">النتائج المستخرجة ستظهر هنا للمراجعة.</div><div id="aiOutput"></div>
- </div>
- 
-<div id="resultForm" class="card hidden"><h2>إدخال نتيجة فريق</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
- <div class="card"><h2>مراجعة النتائج</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
- </div>
+   <div class="card" style="border:1px solid var(--line);margin-bottom:14px">
+    <h2 style="margin:0">إدخال النتائج بالذكاء الاصطناعي</h2>
+    <p class="small" style="margin:6px 0 0">أولاً: ارفع صور نتائج الروم لتحليلها ومراجعتها قبل الحفظ.</p>
+   </div>
+   <div id="aiScanner" class="card hidden">
+    <h2>AI ROOM SCANNER</h2>
+    <p class="muted">ارفع صور نتائج الروم، وسيقرأ الذكاء الاصطناعي المراكز وأسماء اللاعبين وKills كل لاعب.</p>
+    <label>المباراة</label><select id="aiMatch"></select>
+    <label>صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
+    <div class="small">كل صورة يفترض أن تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع كل صور المباراة معاً.</div>
+    <button id="scanImages">تحليل الصور بالذكاء الاصطناعي</button>
+    <div id="aiStatus" class="notice">النتائج المستخرجة ستظهر هنا للمراجعة.</div><div id="aiOutput"></div>
+   </div>
+   <div class="card" style="border:1px solid var(--line);margin:18px 0 14px">
+    <h2 style="margin:0">إدخال النتائج يدوياً</h2>
+    <p class="small" style="margin:6px 0 0">ثانياً: أدخل نتيجة الفريق مباشرةً باختيار المباراة والفريق والمركز وعدد الإقصاءات.</p>
+   </div>
+   <div id="resultForm" class="card hidden"><h2>بيانات النتيجة اليدوية</h2><label>المباراة</label><select id="resultMatch"></select><label>الفريق</label><select id="resultTeam"></select><label>المركز</label><input id="placement" type="number" min="1" step="1" placeholder="مثال: 1"><label>Kills</label><input id="kills" type="number" min="0" step="1" placeholder="عدد الإقصاءات"><label>نقاط الترتيب (تُحسب تلقائياً)</label><input id="placementPoints" type="number" min="0" readonly><div class="notice" id="scorePreview">المجموع النهائي: 0 نقطة</div><div class="small">نقاط الترتيب: 1=10، 2=6، 3=5، 4=4، 5=3، 6=2، 7=1، ومن 8 فما فوق=0. كل Kill = نقطة.</div><button id="addResult">حفظ النتيجة كمعلّقة</button></div>
+   <div class="card"><h2>مراجعة النتائج المعلّقة</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
+  </div>
  <div id="adminMainMvp" class="admin-main-panel hidden">
  <div id="weeklyMvpAdmin" class="card hidden">
   <h2>إدارة MVP الأسبوعي</h2>
