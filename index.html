@@ -457,7 +457,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 <section id="playerProfilePage" class="section hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الموقع</button>
  <div class="auth-card"><div class="auth-heading"><h3>الملف الشخصي</h3><p>بيانات حساب اللاعب</p></div>
-  <div class="card"><p>اسم المستخدم: <b id="playerProfileUsername">—</b></p><p>رقم الواتساب: <b id="playerProfileWhatsapp">—</b></p><p>حالة التحقق: <span class="small">غير موثّق حالياً</span></p></div>
+  <div class="card"><p>اسم المستخدم: <b id="playerProfileUsername">—</b></p><p>الرول الحالي: <span id="playerProfileRole" class="role-badge role-player">لاعب</span></p><p>رقم الواتساب: <b id="playerProfileWhatsapp">—</b></p><p>حالة التحقق: <span class="small">غير موثّق حالياً</span></p></div>
   <button type="button" class="danger" id="playerSignOutButton">تسجيل الخروج</button>
  </div>
 </section>
@@ -917,13 +917,16 @@ async function loadSiteMonitoring(){
  $("siteAnonymousToday").textContent="اليوم: "+Number(stats.anonymous_visits_today||0).toLocaleString("en-US");
  const rows=Array.isArray(stats.accounts)?stats.accounts:[];
  if(!rows.length){host.innerHTML='<div class="notice">لا توجد حسابات مسجلة حتى الآن.</div>';return;}
- host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم المستخدم</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th><th>إدارة</th></tr></thead><tbody>'+
+ host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم المستخدم</th><th>الرول</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th><th>إدارة</th></tr></thead><tbody>'+
  rows.map(account=>{
   const phone=String(account.whatsapp_number||""),digits=phone.replace(/[^0-9]/g,"");
   const verified=account.whatsapp_verified?'<span class="success">موثّق</span>':'<span class="muted">غير موثّق</span>';
+  const roleMeta={founder:["المؤسس","role-founder"],admin:["المشرف العام","role-admin"],organizer:["المنظّم","role-organizer"],results_manager:["مدير النتائج","role-results"],tournament_manager:["مدير البطولات","role-tournament"],viewer:["مشاهد","role-viewer"],player:["لاعب","role-player"]};
+  const role=roleMeta[String(account.role||"player").toLowerCase()]||["غير محدد","role-viewer"];
+  const roleBadge='<span class="role-badge '+role[1]+'">'+role[0]+'</span>';
   const contact=digits?'<a class="secondary" style="display:inline-block;padding:8px 12px;text-decoration:none" href="https://wa.me/'+esc(digits)+'" target="_blank" rel="noopener noreferrer">فتح واتساب</a>':'<span class="muted">لا يوجد رقم</span>';
   const action=currentRole==="founder"?'<button type="button" class="monitoring-user-action" onclick="openMonitoringRoleEditor(\''+esc(account.id)+'\',\''+esc(account.display_name||account.username||"مستخدم")+'\')">إعطاء رول</button>':'<span class="muted">—</span>';
-  return '<tr><td>'+esc(account.display_name||account.username||"مستخدم")+'</td><td dir="ltr">'+esc(phone||"—")+'</td><td>'+verified+'</td><td>'+contact+'</td><td>'+action+'</td></tr>';
+  return '<tr><td>'+esc(account.display_name||account.username||"مستخدم")+'</td><td>'+roleBadge+'</td><td dir="ltr">'+esc(phone||"—")+'</td><td>'+verified+'</td><td>'+contact+'</td><td>'+action+'</td></tr>';
  }).join("")+'</tbody></table></div>';
 }
 
@@ -1052,6 +1055,13 @@ async function openPlayerProfile(){
  const username=user.user_metadata?.username||String(user.email||"").split("@")[0];
  $("playerProfileUsername").textContent=username;
  $("playerProfileWhatsapp").textContent="مسجل في بيانات الحساب";
+ const roleLabels={founder:["المؤسس","role-founder"],admin:["المشرف العام","role-admin"],organizer:["المنظّم","role-organizer"],results_manager:["مدير النتائج","role-results"],tournament_manager:["مدير البطولات","role-tournament"],viewer:["مشاهد","role-viewer"],player:["لاعب","role-player"]};
+ const roleEl=$("playerProfileRole");
+ roleEl.textContent="جاري التحميل...";
+ roleEl.className="role-badge role-player";
+ const {data:profile,error}=await client.from("profiles").select("role").eq("id",user.id).single();
+ if(error){roleEl.textContent="تعذر تحميل الرول";console.warn("Profile role:",error.message);}
+ else{const meta=roleLabels[String(profile?.role||"player").toLowerCase()]||["غير محدد","role-viewer"];roleEl.textContent=meta[0];roleEl.className="role-badge "+meta[1];}
  showStandalonePage("playerProfilePage");
 }
 window.openPlayerProfile=openPlayerProfile;
