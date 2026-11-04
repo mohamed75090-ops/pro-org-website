@@ -1780,7 +1780,7 @@ client.auth.onAuthStateChange((event,session)=>{
  setTimeout(async()=>{await syncPlayerMenu(session?.user||null);await refreshAdmin();await loadPublicScrims();},0);
 });
 setInterval(()=>{if(document.visibilityState==="visible")refreshScrimCountdowns();},1000);
-setInterval(()=>{if(document.visibilityState==="visible")document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\\"scrim-countdown-status\\">انتهت فترة الانسحاب</span>";});},1000);
+setInterval(()=>{if(document.visibilityState==="visible")document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
 // Public refreshes pause in background tabs and while offline.
 setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadPublicScrims();},120000);
 setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadWeeklyMvp();},180000);
