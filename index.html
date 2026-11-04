@@ -326,6 +326,25 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  .monitoring-user-action{background:#1b2938;border:1px solid #49627a;color:#eaf2fb;padding:7px 10px;border-radius:8px;font-weight:700}
  #siteMonitoringRoleEditor{border:1px solid #80612e;background:#211b11;border-radius:12px;padding:14px;margin:12px 0}
  #siteMonitoringRoleEditor .row{align-items:end}
+
+/* Premium tournament registration announcement */
+.tournament-promo-card{overflow:hidden;position:relative;border:1px solid rgba(244,174,48,.55);border-radius:20px;background:radial-gradient(circle at 90% 0%,rgba(255,174,30,.14),transparent 34%),linear-gradient(145deg,#17130d,#090b10 62%,#17120b);box-shadow:0 16px 42px rgba(0,0,0,.34),inset 0 0 0 1px rgba(255,190,55,.08);padding:0;color:#f7f3e9}
+.tournament-promo-poster{display:block;width:100%;aspect-ratio:16/7;object-fit:cover;background:#101116;cursor:pointer}
+.tournament-promo-placeholder{display:grid;place-items:center;font-size:54px;color:#eeb43f;background:radial-gradient(circle,#46300c,#101116 70%)}
+.tournament-promo-body{padding:18px}
+.tournament-promo-top,.tournament-capacity,.tournament-promo-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tournament-promo-kicker,.tournament-countdown-wrap>span,.tournament-capacity span,.tournament-public-teams-title{font-size:11px;letter-spacing:1.1px;color:#b9a47d;font-weight:800}
+.tournament-state-open,.tournament-state-closed{font-size:11px;font-weight:900;letter-spacing:1px;border-radius:30px;padding:7px 11px}
+.tournament-state-open{background:rgba(32,190,115,.13);border:1px solid #239e68;color:#62e4a6}
+.tournament-state-closed{background:rgba(220,70,70,.12);border:1px solid #a84646;color:#ff8d8d}
+.tournament-promo-body h3{font-size:clamp(22px,4vw,30px);margin:13px 0 6px;color:#ffd05c}
+.tournament-promo-description{color:#c9c3b8;line-height:1.7;min-height:24px}
+.tournament-countdown-wrap{margin:16px 0;padding:13px 15px;border:1px solid rgba(246,179,47,.28);border-radius:12px;background:rgba(0,0,0,.35);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tournament-countdown-wrap b{direction:ltr;font-variant-numeric:tabular-nums;color:#ffca42;font-size:clamp(15px,3vw,21px);letter-spacing:1px}
+.tournament-capacity{margin:12px 0 8px}.tournament-capacity b{display:block;color:#fff;font-size:21px;margin-top:4px;font-variant-numeric:tabular-nums}
+.tournament-progress{height:9px;border-radius:20px;background:#29251d;overflow:hidden;margin-bottom:17px}.tournament-progress i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#b87512,#ffdc62);transition:width .35s ease}
+.tournament-promo-actions button{flex:1;min-width:135px}.tournament-public-teams{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:14px}.tournament-public-teams-title{width:100%}.tournament-team-chip{font-size:12px;border:1px solid rgba(255,195,70,.35);background:rgba(255,180,35,.08);border-radius:7px;padding:5px 9px;color:#f3d58c}
+@media(max-width:600px){.tournament-promo-body{padding:14px}.tournament-promo-poster{aspect-ratio:16/9}.tournament-promo-actions{flex-direction:column}.tournament-promo-actions button{width:100%}}
 </style>
 </head>
 <body>
@@ -774,25 +793,65 @@ function tournamentRegistrationState(t){
  if(t.status!=="published")return {open:false,label:"البطولة غير منشورة"};
  if(!t.registration_enabled)return {open:false,label:"التسجيل غير مفعّل"};
  if(open&&now<open)return {open:false,label:"يفتح التسجيل: "+tournamentDateLabel(t.registration_opens_at)};
- if(close&&now>close)return {open:false,label:"انتهى التسجيل"};
- return {open:true,label:close?"التسجيل مفتوح حتى "+tournamentDateLabel(t.registration_closes_at):"التسجيل مفتوح"};
+ if(close&&now>=close)return {open:false,label:"انتهى التسجيل"};
+ return {open:true,label:"التسجيل مفتوح"};
 }
 function tournamentCardHTML(t){
- const state=tournamentRegistrationState(t);
- const poster=t.poster_url?'<img src="'+esc(t.poster_url)+'" alt="إعلان '+esc(t.name)+'" data-open-tournament="'+t.id+'" style="cursor:pointer;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-bottom:12px">':'<div class="mvp-empty" data-open-tournament="'+t.id+'" style="cursor:pointer;aspect-ratio:16/9;display:grid;place-items:center;margin-bottom:12px">🏆 إعلان البطولة</div>';
- return '<article class="card tournament-public-card">'+poster+'<h3>'+esc(t.name)+'</h3><p class="small">'+esc((t.description||"").slice(0,180))+'</p><p class="notice">'+esc(state.label)+'</p><button type="button" data-open-tournament="'+t.id+'">عرض تفاصيل البطولة</button></article>';
+ const state=tournamentRegistrationState(t),max=Math.max(1,Number(t.max_teams)||25);
+ const poster=t.poster_url?'<img src="'+esc(t.poster_url)+'" alt="إعلان '+esc(t.name)+'" data-open-tournament="'+t.id+'" class="tournament-promo-poster">':'<div class="tournament-promo-poster tournament-promo-placeholder" data-open-tournament="'+t.id+'">🏆</div>';
+ const close=t.registration_closes_at?new Date(t.registration_closes_at).getTime():0;
+ const badge=state.open?'<span class="tournament-state-open">● OPEN</span>':'<span class="tournament-state-closed">● CLOSED</span>';
+ return '<article class="tournament-promo-card" data-tournament-card="'+t.id+'">'+poster+'<div class="tournament-promo-body"><div class="tournament-promo-top">'+badge+'<span class="tournament-promo-kicker">OFFICIAL TOURNAMENT</span></div><h3>'+esc(t.name)+'</h3><p class="tournament-promo-description">'+esc((t.description||"").slice(0,180))+'</p><div class="tournament-countdown-wrap"><span>REGISTRATION CLOSES IN</span><b data-tournament-countdown="'+t.id+'" data-close-at="'+(close||"")+'">'+(close? "Calculating..." : "No closing date")+'</b></div><div class="tournament-capacity"><div><span>REGISTERED TEAMS</span><b><span data-registered-count="'+t.id+'">0</span> / '+max+'</b></div><span data-team-percent="'+t.id+'">0%</span></div><div class="tournament-progress"><i data-team-progress="'+t.id+'" style="width:0%"></i></div><div class="tournament-promo-actions"><button type="button" data-open-tournament="'+t.id+'">عرض البطولة</button><button type="button" class="secondary" data-register-tournament="'+t.id+'" '+(state.open?"":"disabled")+'>'+(state.open?"سجل فريقك الآن":"التسجيل مغلق")+'</button></div><div class="tournament-public-teams" data-public-teams="'+t.id+'"></div></div></article>';
 }
-function renderTournamentPageList(rows){const el=$("tournamentsPageList");if(!el)return;el.innerHTML=rows.length?rows.map(tournamentCardHTML).join(""):'<div class="card">لا توجد إعلانات بطولات منشورة حالياً.</div>';}
-function renderPublicTournaments(rows){const el=$("publicTournaments");if(el)el.innerHTML=rows.length?rows.map(tournamentCardHTML).join(""):'<div class="card">لا توجد إعلانات بطولات منشورة حالياً.</div>';}
+async function loadPublicTournamentStats(rows){
+ await Promise.all((rows||[]).map(async t=>{
+  const {data,error}=await client.rpc("get_public_tournament_registration_stats",{p_tournament_id:t.id});
+  if(error)return;
+  const stats=Array.isArray(data)?data[0]:data;if(!stats)return;
+  const count=Number(stats.registered_count)||0,max=Math.max(1,Number(t.max_teams)||25),pct=Math.min(100,Math.round(count/max*100));
+  document.querySelectorAll('[data-registered-count="'+t.id+'"]').forEach(el=>el.textContent=count.toLocaleString("en-US"));
+  document.querySelectorAll('[data-team-percent="'+t.id+'"]').forEach(el=>el.textContent=pct.toLocaleString("en-US")+"%");
+  document.querySelectorAll('[data-team-progress="'+t.id+'"]').forEach(el=>el.style.width=pct+"%");
+  const teamsHost=document.querySelector('[data-public-teams="'+t.id+'"]');
+  if(teamsHost){
+   if(stats.accepted_teams_visible&&Array.isArray(stats.accepted_teams)&&stats.accepted_teams.length){
+    teamsHost.innerHTML='<div class="tournament-public-teams-title">ACCEPTED TEAMS</div>'+stats.accepted_teams.map(a=>'<span class="tournament-team-chip">'+esc(a.team_tag||a.team_name)+'</span>').join("");
+   }else if(!stats.accepted_teams_visible){teamsHost.innerHTML='<span class="small">قائمة الفرق المقبولة مخفية حالياً.</span>';}
+  }
+  if(count>=max){
+   document.querySelectorAll('[data-tournament-card="'+t.id+'"] [data-register-tournament]').forEach(b=>{b.disabled=true;b.textContent="اكتمل العدد";});
+  }
+ }));
+}
+function updateTournamentCountdowns(){
+ document.querySelectorAll("[data-tournament-countdown]").forEach(el=>{
+  const end=Number(el.dataset.closeAt);if(!end){el.textContent="No closing date";return;}
+  let left=Math.max(0,end-Date.now());
+  if(left<=0){el.textContent="REGISTRATION CLOSED";const id=el.dataset.tournamentCountdown;document.querySelectorAll('[data-tournament-card="'+id+'"] [data-register-tournament]').forEach(b=>{b.disabled=true;b.textContent="التسجيل مغلق";});return;}
+  const days=Math.floor(left/86400000);left%=86400000;const hours=Math.floor(left/3600000);left%=3600000;const mins=Math.floor(left/60000);const secs=Math.floor((left%60000)/1000);
+  el.textContent=[days,hours,mins,secs].map(v=>String(v).padStart(2,"0")).join(" : ");
+ });
+}
+if(!window.tournamentCountdownTimer)window.tournamentCountdownTimer=window.setInterval(updateTournamentCountdowns,1000);
+document.addEventListener("click",event=>{
+ const register=event.target.closest("[data-register-tournament]");
+ if(register){event.preventDefault();openTournamentRegistration(register.dataset.registerTournament);return;}
+ const target=event.target.closest("[data-open-tournament]");if(target)openTournamentDetails(target.dataset.openTournament);
+});
+function renderTournamentPageList(rows){const el=$("tournamentsPageList");if(!el)return;el.innerHTML=rows.length?rows.map(tournamentCardHTML).join(""):'<div class="card">لا توجد إعلانات بطولات منشورة حالياً.</div>';updateTournamentCountdowns();loadPublicTournamentStats(rows);}
+function renderPublicTournaments(rows){const el=$("publicTournaments");if(el)el.innerHTML=rows.length?rows.map(tournamentCardHTML).join(""):'<div class="card">لا توجد إعلانات بطولات منشورة حالياً.</div>';updateTournamentCountdowns();loadPublicTournamentStats(rows);}
 document.addEventListener("click",event=>{const target=event.target.closest("[data-open-tournament]");if(target)openTournamentDetails(target.dataset.openTournament);});
 
 async function openTournamentDetails(id){
  activeTournamentId=id;showStandalonePage("tournamentsPage");$("tournamentsPageList").classList.add("hidden");const detail=$("tournamentsPageDetail");detail.classList.remove("hidden");detail.innerHTML='<button type="button" class="secondary" onclick="showTournamentList()">العودة إلى قائمة البطولات</button><div id="tournamentDetailsContent">جاري تحميل تفاصيل البطولة...</div>';
  const el=$("tournamentDetailsContent");
- const {data,error}=await client.from("tournaments").select("id,name,description,status,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled").eq("id",id).maybeSingle();
+ const {data,error}=await client.from("tournaments").select("id,name,description,status,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,accepted_teams_visible").eq("id",id).maybeSingle();
  if(error||!data){el.innerHTML='<div class="notice">تعذر تحميل البطولة: '+esc(error?.message||"غير موجودة")+'</div>';return;}
  const state=tournamentRegistrationState(data),poster=data.poster_url?'<img src="'+esc(data.poster_url)+'" alt="إعلان البطولة" style="width:100%;max-height:420px;object-fit:contain;border-radius:14px">':"";
- el.innerHTML=poster+'<h2>'+esc(data.name)+'</h2><p>'+esc(data.description||"لا توجد تفاصيل إضافية حالياً.")+'</p><div class="notice"><b>'+esc(state.label)+'</b><p class="small">فتح التسجيل: '+tournamentDateLabel(data.registration_opens_at)+'<br>إغلاق التسجيل: '+tournamentDateLabel(data.registration_closes_at)+'<br>الحد الأقصى للفرق: '+Number(data.max_teams||25)+'</p></div><div class="row" style="flex-wrap:wrap"><button type="button" '+(state.open?"":"disabled")+' onclick="openTournamentRegistration(\''+id+'\')">تسجيل فريق في البطولة</button><button type="button" class="secondary" onclick="openTournamentTeamCenter(\''+id+'\')">مركز الفريق لهذه البطولة</button></div>';
+ const statsResult=await client.rpc("get_public_tournament_registration_stats",{p_tournament_id:id}),stats=Array.isArray(statsResult.data)?statsResult.data[0]:statsResult.data,count=Number(stats?.registered_count)||0,max=Math.max(1,Number(data.max_teams)||25);
+ const close=data.registration_closes_at?new Date(data.registration_closes_at).getTime():0;
+ el.innerHTML=poster+'<h2>'+esc(data.name)+'</h2><p>'+esc(data.description||"لا توجد تفاصيل إضافية حالياً.")+'</p><div class="notice"><b>'+esc(state.label)+'</b><p class="small">فتح التسجيل: '+tournamentDateLabel(data.registration_opens_at)+'<br>إغلاق التسجيل: '+tournamentDateLabel(data.registration_closes_at)+'</p><div class="tournament-countdown-wrap"><span>REGISTRATION CLOSES IN</span><b id="tournamentDetailCountdown" data-close-at="'+(close||"")+'">Calculating...</b></div><div class="tournament-capacity"><div><span>REGISTERED TEAMS</span><b>'+count.toLocaleString("en-US")+' / '+max.toLocaleString("en-US")+'</b></div><span>'+Math.min(100,Math.round(count/max*100)).toLocaleString("en-US")+'%</span></div><div class="tournament-progress"><i style="width:'+Math.min(100,Math.round(count/max*100))+'%"></i></div></div><div class="row" style="flex-wrap:wrap"><button type="button" '+(state.open&&count<max?"":"disabled")+' onclick="openTournamentRegistration(\''+id+'\')">'+(count>=max?"اكتمل العدد":"تسجيل فريق في البطولة")+'</button><button type="button" class="secondary" onclick="openTournamentTeamCenter(\''+id+'\')">مركز الفريق لهذه البطولة</button></div>';
+ updateTournamentCountdowns();
 }
 function showTournamentList(){$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"});}
 window.showTournamentList=showTournamentList;
@@ -906,7 +965,7 @@ async function loadPublic(){
  let timer;
  try{
   const pending=Promise.all([
-   client.from("tournaments").select("id,name,description,status,start_date,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled").in("status",["published","completed"]).order("created_at",{ascending:false}),
+   client.from("tournaments").select("id,name,description,status,start_date,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,accepted_teams_visible").in("status",["published","completed"]).order("created_at",{ascending:false}),
    client.from("teams").select("id,name,tag").eq("status","active").order("name"),
    client.from("match_results").select("placement,kills,placement_points,total_points,teams(name,tag),matches(name)").eq("status","approved").order("total_points",{ascending:false}).limit(30)
   ]);
@@ -1024,7 +1083,7 @@ async function loadAdminTournamentManagement(){
  panel.classList.toggle("hidden",!allowed);
  if(!allowed){host.innerHTML="<p class='notice'>لا تملك صلاحية إدارة البطولات.</p>";return;}
  host.innerHTML="<h3>إدارة البطولات</h3><p class='small'>جاري تحميل البطولات...</p>";
- const {data,error}=await client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,created_at").order("created_at",{ascending:false});
+ const {data,error}=await client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,accepted_teams_visible,created_at").order("created_at",{ascending:false});
  if(error){
   host.innerHTML='<h3>إدارة البطولات</h3><div class="notice">تعذر تحميل البطولات: <b>'+esc(error.message)+'</b></div><button class="secondary" id="retryAdminTournaments">إعادة المحاولة</button>';
   $("retryAdminTournaments").onclick=loadAdminTournamentManagement;
@@ -1032,15 +1091,23 @@ async function loadAdminTournamentManagement(){
  }
  tournamentsCache=data||[];
  const actions='<div class="row"><button data-status="published">نشر</button><button class="secondary" data-status="paused">إيقاف مؤقت</button><button class="secondary" data-status="draft">إرجاع لمسودة</button><button class="danger" data-status="completed">إنهاء البطولة</button><button class="danger" data-delete="1">حذف البطولة</button></div>';
- host.innerHTML='<div class="row" style="align-items:center;justify-content:space-between"><h3>إدارة البطولات ('+tournamentsCache.length+')</h3><button class="secondary" id="refreshAdminTournaments">تحديث القائمة</button></div>'+(tournamentsCache.length?tournamentsCache.map(x=>'<div class="card" data-tournament-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><p>الحالة: '+esc(x.status||"غير محددة")+'</p>'+actions+'</div>').join(""):'<p class="notice">لا توجد بطولات في جدول الإدارة.</p>');
+ host.innerHTML='<div class="row" style="align-items:center;justify-content:space-between"><h3>إدارة البطولات ('+tournamentsCache.length+')</h3><button class="secondary" id="refreshAdminTournaments">تحديث القائمة</button></div>'+(tournamentsCache.length?tournamentsCache.map(x=>'<div class="card" data-tournament-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><p>الحالة: '+esc(x.status||"غير محددة")+'</p><p>ظهور الفرق المقبولة للعامة: <b>'+(x.accepted_teams_visible?'ظاهر':'مخفي')+'</b></p><div class="row"><button class="secondary" data-team-visibility="'+(x.accepted_teams_visible?'hide':'show')+'">'+(x.accepted_teams_visible?'إخفاء الفرق المقبولة':'إظهار الفرق المقبولة')+'</button></div>'+actions+'</div>').join(""):'<p class="notice">لا توجد بطولات في جدول الإدارة.</p>');
  $("refreshAdminTournaments").onclick=loadAdminTournamentManagement;
  host.querySelectorAll("[data-tournament-id]").forEach(card=>{
   const id=card.dataset.tournamentId,name=card.querySelector("b")?.textContent||"البطولة";
   card.querySelectorAll("[data-status]").forEach(button=>button.addEventListener("click",()=>setTournamentStatus(id,button.dataset.status)));
   const del=card.querySelector("[data-delete]");
   if(del)del.addEventListener("click",()=>deleteTournament(id,name));
+  const visibility=card.querySelector("[data-team-visibility]");
+  if(visibility)visibility.addEventListener("click",()=>toggleTournamentAcceptedTeamsVisibility(id,visibility.dataset.teamVisibility==="show"));
  });
 }
+async function toggleTournamentAcceptedTeamsVisibility(tournamentId,visible){
+ const {error}=await client.from("tournaments").update({accepted_teams_visible:visible}).eq("id",tournamentId);
+ if(error){alert("تعذر تحديث ظهور الفرق: "+error.message);return;}
+ await loadAdminTournamentManagement();await loadPublic();
+}
+window.toggleTournamentAcceptedTeamsVisibility=toggleTournamentAcceptedTeamsVisibility;
 window.loadAdminTournamentManagement=loadAdminTournamentManagement;
 
 async function refreshAdmin(){
