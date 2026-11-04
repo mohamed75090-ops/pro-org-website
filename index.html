@@ -274,6 +274,26 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  .mvp-rank-stats{grid-column:2}
  .mvp-admin-grid{grid-template-columns:1fr}
 }
+
+/* Standalone moderator sign-in page */
+.auth-page{max-width:520px;margin:clamp(28px,7vh,76px) auto;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.auth-card{position:relative;overflow:hidden;padding:clamp(24px,5vw,38px);border:1px solid #344b61;border-radius:22px;background:radial-gradient(ellipse at 50% -20%,#29445d 0%,transparent 58%),linear-gradient(155deg,#172b40,#0c131d 78%);box-shadow:0 24px 65px #0008}
+.auth-card:before{content:"";position:absolute;top:0;left:12%;right:12%;height:2px;background:linear-gradient(90deg,transparent,#e2bd69,transparent)}
+.auth-brand{display:flex;align-items:center;justify-content:center;gap:13px;margin-bottom:28px;text-align:left;direction:ltr}
+.auth-brand .brand-mark{width:54px;height:54px}
+.auth-brand h2{margin:0;color:#f0d58d;font-size:clamp(17px,4vw,22px);letter-spacing:1px}
+.auth-brand p{margin:4px 0 0;color:#aab8c7;font-size:10px;letter-spacing:2px}
+.auth-heading{text-align:center;margin-bottom:24px}
+.auth-heading h3{font-size:23px;margin:0 0 8px;color:#f3f5f8}
+.auth-heading p{font-size:13px;color:#aab8c7;margin:0}
+.auth-card label{display:block;color:#d9c28e;font-weight:700;margin-top:14px}
+.auth-card input{background:#0b121b;border:1px solid #40566b;border-radius:10px;padding:14px;color:#fff;font-size:15px}
+.auth-card input:focus{outline:2px solid #cba85d;outline-offset:1px;border-color:#cba85d}
+.auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.auth-actions button{min-height:46px}
+.auth-back{display:flex;justify-content:center;margin:0 auto 16px;background:transparent!important;border:1px solid #344b61!important;color:#cbd5e1!important}
+.auth-note{text-align:center;color:#91a2b5;font-size:12px;margin:18px 0 0}
+@media(max-width:600px){.auth-page{margin:24px 4%}.auth-card{border-radius:17px;padding:23px 18px}}
 </style>
 </head>
 <body>
@@ -361,12 +381,16 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  <div class="card"><h2>آخر النتائج المعتمدة</h2><div id="results" class="muted">جاري التحميل...</div></div>
 </section>
 
-<section id="login" class="card hidden">
- <h2>دخول المشرفين</h2>
- <label>البريد الإلكتروني</label><input id="email" type="email" autocomplete="username">
- <label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password">
- <div class="row"><button id="signIn">تسجيل الدخول</button><button class="secondary" id="closeLogin">إغلاق</button></div>
- <p class="small">الحسابات تُنشأ وتُدار من Supabase Authentication.</p>
+<section id="login" class="auth-page hidden">
+ <button type="button" class="auth-back" id="closeLogin">← العودة إلى الموقع</button>
+ <div class="auth-card">
+  <div class="auth-brand"><div class="brand-mark">PRO</div><div><h2>PROFESSIONAL ESPORTS</h2><p>PRO ORG · PUBG MOBILE</p></div></div>
+  <div class="auth-heading"><h3>دخول المشرفين</h3><p>سجّل الدخول للوصول إلى لوحة إدارة المنظمة</p></div>
+  <label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="username" placeholder="name@example.com">
+  <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" placeholder="أدخل كلمة المرور">
+  <div class="auth-actions"><button id="signIn">تسجيل الدخول</button><button type="button" class="secondary" id="cancelAdminLogin" onclick="returnToPublicPages()">إلغاء</button></div>
+  <p class="auth-note">منطقة مخصصة للمشرفين والحسابات المعتمدة فقط</p>
+ </div>
 </section>
 <section id="admin" class="hidden">
  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
@@ -664,7 +688,7 @@ async function refreshAdmin(){
  if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);return;}
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
- currentRole=String(profile.role||"").trim().toLowerCase();show("admin",true);show("login",false);
+ currentRole=String(profile.role||"").trim().toLowerCase();showStandalonePage("admin");
  $("who").textContent=`${profile.display_name||user.email} · ${currentRole}`;$("roleNote").textContent=`الصلاحية الحالية: ${currentRole}`;
  show("teamForm",["founder","admin"].includes(currentRole));
  show("tournamentForm",["founder","admin","tournament_manager"].includes(currentRole));
@@ -706,9 +730,9 @@ $("siteMenuToggle").onclick=()=>{const menu=$("siteDropdown"),toggle=$("siteMenu
 document.addEventListener("click",event=>{if(!event.target.closest(".header-menu"))closeSiteMenu();});
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSiteMenu();});
 $("siteDropdown").querySelectorAll("a").forEach(link=>link.addEventListener("click",closeSiteMenu));
-$("loginToggle").onclick=()=>show("login");$("closeLogin").onclick=()=>show("login",false);
+$("loginToggle").onclick=()=>{closeSiteMenu();showStandalonePage("login");$("email").focus();};$("closeLogin").onclick=returnToPublicPages;
 $("signIn").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}await refreshAdmin();msg("تم تسجيل الدخول.","ok");};
-$("signOut").onclick=async()=>{await client.auth.signOut();show("admin",false);msg("تم تسجيل الخروج.");};
+$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;returnToPublicPages();msg("تم تسجيل الخروج.");};
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
 $("addTournament").onclick=async()=>{const {error}=await client.from("tournaments").insert({name:$("tournamentName").value.trim(),description:$("tournamentDesc").value.trim(),status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء البطولة كمسودة. يمكنك نشرها أو إيقافها من قسم إدارة البطولات والرومات داخل الموقع.");await refreshAdmin();}};
 $("addMatch").onclick=async()=>{const {error}=await client.from("matches").insert({tournament_id:$("matchTournament").value,name:$("matchName").value.trim(),match_number:Number($("matchNumber").value)||null,status:"draft"});if(error)alert(error.message);else{alert("تم إنشاء المباراة كمسودة. يمكنك فتحها أو إيقافها من قسم إدارة البطولات والرومات داخل الموقع.");await refreshAdmin();}};
@@ -771,11 +795,11 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","registrationPage","teamCenterPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","registrationPage","teamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
- ["registrationPage","teamCenterPage"].forEach(id=>$(id).classList.add("hidden"));
+ ["registrationPage","teamCenterPage","login","admin"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
