@@ -530,7 +530,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div id="adminRoomsContent"></div>
  </div>
  <div id="adminMainTournaments" class="admin-main-panel hidden">
- <div id="tournamentForm" class="card hidden"><h2>إنشاء إعلان بطولة</h2><label>اسم البطولة</label><input id="tournamentName" maxlength="120" required><label>وصف وتفاصيل البطولة</label><textarea id="tournamentDesc" rows="4"></textarea><label>صورة إعلان البطولة</label><input id="tournamentPoster" type="file" accept="image/jpeg,image/png,image/webp"><label>موعد فتح التسجيل</label><input id="tournamentOpensAt" type="datetime-local"><label>موعد إغلاق التسجيل</label><input id="tournamentClosesAt" type="datetime-local"><label>الحد الأقصى للفرق</label><input id="tournamentMaxTeams" type="number" min="1" max="500" value="25"><label><input id="tournamentRegistrationEnabled" type="checkbox" style="width:auto"> تفعيل التسجيل لهذه البطولة</label><button id="addTournament">إنشاء إعلان البطولة كمسودة</button><p class="small">بعد الإنشاء يمكنك نشر الإعلان وإدارة طلبات الفرق من قسم إدارة البطولات.</p></div>
+ <div id="tournamentForm" class="card hidden"><h2>إنشاء إعلان بطولة</h2><label>اسم البطولة</label><input id="tournamentName" maxlength="120" required><label>وصف وتفاصيل البطولة</label><textarea id="tournamentDesc" rows="4"></textarea><label>صورة إعلان البطولة</label><input id="tournamentPoster" type="file" accept="image/jpeg,image/png,image/webp"><label>موعد فتح التسجيل</label><input id="tournamentOpensAt" type="datetime-local"><label>موعد إغلاق التسجيل</label><input id="tournamentClosesAt" type="datetime-local"><label>الحد الأقصى للفرق</label><input id="tournamentMaxTeams" type="number" min="1" max="500" value="25"><label><input id="tournamentRegistrationEnabled" type="checkbox" style="width:auto"> تفعيل التسجيل لهذه البطولة</label><button id="addTournament">إنشاء ونشر إعلان البطولة</button><p class="small">سيظهر الإعلان مباشرةً في صفحة البطولات والصفحة الرئيسية بعد الحفظ.</p></div>
  <div id="managementPanel" class="card hidden"><h2>إدارة البطولات والرومات</h2><p class="small">انشر البطولة، أوقفها مؤقتاً، أو أعد فتحها. ويمكنك التحكم في حالة كل روم من هنا.</p><div id="tournamentManagement"></div><div id="tournamentApplicationsManagement"></div><div id="matchManagement"></div></div>
  <div id="matchForm" class="card hidden"><h2>إنشاء روم / مباراة</h2><label>البطولة</label><select id="matchTournament"></select><label>اسم المباراة</label><input id="matchName" placeholder="مثال: Room 1"><label>رقم المباراة</label><input id="matchNumber" type="number" min="1"><button id="addMatch">إنشاء المباراة</button></div>
 
@@ -832,7 +832,7 @@ async function createTournamentAnnouncement(){
  const name=$("tournamentName").value.trim();if(name.length<2){alert("اكتب اسم البطولة.");return;}
  const max=Math.max(1,Number($("tournamentMaxTeams").value)||25),file=$("tournamentPoster").files?.[0];
  if(file&&!["image/jpeg","image/png","image/webp"].includes(file.type)){alert("صيغة الصورة يجب أن تكون JPG أو PNG أو WEBP.");return;}
- const payload={name,description:$("tournamentDesc").value.trim(),status:"draft",max_teams:max,registration_enabled:$("tournamentRegistrationEnabled").checked,registration_opens_at:$("tournamentOpensAt").value?new Date($("tournamentOpensAt").value).toISOString():null,registration_closes_at:$("tournamentClosesAt").value?new Date($("tournamentClosesAt").value).toISOString():null};
+ const payload={name,description:$("tournamentDesc").value.trim(),status:"published",max_teams:max,registration_enabled:$("tournamentRegistrationEnabled").checked,registration_opens_at:$("tournamentOpensAt").value?new Date($("tournamentOpensAt").value).toISOString():null,registration_closes_at:$("tournamentClosesAt").value?new Date($("tournamentClosesAt").value).toISOString():null};
  if(payload.registration_opens_at&&payload.registration_closes_at&&new Date(payload.registration_closes_at)<=new Date(payload.registration_opens_at)){alert("موعد إغلاق التسجيل يجب أن يكون بعد موعد فتحه.");return;}
  const button=$("addTournament");button.disabled=true;button.textContent="جارٍ إنشاء البطولة...";
  try{
@@ -843,10 +843,10 @@ async function createTournamentAnnouncement(){
    const upd=await client.from("tournaments").update({poster_url:pub.data.publicUrl}).eq("id",data.id);if(upd.error)throw upd.error;
   }
   $("tournamentName").value="";$("tournamentDesc").value="";$("tournamentPoster").value="";$("tournamentOpensAt").value="";$("tournamentClosesAt").value="";$("tournamentMaxTeams").value="25";$("tournamentRegistrationEnabled").checked=false;
-  alert("تم إنشاء إعلان البطولة كمسودة. راجعه ثم انشره من إدارة البطولات.");
+  alert("تم إنشاء ونشر إعلان البطولة بنجاح. سيظهر في صفحة البطولات والصفحة الرئيسية.");
   await refreshAdmin();await loadPublic();
  }catch(e){alert("تعذر إنشاء البطولة: "+(e.message||e));}
- finally{button.disabled=false;button.textContent="إنشاء إعلان البطولة كمسودة";}
+ finally{button.disabled=false;button.textContent="إنشاء ونشر إعلان البطولة";}
 }
 async function loadTournamentApplicationsAdmin(){
  const host=$("tournamentApplicationsManagement");if(!host)return;
