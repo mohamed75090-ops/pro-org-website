@@ -487,16 +487,65 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   .about-professional-esports .site-status{font-size:7px!important}
 }
 
+
+/* Compact header controls, notifications and appearance */
+.site-header{padding:7px max(3%,calc((100% - 1180px)/2))!important}
+.header-inner{flex-wrap:nowrap!important;gap:8px!important}
+.header-brand-controls{display:flex;align-items:center;gap:9px;min-width:0;flex:1;direction:ltr}
+.brand{gap:7px!important;min-width:0}
+.brand-mark{width:31px!important;height:31px!important;flex:0 0 31px!important;border-radius:8px!important;font-size:12px!important}
+.brand h1{font-size:clamp(10px,1.7vw,15px)!important;letter-spacing:.35px!important;white-space:nowrap}
+.brand p{font-size:7px!important;letter-spacing:.8px!important}
+.header-quick-controls{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.quick-icon-btn,.quick-language-btn{position:relative;width:29px;height:29px;min-width:29px;padding:0!important;display:grid;place-items:center;border:1px solid #4a4c52!important;border-radius:8px!important;background:#171a20!important;color:#f0d58d!important;font-size:15px!important;line-height:1}
+.quick-language-btn{font-size:9px!important;font-weight:900;letter-spacing:.2px}
+.notification-count{position:absolute;top:-5px;right:-5px;min-width:14px;height:14px;padding:0 3px;border-radius:99px;background:#e33b45;color:white;font-size:9px;display:grid;place-items:center}
+.notification-wrap{position:relative}
+.notifications-panel{position:absolute;top:calc(100% + 9px);left:0;width:min(330px,calc(100vw - 26px));max-height:65vh;overflow:auto;z-index:100;background:#111821;border:1px solid #526174;border-radius:12px;box-shadow:0 16px 40px #000b;padding:10px;color:#f4f5f7;direction:rtl}
+.notifications-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 2px 9px;border-bottom:1px solid #34404d}
+.notifications-head button{font-size:10px!important;padding:5px 7px!important;background:#263747!important;color:#eaf2fa!important}
+.notification-item{padding:9px 7px;border-bottom:1px solid #293542;font-size:12px;line-height:1.5}
+.notification-item:last-child{border-bottom:0}
+.notification-item small{display:block;color:#9ba9b8;font-size:10px;margin-top:3px}
+.notification-item.unread{border-right:3px solid #d8b15b;background:#1a222c}
+body.light-mode{background:#f3f5f8!important;color:#202633!important;--bg:#f3f5f8;--panel:#fff;--panel2:#edf0f4;--muted:#667085;--line:#d6dbe3}
+body.light-mode .site-header{background:rgba(255,255,255,.96)!important;border-bottom-color:#d9dee7!important}
+body.light-mode .brand h1{color:#9b6d17!important}
+body.light-mode .brand p{color:#667085!important}
+body.light-mode .card,body.light-mode .scrim-public-card,body.light-mode .scrim-public-details{background:#fff!important;color:#202633!important;border-color:#d7dce5!important}
+body.light-mode .card p,body.light-mode td,body.light-mode .small{color:#4b5565}
+body.light-mode .section-heading h2,body.light-mode .card h2{color:#8a641d!important}
+body.light-mode footer{background:#e9edf2!important;color:#596273!important}
+body.light-mode .quick-icon-btn,body.light-mode .quick-language-btn{background:#eef1f5!important;color:#715016!important;border-color:#ccd3dd!important}
+body.light-mode .header-dropdown{background:#fff!important;border-color:#d4dae3!important}
+body.light-mode .header-dropdown a,body.light-mode .header-dropdown button{color:#263244!important}
+body.light-mode .header-dropdown a:hover,body.light-mode .header-dropdown button:not(.admin-menu-link):hover{background:#edf1f6!important}
+@media(max-width:600px){
+ .site-header{padding:6px 2.5%!important}.header-inner{gap:5px!important}.header-brand-controls{gap:5px}
+ .brand{gap:5px!important}.brand-mark{width:27px!important;height:27px!important;flex-basis:27px!important;font-size:10px!important}
+ .brand h1{font-size:9px!important;letter-spacing:0!important}.brand p{font-size:6px!important;letter-spacing:.3px!important}
+ .header-quick-controls{gap:3px}.quick-icon-btn,.quick-language-btn{width:25px;height:25px;min-width:25px;border-radius:7px!important;font-size:13px!important}
+ .quick-language-btn{font-size:8px!important}.menu-toggle{width:32px!important;height:32px!important;border-radius:8px!important}
+ .menu-toggle span,.menu-toggle span:before,.menu-toggle span:after{width:16px!important}
+ .notifications-panel{left:-72px;width:min(310px,calc(100vw - 18px))}
+}
+
 </style>
 </head>
 <body>
 
 <header class="site-header">
  <div class="header-inner">
-  <a class="brand" href="#home" onclick="returnToPublicPages();closeSiteMenu()" aria-label="Professional eSports - الرئيسية">
-   <div class="brand-mark">PRO</div>
-   <div><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE</p></div>
-  </a>
+  <div class="header-brand-controls">
+   <a class="brand" href="#home" onclick="returnToPublicPages();closeSiteMenu()" aria-label="Professional eSports - الرئيسية">
+    <div class="brand-mark">PRO</div><div class="brand-copy"><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE</p></div>
+   </a>
+   <div class="header-quick-controls" aria-label="إعدادات الموقع">
+    <div class="notification-wrap"><button type="button" class="quick-icon-btn" id="notificationsToggle" aria-label="الإشعارات" title="الإشعارات">♧<span id="notificationCount" class="notification-count hidden">0</span></button><div id="notificationsPanel" class="notifications-panel hidden"><div class="notifications-head"><b id="notificationsTitle">الإشعارات</b><button type="button" id="markNotificationsRead">تحديد الكل كمقروء</button></div><div id="notificationsList"><p class="small">جاري تحميل الإشعارات...</p></div></div></div>
+    <button type="button" class="quick-icon-btn" id="themeToggle" aria-label="تغيير المظهر" title="الوضع الليلي / الفاتح">☀</button>
+    <button type="button" class="quick-language-btn" id="languageToggle" aria-label="تغيير اللغة" title="العربية / English">EN</button>
+   </div>
+  </div>
   <div class="header-menu">
    <button type="button" class="menu-toggle" id="siteMenuToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="siteDropdown"><span></span></button>
    <nav class="header-dropdown" id="siteDropdown" aria-label="القائمة الرئيسية">
@@ -1987,6 +2036,82 @@ window.finishScrimRoom=finishScrimRoom;
 window.setScrimMatchStatus=setScrimMatchStatus;
 window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview=scrimReview;window.deleteTournament=deleteTournament;
  $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAccess;$("sendScrimInvite").onclick=inviteScrimTeam;$("addScrimMatch").onclick=addScrimMatch;
+
+
+/* Header quick settings and player-focused notification center */
+(function(){
+ const $id=id=>document.getElementById(id);
+ const themeKey="proorg_theme_v1",langKey="proorg_language_v1",readKey="proorg_notifications_read_v1";
+ function applyTheme(){
+  const light=localStorage.getItem(themeKey)==="light";
+  document.body.classList.toggle("light-mode",light);
+  const b=$id("themeToggle");if(b){b.textContent=light?"☾":"☀";b.title=light?"تفعيل الوضع الليلي":"تفعيل الوضع الفاتح";}
+ }
+ function applyLanguage(){
+  const en=localStorage.getItem(langKey)==="en";
+  document.documentElement.lang=en?"en":"ar";document.documentElement.dir=en?"ltr":"rtl";
+  const b=$id("languageToggle");if(b)b.textContent=en?"ع":"EN";
+  const title=$id("notificationsTitle");if(title)title.textContent=en?"Notifications":"الإشعارات";
+  const read=$id("markNotificationsRead");if(read)read.textContent=en?"Mark all as read":"تحديد الكل كمقروء";
+ }
+ $id("themeToggle")?.addEventListener("click",()=>{localStorage.setItem(themeKey,document.body.classList.contains("light-mode")?"dark":"light");applyTheme();});
+ $id("languageToggle")?.addEventListener("click",()=>{localStorage.setItem(langKey,localStorage.getItem(langKey)==="en"?"ar":"en");applyLanguage();});
+ $id("notificationsToggle")?.addEventListener("click",async()=>{const p=$id("notificationsPanel");p.classList.toggle("hidden");if(!p.classList.contains("hidden"))await refreshPlayerNotifications();});
+ document.addEventListener("click",e=>{if(!e.target.closest(".notification-wrap"))$id("notificationsPanel")?.classList.add("hidden");});
+ let notificationRows=[];
+ function renderNotifications(){
+  const readSet=new Set(JSON.parse(localStorage.getItem(readKey)||"[]"));
+  const unread=notificationRows.filter(n=>!readSet.has(n.id)).length;
+  const badge=$id("notificationCount");badge.textContent=unread>99?"99+":String(unread);badge.classList.toggle("hidden",unread===0);
+  const host=$id("notificationsList");
+  host.innerHTML=notificationRows.length?notificationRows.slice(0,35).map(n=>'<div class="notification-item '+(readSet.has(n.id)?"":"unread")+'"><b>'+n.icon+' '+escapeNotification(n.title)+'</b><div>'+escapeNotification(n.body)+'</div><small>'+escapeNotification(n.date||"")+'</small></div>').join(""):'<p class="small">لا توجد إشعارات جديدة حالياً.</p>';
+ }
+ function escapeNotification(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+ async function refreshPlayerNotifications(){
+  if(typeof client==="undefined")return;
+  const items=[];
+  try{
+   const [t,s,res,mvp]=await Promise.all([
+    client.from("tournaments").select("id,name,status,created_at,registration_opens_at").in("status",["published","completed"]).order("created_at",{ascending:false}).limit(8),
+    client.from("scrims").select("id,title,status,created_at,scheduled_at").neq("status","draft").order("created_at",{ascending:false}).limit(8),
+    client.from("match_results").select("id,placement,total_points,created_at,matches(name),teams(name)").eq("status","approved").order("created_at",{ascending:false}).limit(8),
+    client.from("weekly_mvp_players").select("week_label,player_name,team_name,rank_position").eq("is_published",true).order("rank_position",{ascending:true}).limit(4)
+   ]);
+   (t.data||[]).forEach(x=>items.push({id:"tournament:"+x.id,icon:"🏆",title:"بطولة منشورة أو محدثة",body:x.name,date:x.created_at}));
+   (s.data||[]).forEach(x=>items.push({id:"scrim:"+x.id,icon:"🎮",title:"إعلان سكريم",body:x.title+" · "+(x.status==="registration_open"?"التسجيل مفتوح":x.status==="completed"?"انتهى":"تحديث جديد"),date:x.created_at}));
+   (res.data||[]).forEach(x=>items.push({id:"result:"+x.id,icon:"📊",title:"نتيجة معتمدة",body:(x.teams?.name||"فريق")+" · "+(x.matches?.name||"مباراة")+" · "+(x.total_points??"")+" نقطة",date:x.created_at}));
+   const top=(mvp.data||[]).find(x=>Number(x.rank_position)===0);
+   if(top)items.push({id:"mvp:"+top.week_label+":"+top.player_name,icon:"⭐",title:"تم إعلان MVP الأسبوع",body:top.player_name+" · "+(top.team_name||""),date:top.week_label});
+   const auth=await client.auth.getUser(),user=auth.data?.user;
+   if(user){
+    const access=await client.from("scrim_team_access").select("team_id").eq("user_id",user.id);
+    const teamIds=[...new Set((access.data||[]).map(x=>x.team_id))];
+    if(teamIds.length){
+     const [teams,apps]=await Promise.all([
+      client.from("teams").select("id,name,tag").in("id",teamIds),
+      client.from("scrim_registrations").select("id,scrim_id,team_id,status,created_at,scrims(title)").in("team_id",teamIds).order("created_at",{ascending:false}).limit(20)
+     ]);
+     const names=new Map((teams.data||[]).map(x=>[x.id,x.name]));
+     (apps.data||[]).forEach(x=>{if(x.status==="accepted"||x.status==="rejected")items.push({id:"scrim-app:"+x.id,icon:x.status==="accepted"?"✅":"⚠️",title:x.status==="accepted"?"تم قبول فريقك في السكريم":"تحديث طلب السكريم",body:(names.get(x.team_id)||"فريقك")+" · "+(x.scrims?.title||""),date:x.created_at});});
+     const tags=(teams.data||[]).map(x=>x.tag).filter(Boolean);
+     if(tags.length){
+      const ta=await client.from("tournament_team_applications").select("id,tournament_id,team_name,status,created_at").in("team_tag",tags).order("created_at",{ascending:false}).limit(20);
+      const tNames=new Map((t.data||[]).map(x=>[x.id,x.name]));
+      (ta.data||[]).forEach(x=>{if(x.status==="accepted"||x.status==="rejected"||x.status==="backup")items.push({id:"tournament-app:"+x.id,icon:x.status==="accepted"?"✅":"📣",title:x.status==="accepted"?"تم قبول فريقك في البطولة":"تحديث طلب البطولة",body:(x.team_name||"فريقك")+" · "+(tNames.get(x.tournament_id)||"بطولة"),date:x.created_at});});
+     }
+    }
+   }
+   const unique=new Map();items.forEach(x=>unique.set(x.id,x));
+   notificationRows=[...unique.values()].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+   renderNotifications();
+  }catch(e){$id("notificationsList").innerHTML='<p class="small">تعذر تحميل الإشعارات حالياً. حاول مرة أخرى.</p>';console.warn("Player notifications:",e);}
+ }
+ $id("markNotificationsRead")?.addEventListener("click",()=>{localStorage.setItem(readKey,JSON.stringify(notificationRows.map(n=>n.id)));renderNotifications();});
+ applyTheme();applyLanguage();
+ window.refreshPlayerNotifications=refreshPlayerNotifications;
+ setTimeout(()=>{if(typeof client!=="undefined")refreshPlayerNotifications();},2500);
+ setInterval(()=>{if(document.visibilityState==="visible"&&typeof client!=="undefined")refreshPlayerNotifications();},180000);
+})();
 
 // Coalesce simultaneous refreshes so slow connections never create duplicate database requests.
 function coalesceRefresh(fn){
