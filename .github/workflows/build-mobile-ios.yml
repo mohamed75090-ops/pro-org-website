@@ -1,0 +1,67 @@
+name: Build PRO ORG iOS App
+
+on:
+  push:
+    branches: [mobile-app]
+    paths:
+      - 'mobile/**'
+      - 'index.html'
+      - '.github/workflows/build-mobile-ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    steps:
+      - name: Checkout mobile app branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install
+
+      - name: Prepare isolated website bundle
+        working-directory: mobile
+        run: npm run prepare:web
+
+      - name: Generate iOS project
+        working-directory: mobile
+        run: npx cap add ios
+
+      - name: Sync Capacitor
+        working-directory: mobile
+        run: npx cap sync ios
+
+      - name: Build iOS simulator app (unsigned preview)
+        working-directory: mobile
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build/ios-derived \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package simulator app
+        working-directory: mobile
+        run: |
+          cd build/ios-derived/Build/Products/Release-iphonesimulator
+          ditto -c -k --sequesterRsrc --keepParent App.app "$GITHUB_WORKSPACE/PRO-ORG-iOS-Simulator.zip"
+
+      - name: Upload iOS build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pro-org-ios-simulator-preview
+          path: PRO-ORG-iOS-Simulator.zip
+          if-no-files-found: error
+          retention-days: 14
