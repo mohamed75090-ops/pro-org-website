@@ -67,7 +67,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .scrim-countdown strong{color:#7dd3fc;font-size:17px}
 .scrim-countdown{display:block;text-align:right}
 .scrim-countdown-title{display:block;color:#e7edf4;font-weight:800;margin-bottom:12px}
-.scrim-timer-units{display:flex;direction:ltr;justify-content:flex-start;gap:8px;flex-wrap:wrap}
+.scrim-timer-units{display:flex;direction:rtl;justify-content:flex-start;gap:8px;flex-wrap:wrap}
 .scrim-timer-unit{min-width:58px;text-align:center;padding:8px 7px;border-radius:9px;background:#f7f8fa;border:1px solid #cbd5e1;color:#111827}
 .scrim-timer-unit b{display:block;font-size:22px;line-height:1.15;font-variant-numeric:tabular-nums;direction:ltr}
 .scrim-timer-unit small{display:block;color:#64748b;font-size:11px;margin-top:4px}
@@ -984,7 +984,7 @@ function countdownDisplay(scrim){
  return `<span class="scrim-countdown-title">العد التنازلي للفتح / الإغلاق</span><div class="scrim-countdown-content" data-countdown-content><span class="scrim-countdown-status">${state.title}</span>${html}</div>`;
 }
 function countdownUnitsHTML(ms){
- const total=Math.max(0,Math.floor(ms/1000)),values=[Math.floor(total/86400),Math.floor(total%86400/3600),Math.floor(total%3600/60),total%60],labels=["يوم","ساعة","دقيقة","ثانية"];
+ const total=Math.max(0,Math.floor(ms/1000)),values=[Math.floor(total/3600),Math.floor(total%3600/60),total%60],labels=["ساعة","دقيقة","ثانية"];
  return `<div class="scrim-timer-units">${values.map((v,i)=>`<div class="scrim-timer-unit"><b>${String(v).padStart(2,"0")}</b><small>${labels[i]}</small></div>`).join("")}</div>`;
 }
 function refreshScrimCountdowns(){
