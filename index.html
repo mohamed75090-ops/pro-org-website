@@ -318,6 +318,8 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
     <a href="#resultsSection"><span>▤</span> النتائج</a>
     <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
     <div class="menu-divider"></div>
+    <button type="button" id="playerLoginMenu"><span>♙</span> دخول اللاعبين</button>
+    <button type="button" id="playerRegisterMenu"><span>＋</span> إنشاء حساب لاعب</button>
     <button type="button" class="admin-menu-link" id="loginToggle"><span>♙</span> دخول المشرفين</button>
    </nav>
   </div>
@@ -400,6 +402,27 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" placeholder="أدخل كلمة المرور">
   <div class="auth-actions"><button id="signIn">تسجيل الدخول</button><button type="button" class="secondary" id="cancelAdminLogin" onclick="returnToPublicPages()">إلغاء</button></div>
   <p class="auth-note">منطقة مخصصة للمشرفين والحسابات المعتمدة فقط</p>
+ </div>
+</section>
+<section id="playerAuthPage" class="auth-page hidden">
+ <button type="button" class="auth-back" id="playerAuthBack">← العودة إلى الموقع</button>
+ <div class="auth-card">
+  <div class="auth-brand"><div class="brand-mark">PRO</div><div><h2>PROFESSIONAL ESPORTS</h2><p>PRO ORG · PLAYER ACCOUNT</p></div></div>
+  <div class="auth-heading"><h3 id="playerAuthTitle">دخول اللاعبين</h3><p id="playerAuthDescription">ادخل باسم المستخدم وكلمة المرور.</p></div>
+  <div id="playerLoginFields">
+   <label for="playerLoginUsername">اسم المستخدم</label><input id="playerLoginUsername" autocomplete="username" placeholder="اسم المستخدم">
+   <label for="playerLoginPassword">كلمة المرور</label><input id="playerLoginPassword" type="password" autocomplete="current-password" placeholder="كلمة المرور">
+   <button type="button" id="playerLoginButton">تسجيل الدخول</button>
+  </div>
+  <form id="playerRegisterForm" class="hidden">
+   <label for="playerRegisterUsername">اسم المستخدم</label><input id="playerRegisterUsername" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" placeholder="أحرف إنجليزية وأرقام وشرطة سفلية" required>
+   <label for="playerRegisterPassword">كلمة المرور</label><input id="playerRegisterPassword" type="password" autocomplete="new-password" minlength="8" placeholder="8 أحرف على الأقل" required>
+   <label for="playerRegisterWhatsapp">رقم الواتساب مع مفتاح الدولة</label><input id="playerRegisterWhatsapp" type="tel" inputmode="tel" autocomplete="tel" placeholder="مثال: 2499xxxxxxxx" required>
+   <button type="submit" id="playerRegisterButton">إنشاء الحساب</button>
+  </form>
+  <div id="playerAuthMessage" class="notice hidden" style="margin-top:14px"></div>
+  <p class="auth-note">لا نطلب بريداً إلكترونياً من اللاعب. تأكيد الواتساب سيتم ربطه في مرحلة لاحقة.</p>
+  <div class="auth-actions"><button type="button" class="secondary" id="switchPlayerAuth">إنشاء حساب جديد</button></div>
  </div>
 </section>
 <section id="siteMonitoringPage" class="section hidden">
@@ -920,6 +943,50 @@ document.addEventListener("click",event=>{if(!event.target.closest(".header-menu
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSiteMenu();});
 $("siteDropdown").querySelectorAll("a").forEach(link=>link.addEventListener("click",closeSiteMenu));
 $("loginToggle").onclick=()=>{closeSiteMenu();showStandalonePage("login");$("email").focus();};
+function openPlayerAuth(mode){
+ closeSiteMenu();showStandalonePage("playerAuthPage");
+ const registering=mode==="register";
+ $("playerAuthTitle").textContent=registering?"إنشاء حساب لاعب":"دخول اللاعبين";
+ $("playerAuthDescription").textContent=registering?"أنشئ حسابك باسم مستخدم ورقم واتساب.":"ادخل باسم المستخدم وكلمة المرور.";
+ $("playerLoginFields").classList.toggle("hidden",registering);
+ $("playerRegisterForm").classList.toggle("hidden",!registering);
+ $("switchPlayerAuth").textContent=registering?"لديك حساب؟ تسجيل الدخول":"ليس لديك حساب؟ إنشاء حساب";
+ $("playerAuthMessage").classList.add("hidden");
+}
+$("playerLoginMenu").onclick=()=>openPlayerAuth("login");
+$("playerRegisterMenu").onclick=()=>openPlayerAuth("register");
+$("playerAuthBack").onclick=returnToPublicPages;
+$("switchPlayerAuth").onclick=()=>openPlayerAuth($("playerRegisterForm").classList.contains("hidden")?"register":"login");
+$("playerLoginButton").onclick=async()=>{
+ const username=$("playerLoginUsername").value.trim().toLowerCase(),password=$("playerLoginPassword").value;
+ if(!/^[a-z0-9_]{3,24}$/.test(username)){alert("اسم المستخدم يجب أن يكون من 3 إلى 24 حرفاً إنجليزياً أو رقماً أو _");return;}
+ const {error}=await client.auth.signInWithPassword({email:username+"@players.professionalesports.com",password});
+ if(error){$("playerAuthMessage").textContent="تعذر الدخول: "+error.message;$("playerAuthMessage").classList.remove("hidden");return;}
+ const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);
+ $("playerAuthMessage").textContent="تم تسجيل الدخول بنجاح.";$("playerAuthMessage").classList.remove("hidden");
+ returnToPublicPages();
+};
+$("playerRegisterForm").onsubmit=async(event)=>{
+ event.preventDefault();
+ const username=$("playerRegisterUsername").value.trim().toLowerCase(),password=$("playerRegisterPassword").value,whatsapp=$("playerRegisterWhatsapp").value.trim();
+ if(!/^[a-z0-9_]{3,24}$/.test(username)){alert("اسم المستخدم يجب أن يكون من 3 إلى 24 حرفاً إنجليزياً أو رقماً أو _");return;}
+ const button=$("playerRegisterButton");button.disabled=true;button.textContent="جاري إنشاء الحساب...";
+ try{
+  const {data,error}=await client.auth.signUp({email:username+"@players.professionalesports.com",password,options:{data:{username,account_type:"player"}}});
+  if(error)throw error;
+  if(!data.user)throw new Error("لم يتم إنشاء الحساب.");
+  if(!data.session)throw new Error("تم إنشاء الحساب لكن تأكيد البريد مفعّل في Supabase. عطّل تأكيد البريد الإلكتروني في إعدادات Auth ثم أعد المحاولة؛ اللاعب لا يحتاج بريداً.");
+  const saved=await client.rpc("save_my_player_profile",{p_username:username,p_whatsapp:whatsapp});
+  if(saved.error)throw saved.error;
+  const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);
+  $("playerRegisterForm").reset();
+  $("playerAuthMessage").textContent="تم إنشاء حسابك بنجاح. يمكنك الآن تسجيل الدخول باسم المستخدم وكلمة المرور.";
+  $("playerAuthMessage").classList.remove("hidden");
+  $("playerAuthTitle").textContent="تم إنشاء الحساب";
+  $("playerLoginFields").classList.remove("hidden");$("playerRegisterForm").classList.add("hidden");
+ }catch(error){$("playerAuthMessage").textContent="تعذر إنشاء الحساب: "+(error.message||error);$("playerAuthMessage").classList.remove("hidden");}
+ finally{button.disabled=false;button.textContent="إنشاء الحساب";}
+};
 $("siteMonitoringMenu").onclick=()=>{closeSiteMenu();showStandalonePage("siteMonitoringPage");loadSiteMonitoring();};
 $("refreshSiteMonitoring").onclick=loadSiteMonitoring;
 $("closeLogin").onclick=returnToPublicPages;
@@ -989,11 +1056,11 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
- ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","admin","siteMonitoringPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
