@@ -530,6 +530,17 @@ body.light-mode .header-dropdown a:hover,body.light-mode .header-dropdown button
  .notifications-panel{left:-72px;width:min(310px,calc(100vw - 18px))}
 }
 
+
+/* More visible notification bell and header controls */
+.header-quick-controls{gap:7px!important}
+.quick-icon-btn,.quick-language-btn{width:39px!important;height:39px!important;min-width:39px!important;border-radius:11px!important;font-size:20px!important;border:1px solid #806a3c!important;background:linear-gradient(145deg,#252a33,#12161d)!important;box-shadow:0 3px 12px #0005,inset 0 1px #ffffff12!important}
+.quick-language-btn{font-size:12px!important;font-weight:900!important}
+.notification-bell{width:23px;height:23px;display:block;overflow:visible}
+#notificationsToggle.has-unread .notification-bell{transform-origin:50% 12%;animation:proBellRing 1.8s ease-in-out infinite}
+#notificationsToggle.has-unread{border-color:#d8b15b!important;box-shadow:0 0 0 2px #d8b15b24,0 3px 14px #0006!important}
+.notification-count{top:-6px!important;right:-6px!important;min-width:18px!important;height:18px!important;font-size:10px!important;font-weight:900!important;box-shadow:0 0 0 2px #111318}
+@keyframes proBellRing{0%,68%,100%{transform:rotate(0)}72%{transform:rotate(16deg)}76%{transform:rotate(-14deg)}80%{transform:rotate(10deg)}84%{transform:rotate(-7deg)}88%{transform:rotate(3deg)}92%{transform:rotate(0)}}
+@media(max-width:600px){.quick-icon-btn,.quick-language-btn{width:35px!important;height:35px!important;min-width:35px!important;border-radius:10px!important}.notification-bell{width:21px;height:21px}.header-quick-controls{gap:5px!important}}
 </style>
 </head>
 <body>
@@ -541,7 +552,7 @@ body.light-mode .header-dropdown a:hover,body.light-mode .header-dropdown button
     <div class="brand-mark">PRO</div><div class="brand-copy"><h1>PROFESSIONAL ESPORTS</h1><p>PRO ORG · PUBG MOBILE</p></div>
    </a>
    <div class="header-quick-controls" aria-label="إعدادات الموقع">
-    <div class="notification-wrap"><button type="button" class="quick-icon-btn" id="notificationsToggle" aria-label="الإشعارات" title="الإشعارات">♧<span id="notificationCount" class="notification-count hidden">0</span></button><div id="notificationsPanel" class="notifications-panel hidden"><div class="notifications-head"><b id="notificationsTitle">الإشعارات</b><button type="button" id="markNotificationsRead">تحديد الكل كمقروء</button></div><div id="notificationsList"><p class="small">جاري تحميل الإشعارات...</p></div></div></div>
+    <div class="notification-wrap"><button type="button" class="quick-icon-btn" id="notificationsToggle" aria-label="الإشعارات" title="الإشعارات"><svg class="notification-bell" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="notificationCount" class="notification-count hidden">0</span></button><div id="notificationsPanel" class="notifications-panel hidden"><div class="notifications-head"><b id="notificationsTitle">الإشعارات</b><button type="button" id="markNotificationsRead">تحديد الكل كمقروء</button></div><div id="notificationsList"><p class="small">جاري تحميل الإشعارات...</p></div></div></div>
     <button type="button" class="quick-icon-btn" id="themeToggle" aria-label="تغيير المظهر" title="الوضع الليلي / الفاتح">☀</button>
     <button type="button" class="quick-language-btn" id="languageToggle" aria-label="تغيير اللغة" title="العربية / English">EN</button>
    </div>
@@ -2062,7 +2073,7 @@ window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview
  function renderNotifications(){
   const readSet=new Set(JSON.parse(localStorage.getItem(readKey)||"[]"));
   const unread=notificationRows.filter(n=>!readSet.has(n.id)).length;
-  const badge=$id("notificationCount");badge.textContent=unread>99?"99+":String(unread);badge.classList.toggle("hidden",unread===0);
+  const badge=$id("notificationCount");badge.textContent=unread>99?"99+":String(unread);badge.classList.toggle("hidden",unread===0);$id("notificationsToggle")?.classList.toggle("has-unread",unread>0);
   const host=$id("notificationsList");
   host.innerHTML=notificationRows.length?notificationRows.slice(0,35).map(n=>'<div class="notification-item '+(readSet.has(n.id)?"":"unread")+'"><b>'+n.icon+' '+escapeNotification(n.title)+'</b><div>'+escapeNotification(n.body)+'</div><small>'+escapeNotification(n.date||"")+'</small></div>').join(""):'<p class="small">لا توجد إشعارات جديدة حالياً.</p>';
  }
