@@ -979,6 +979,37 @@ function msg(text,type=""){$("status").innerHTML=`<span class="${type}">${text}<
 function show(id,yes=true){$(id).classList.toggle("hidden",!yes);}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 
+const PUBLIC_SECTION_CACHE_KEY="proorg_public_sections_v1";
+const PUBLIC_SECTION_CACHE_IDS=["publicScrims","publicTournaments","weeklyMvpFeature","weeklyMvpTop3","results"];
+function restorePublicSectionCache(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(PUBLIC_SECTION_CACHE_KEY)||"null");
+  if(!saved||Date.now()-Number(saved.savedAt||0)>604800000)return;
+  PUBLIC_SECTION_CACHE_IDS.forEach(id=>{
+   const el=$(id),html=saved.sections&&saved.sections[id];
+   if(el&&typeof html==="string"&&html.trim()&&!/جاري (?:تحميل|الاتصال)/.test(html))el.innerHTML=html;
+  });
+ }catch(e){}
+}
+function savePublicSectionCache(){
+ try{
+  const sections={};
+  PUBLIC_SECTION_CACHE_IDS.forEach(id=>{
+   const el=$(id),html=el?el.innerHTML:"";
+   if(html.trim()&&!/جاري (?:تحميل|الاتصال)/.test(html))sections[id]=html;
+  });
+  if(Object.keys(sections).length)localStorage.setItem(PUBLIC_SECTION_CACHE_KEY,JSON.stringify({savedAt:Date.now(),sections}));
+ }catch(e){}
+}
+function watchPublicSectionCache(){
+ if(!window.MutationObserver)return;
+ const observer=new MutationObserver(()=>{
+  clearTimeout(window.publicSectionCacheTimer);
+  window.publicSectionCacheTimer=setTimeout(savePublicSectionCache,300);
+ });
+ PUBLIC_SECTION_CACHE_IDS.forEach(id=>{const el=$(id);if(el)observer.observe(el,{childList:true,subtree:true});});
+}
+
 async function loadWeeklyMvp(){
  const feature=$("weeklyMvpFeature"),top=$("weeklyMvpTop3");
  let data=null,error=null,timer;
@@ -2278,6 +2309,8 @@ setInterval(()=>{if(document.visibilityState==="visible")document.querySelectorA
 setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadPublicScrims();},120000);
 setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadWeeklyMvp();},180000);
 (async()=>{
+ restorePublicSectionCache();
+ watchPublicSectionCache();
  await Promise.allSettled([loadPublic(),loadWeeklyMvp(),loadPublicScrims()]);
  try{
   const {data:{session}}=await client.auth.getSession();
