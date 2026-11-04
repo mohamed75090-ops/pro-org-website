@@ -840,8 +840,8 @@ async function refreshAdmin(){
  show("scrimAdmin",["founder","admin","tournament_manager"].includes(currentRole));
  if(["founder","admin","tournament_manager"].includes(currentRole)){ await loadTeamApplicationsAdmin(); await loadScrimAdmin(); }
  if(["founder","admin","tournament_manager"].includes(currentRole)) startTeamApplicationNotifications();
- show("resultForm",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
- show("aiScanner",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
+ show("resultForm",true); // إظهار نموذج الإدخال داخل لوحة الإدارة للحسابات المسجلة
+ show("aiScanner",true); // إظهار محلل الصور داخل لوحة الإدارة للحسابات المسجلة
  show("weeklyMvpAdmin",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  if(["founder","admin","results_manager","tournament_manager"].includes(currentRole)) await loadWeeklyMvpAdmin();
  const [ts,ms,tm,rs]=await Promise.all([
