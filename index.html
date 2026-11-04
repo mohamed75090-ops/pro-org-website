@@ -615,6 +615,15 @@ body.gold-mode table th,body.gold-mode .accepted-team-table-head{
  body.gold-mode .card,body.gold-mode .scrim-public-card,body.gold-mode .tournament-public-card{box-shadow:0 5px 16px #0005,inset 0 1px 0 #f9dc9840!important}
 }
 
+
+/* Clickable notification navigation */
+.notification-item.notification-open{display:block;width:100%;text-align:right;font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px solid #293542;cursor:pointer}
+.notification-item.notification-open:hover{background:#283342}
+.notification-open-hint{display:block;margin-top:5px;font-size:10px;color:#d8b15b;font-weight:800}
+body.gold-mode .notification-item.notification-open{color:#fff0cf;border-color:#8d6a34}
+body.gold-mode .notification-item.notification-open:hover{background:#59401f}
+.notification-highlight{outline:3px solid #e2b85d!important;box-shadow:0 0 0 6px #e2b85d35,0 0 28px #e2b85d55!important;transition:box-shadow .2s ease}
+
 </style>
 </head>
 <body>
@@ -1709,7 +1718,7 @@ async function loadPublicScrims(){
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
   const teamsHtml=renderAcceptedTeamsTable(accepted,"قائمة الفرق لم تُنشر بعد.");
-  return `<article class="scrim-public-card">
+  return `<article class="scrim-public-card" id="scrim-card-${esc(s.id)}">
    <div class="scrim-public-layout">
     <div>
      <div class="scrim-control-head"><div><span class="small">إعلان سكريم</span><h3>${esc(s.title)}</h3></div><span class="scrim-state ${state.cls}">${state.label}</span></div>
@@ -2151,8 +2160,23 @@ window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview
   const unread=notificationRows.filter(n=>!readSet.has(n.id)).length;
   const badge=$id("notificationCount");badge.textContent=unread>99?"99+":String(unread);badge.classList.toggle("hidden",unread===0);$id("notificationsToggle")?.classList.toggle("has-unread",unread>0);
   const host=$id("notificationsList");
-  host.innerHTML=notificationRows.length?notificationRows.slice(0,35).map(n=>'<div class="notification-item '+(readSet.has(n.id)?"":"unread")+'"><b>'+n.icon+' '+escapeNotification(n.title)+'</b><div>'+escapeNotification(n.body)+'</div><small>'+escapeNotification(n.date||"")+'</small></div>').join(""):'<p class="small">لا توجد إشعارات جديدة حالياً.</p>';
+  host.innerHTML=notificationRows.length?notificationRows.slice(0,35).map((n,i)=>'<button type="button" class="notification-item notification-open '+(readSet.has(n.id)?"":"unread")+'" data-notification-index="'+i+'"><b>'+n.icon+' '+escapeNotification(n.title)+'</b><div>'+escapeNotification(n.body)+'</div><small>'+escapeNotification(n.date||"")+'</small><span class="notification-open-hint">اضغط للانتقال للقسم ←</span></button>').join(""):'<p class="small">لا توجد إشعارات جديدة حالياً.</p>';
  }
+ $id("notificationsList")?.addEventListener("click",event=>{
+  const item=event.target.closest("[data-notification-index]");if(!item)return;
+  const n=notificationRows[Number(item.dataset.notificationIndex)];if(!n)return;
+  const readSet=new Set(JSON.parse(localStorage.getItem(readKey)||"[]"));readSet.add(n.id);localStorage.setItem(readKey,JSON.stringify([...readSet]));renderNotifications();
+  $id("notificationsPanel")?.classList.add("hidden");
+  const go=()=>{
+   if(n.target==="scrim"){openScrimsPage();setTimeout(()=>{const card=document.getElementById("scrim-card-"+n.targetId);if(card){card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("notification-highlight");setTimeout(()=>card.classList.remove("notification-highlight"),2200);}},300);}
+   else if(n.target==="tournament")openTournamentDetails(n.targetId);
+   else if(n.target==="team-center")openTeamCenterPage();
+   else if(n.target==="tournament-center")openTournamentTeamCenter(n.targetId);
+   else if(n.target==="results"){returnToPublicPages();setTimeout(()=>document.getElementById("resultsSection")?.scrollIntoView({behavior:"smooth",block:"start"}),100);}
+   else if(n.target==="mvp"){returnToPublicPages();setTimeout(()=>document.getElementById("home")?.scrollIntoView({behavior:"smooth",block:"start"}),100);}
+  };
+  if(typeof go==="function")go();
+ });
  function escapeNotification(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
  async function refreshPlayerNotifications(){
   if(typeof client==="undefined")return;
@@ -2164,11 +2188,11 @@ window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview
     client.from("match_results").select("id,placement,total_points,created_at,matches(name),teams(name)").eq("status","approved").order("created_at",{ascending:false}).limit(8),
     client.from("weekly_mvp_players").select("week_label,player_name,team_name,rank_position").eq("is_published",true).order("rank_position",{ascending:true}).limit(4)
    ]);
-   (t.data||[]).forEach(x=>items.push({id:"tournament:"+x.id,icon:"🏆",title:"بطولة منشورة أو محدثة",body:x.name,date:x.created_at}));
-   (s.data||[]).forEach(x=>items.push({id:"scrim:"+x.id,icon:"🎮",title:"إعلان سكريم",body:x.title+" · "+(x.status==="registration_open"?"التسجيل مفتوح":x.status==="completed"?"انتهى":"تحديث جديد"),date:x.created_at}));
-   (res.data||[]).forEach(x=>items.push({id:"result:"+x.id,icon:"📊",title:"نتيجة معتمدة",body:(x.teams?.name||"فريق")+" · "+(x.matches?.name||"مباراة")+" · "+(x.total_points??"")+" نقطة",date:x.created_at}));
+   (t.data||[]).forEach(x=>items.push({id:"tournament:"+x.id,icon:"🏆",title:"بطولة منشورة أو محدثة",body:x.name,date:x.created_at,target:"tournament",targetId:x.id}));
+   (s.data||[]).forEach(x=>items.push({id:"scrim:"+x.id,icon:"🎮",title:"إعلان سكريم",body:x.title+" · "+(x.status==="registration_open"?"التسجيل مفتوح":x.status==="completed"?"انتهى":"تحديث جديد"),date:x.created_at,target:"scrim",targetId:x.id}));
+   (res.data||[]).forEach(x=>items.push({id:"result:"+x.id,icon:"📊",title:"نتيجة معتمدة",body:(x.teams?.name||"فريق")+" · "+(x.matches?.name||"مباراة")+" · "+(x.total_points??"")+" نقطة",date:x.created_at,target:"results"}));
    const top=(mvp.data||[]).find(x=>Number(x.rank_position)===0);
-   if(top)items.push({id:"mvp:"+top.week_label+":"+top.player_name,icon:"⭐",title:"تم إعلان MVP الأسبوع",body:top.player_name+" · "+(top.team_name||""),date:top.week_label});
+   if(top)items.push({id:"mvp:"+top.week_label+":"+top.player_name,icon:"⭐",title:"تم إعلان MVP الأسبوع",body:top.player_name+" · "+(top.team_name||""),date:top.week_label,target:"mvp"});
    const auth=await client.auth.getUser(),user=auth.data?.user;
    if(user){
     const access=await client.from("scrim_team_access").select("team_id").eq("user_id",user.id);
@@ -2179,12 +2203,12 @@ window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview
       client.from("scrim_registrations").select("id,scrim_id,team_id,status,created_at,scrims(title)").in("team_id",teamIds).order("created_at",{ascending:false}).limit(20)
      ]);
      const names=new Map((teams.data||[]).map(x=>[x.id,x.name]));
-     (apps.data||[]).forEach(x=>{if(x.status==="accepted"||x.status==="rejected")items.push({id:"scrim-app:"+x.id,icon:x.status==="accepted"?"✅":"⚠️",title:x.status==="accepted"?"تم قبول فريقك في السكريم":"تحديث طلب السكريم",body:(names.get(x.team_id)||"فريقك")+" · "+(x.scrims?.title||""),date:x.created_at});});
+     (apps.data||[]).forEach(x=>{if(x.status==="accepted"||x.status==="rejected")items.push({id:"scrim-app:"+x.id,icon:x.status==="accepted"?"✅":"⚠️",title:x.status==="accepted"?"تم قبول فريقك في السكريم":"تحديث طلب السكريم",body:(names.get(x.team_id)||"فريقك")+" · "+(x.scrims?.title||""),date:x.created_at,target:"team-center"});});
      const tags=(teams.data||[]).map(x=>x.tag).filter(Boolean);
      if(tags.length){
       const ta=await client.from("tournament_team_applications").select("id,tournament_id,team_name,status,created_at").in("team_tag",tags).order("created_at",{ascending:false}).limit(20);
       const tNames=new Map((t.data||[]).map(x=>[x.id,x.name]));
-      (ta.data||[]).forEach(x=>{if(x.status==="accepted"||x.status==="rejected"||x.status==="backup")items.push({id:"tournament-app:"+x.id,icon:x.status==="accepted"?"✅":"📣",title:x.status==="accepted"?"تم قبول فريقك في البطولة":"تحديث طلب البطولة",body:(x.team_name||"فريقك")+" · "+(tNames.get(x.tournament_id)||"بطولة"),date:x.created_at});});
+      (ta.data||[]).forEach(x=>{if(x.status==="accepted"||x.status==="rejected"||x.status==="backup")items.push({id:"tournament-app:"+x.id,icon:x.status==="accepted"?"✅":"📣",title:x.status==="accepted"?"تم قبول فريقك في البطولة":"تحديث طلب البطولة",body:(x.team_name||"فريقك")+" · "+(tNames.get(x.tournament_id)||"بطولة"),date:x.created_at,target:"tournament-center",targetId:x.tournament_id});});
      }
     }
    }
