@@ -17,7 +17,7 @@ begin
   if tg_op = 'INSERT' then
     -- Signup may create an ordinary player profile; elevated roles require an existing founder.
     if auth.uid() is null then
-      if coalesce(current_setting('request.jwt.claim.role',true),'') in ('anon','authenticated') then
+      if coalesce(auth.role(),'') in ('anon','authenticated') then
         raise exception 'إنشاء صلاحيات إدارية غير مسموح';
       end if;
       return new;
@@ -41,7 +41,7 @@ begin
 
   -- Trusted server-side maintenance calls may have no auth.uid(); API clients may not bypass this.
   if auth.uid() is null then
-    if coalesce(current_setting('request.jwt.claim.role',true),'') in ('anon','authenticated') then
+    if coalesce(auth.role(),'') in ('anon','authenticated') then
       raise exception 'تغيير الرولات متاح للمؤسس فقط';
     end if;
     return new;
