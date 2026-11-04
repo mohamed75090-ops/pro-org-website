@@ -439,19 +439,8 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
   <div class="card"><h3>دعوة فريق</h3><label>السكريم</label><select id="scrimInviteSelect"></select><label>الفريق</label><select id="scrimInviteTeam"></select><button id="sendScrimInvite" class="secondary">إرسال الدعوة</button></div>
  </div>
  <div id="adminTabTeams" class="admin-tab-panel hidden">
- <section class="admin-scrim-overview">
-  <h3>السكرم النشط</h3>
-  <div class="admin-overview-grid">
-   <div class="admin-overview-card"><span>الفرق المقبولة والمتبقية</span><b id="adminActiveTeams">—</b><small id="adminActiveTeamsNote">بانتظار تحميل البيانات</small></div>
-   <div class="admin-overview-card"><span>الرومات</span><b id="adminActiveRooms">—</b><small id="adminActiveRoomsNote">عدد مباريات السكريم النشط</small></div>
-   <div class="admin-overview-card"><span>النتائج المعلّقة</span><b id="adminPendingResults">—</b><small>تحتاج إلى مراجعة المشرف</small></div>
-  </div>
-  <p id="adminActiveScrimName" class="small">جاري تحديد السكريم النشط...</p>
- </section>
- 
-  <div class="card"><h3>ملخص الفرق</h3><div class="admin-overview-grid"><div class="admin-overview-card"><span>الفرق المقبولة</span><b id="teamAcceptedCount">0</b></div><div class="admin-overview-card"><span>في الانتظار</span><b id="teamPendingCount">0</b></div><div class="admin-overview-card"><span>فرق الاحتياط</span><b id="teamReserveCount">0</b></div><div class="admin-overview-card"><span>الفرق المرفوضة</span><b id="teamRejectedCount">0</b></div></div></div>
   <div class="card"><h3>إدارة الفرق</h3><div id="teamApplicationsAdmin">جاري تحميل الطلبات...</div></div>
-  </div>
+ </div>
  <div id="adminTabRooms" class="admin-tab-panel hidden">
   <div class="card"><h3>إضافة مباراة ونشر بيانات الروم</h3><label>السكريم</label><select id="scrimMatchSelect"></select><label>اسم الخريطة</label><select id="scrimMatchTitle"><option value="">اختر الخريطة</option><option value="ERANGEL">ERANGEL</option><option value="MIRMAR">MIRMAR</option><option value="RONDO">RONDO</option></select><label>رقم المباراة</label><input id="scrimMatchNumber" type="number" min="1" placeholder="1"><label>Room ID</label><input id="scrimRoomId" dir="ltr"><label>كلمة المرور</label><input id="scrimRoomPassword" dir="ltr"><label>موعد المباراة</label><input id="scrimMatchStarts" type="datetime-local"><label>ملاحظات</label><textarea id="scrimMatchNotes"></textarea><button id="addScrimMatch">إضافة المباراة ونشر بيانات الروم</button><div id="scrimMatchAdminList"></div></div>
  </div>
