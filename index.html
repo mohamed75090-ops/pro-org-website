@@ -850,19 +850,41 @@ async function createTournamentAnnouncement(){
 }
 async function loadTournamentApplicationsAdmin(){
  const host=$("tournamentApplicationsManagement");if(!host)return;
- const {data,error}=await client.from("tournament_team_applications").select("id,tournament_id,team_name,team_tag,team_representative,status,slot_number,access_code,created_at").order("created_at",{ascending:false});
- if(error){host.innerHTML='<p class="notice">تعذر تحميل طلبات البطولات: '+esc(error.message)+'</p>';return;}
- const rows=data||[];
- host.innerHTML='<h3>طلبات تسجيل الفرق في البطولات</h3>'+(rows.length?rows.map(a=>{
-  const t=tournamentsCache.find(x=>x.id===a.tournament_id),status={pending:"قيد الانتظار",accepted:"مقبول",backup:"احتياط",rejected:"مرفوض"}[a.status]||a.status;
-  return '<div class="card"><b>'+esc(t?.name||"بطولة")+'</b><p>'+esc(a.team_name)+' · '+esc(a.team_tag)+'<br>الممثل: '+esc(a.team_representative)+'<br>الحالة: <b>'+status+'</b> · كود الفريق: <code>'+esc(a.access_code)+'</code>'+(a.slot_number?' · الخانة: '+a.slot_number:"")+'</p><div class="row"><button onclick="reviewTournamentApplication(\''+a.id+'\',\'accepted\')">قبول</button><button class="secondary" onclick="reviewTournamentApplication(\''+a.id+'\',\'backup\')">احتياط</button><button class="danger" onclick="reviewTournamentApplication(\''+a.id+'\',\'rejected\')">رفض</button></div></div>';
- }).join(""):'<p class="small">لا توجد طلبات تسجيل حتى الآن.</p>');
+ const {data,error}=await client.from("tournament_team_applications").select("id,tournament_id,team_name,team_tag,team_representative,status,slot_number,access_code,group_name,created_at").order("created_at",{ascending:false});
+ if(error){host.innerHTML='<p class="notice">تعذر تحميل طلبات البطولات: '+esc(error.message)+'</p><p class="small">تأكد من تنفيذ إعداد مجموعات البطولات في Supabase.</p>';return;}
+ const rows=data||[],groups=[{id:"A",name:"المجموعة A",color:"#2787ff",bg:"rgba(39,135,255,.12)"},{id:"B",name:"المجموعة B",color:"#20b77a",bg:"rgba(32,183,122,.12)"},{id:"C",name:"المجموعة C",color:"#a477ff",bg:"rgba(164,119,255,.12)"},{id:"D",name:"المجموعة D",color:"#f39a36",bg:"rgba(243,154,54,.12)"}];
+ const status={pending:"قيد الانتظار",accepted:"مقبول",backup:"احتياط",rejected:"مرفوض"};
+ const groupSelect=(a)=>'<label style="display:block;margin:10px 0 5px">المجموعة التي سيلعب فيها الفريق</label><select id="tournamentGroup-'+a.id+'" style="border-color:#64748b"><option value="">اختر المجموعة</option>'+groups.map(g=>'<option value="'+g.id+'" '+(a.group_name===g.id?'selected':'')+'>'+g.name+'</option>').join("")+'</select>';
+ const appCards=rows.filter(a=>a.status!=="accepted").map(a=>{
+  const t=tournamentsCache.find(x=>x.id===a.tournament_id);
+  return '<div class="card"><b>'+esc(t?.name||"بطولة")+'</b><p>'+esc(a.team_name)+' · '+esc(a.team_tag)+'<br>الممثل: '+esc(a.team_representative)+'<br>الحالة: <b>'+status[a.status]+'</b> · كود الفريق: <code>'+esc(a.access_code)+'</code></p>'+(a.status==="pending"?groupSelect(a):"")+'<div class="row">'+(a.status==="pending"?'<button onclick="reviewTournamentApplication(\''+a.id+'\',\'accepted\')">قبول وتحديد المجموعة</button>':"")+'<button class="secondary" onclick="reviewTournamentApplication(\''+a.id+'\',\'backup\')">احتياط</button><button class="danger" onclick="reviewTournamentApplication(\''+a.id+'\',\'rejected\')">رفض</button></div></div>';
+ }).join("");
+ const accepted=rows.filter(a=>a.status==="accepted");
+ const groupBoards=groups.map(g=>{
+  const members=accepted.filter(a=>a.group_name===g.id).sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999)||a.team_tag.localeCompare(b.team_tag));
+  return '<section class="card" style="border:1px solid '+g.color+';background:linear-gradient(145deg,'+g.bg+',rgba(12,18,28,.65));margin:12px 0"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3 style="color:'+g.color+';margin:0">'+g.name+'</h3><b style="color:'+g.color+'">'+members.length+' فريق</b></div>'+(members.length?'<div style="overflow-x:auto"><table class="data-table" style="width:100%;margin-top:10px"><thead><tr><th>الترتيب</th><th>الفريق</th><th>TAG</th><th>تغيير المجموعة</th></tr></thead><tbody>'+members.map(a=>'<tr><td>'+esc(a.slot_number??"—")+'</td><td>'+esc(a.team_name)+'</td><td>'+esc(a.team_tag)+'</td><td><select id="tournamentGroup-'+a.id+'">'+groups.map(x=>'<option value="'+x.id+'" '+(a.group_name===x.id?'selected':'')+'>'+x.name+'</option>').join("")+'</select><button class="secondary" style="margin-top:5px" onclick="reviewTournamentApplication(\''+a.id+'\',\'move\')">حفظ</button></td></tr>').join("")+'</tbody></table></div>':'<p class="small" style="margin:10px 0 0">لم يتم إضافة فرق لهذه المجموعة بعد.</p>')+'</section>';
+ }).join("");
+ const unassigned=accepted.filter(a=>!["A","B","C","D"].includes(a.group_name));
+ host.innerHTML='<h3>طلبات تسجيل الفرق في البطولات</h3><p class="small">اختر المجموعة عند قبول كل فريق. بعد القبول سيظهر تلقائياً في قائمة مجموعته.</p>'+(appCards||'<p class="small">لا توجد طلبات معلّقة أو احتياط أو مرفوضة.</p>')+'<h3 style="margin-top:22px">قوائم المجموعات والفرق المقبولة</h3>'+groupBoards+(unassigned.length?'<div class="notice">هناك فرق مقبولة غير مسندة لمجموعة. اختر لها مجموعة من القائمة أدناه ثم احفظ.</div>'+unassigned.map(a=>'<div class="card"><b>'+esc(a.team_name)+' · '+esc(a.team_tag)+'</b>'+groupSelect(a)+'<button class="secondary" onclick="reviewTournamentApplication(\''+a.id+'\',\'move\')">حفظ المجموعة</button></div>').join(""):"");
 }
 async function reviewTournamentApplication(id,status){
- const {data:application,error:readError}=await client.from("tournament_team_applications").select("tournament_id").eq("id",id).maybeSingle();if(readError||!application){alert("تعذر العثور على طلب التسجيل.");return;}
- let slot=null;if(status==="accepted"){const {count,error}=await client.from("tournament_team_applications").select("id",{count:"exact",head:true}).eq("tournament_id",application.tournament_id).eq("status","accepted");if(error){alert(error.message);return;}slot=(count||0)+1;}
- const {error}=await client.from("tournament_team_applications").update({status,slot_number:slot,updated_at:new Date().toISOString()}).eq("id",id);
- if(error){alert("تعذر تحديث الطلب: "+error.message);return;}await loadTournamentApplicationsAdmin();
+ if(!["accepted","backup","rejected","move"].includes(status))return;
+ const select=$("tournamentGroup-"+id);
+ const group=status==="accepted"||status==="move"?String(select?.value||"").trim():null;
+ if((status==="accepted"||status==="move")&&!["A","B","C","D"].includes(group)){alert("اختار المجموعة A أو B أو C أو D أولاً.");return;}
+ const {data:application,error:readError}=await client.from("tournament_team_applications").select("tournament_id,status").eq("id",id).maybeSingle();
+ if(readError||!application){alert("تعذر العثور على طلب التسجيل.");return;}
+ let slot=null;
+ if(status==="accepted"){
+  const {count,error}=await client.from("tournament_team_applications").select("id",{count:"exact",head:true}).eq("tournament_id",application.tournament_id).eq("status","accepted");
+  if(error){alert(error.message);return;}slot=(count||0)+1;
+ }
+ const update=status==="move"?{group_name:group,updated_at:new Date().toISOString()}:{status,group_name:status==="accepted"?group:null,slot_number:status==="accepted"?slot:null,updated_at:new Date().toISOString()};
+ let query=client.from("tournament_team_applications").update(update).eq("id",id);
+ if(status==="accepted")query=query.in("status",["pending","backup"]);
+ const {error}=await query;
+ if(error){alert("تعذر تحديث الطلب: "+error.message);return;}
+ await loadTournamentApplicationsAdmin();
 }
 window.reviewTournamentApplication=reviewTournamentApplication;
 
