@@ -936,8 +936,8 @@ function startTeamApplicationNotifications(){
   .on("postgres_changes",{event:"*",schema:"public",table:"scrim_team_applications"},()=>loadTeamApplicationsAdmin())
   .subscribe();
  if(!teamApplicationRefreshTimer)teamApplicationRefreshTimer=window.setInterval(()=>{
-  if(["founder","admin","organizer","tournament_manager"].includes(currentRole))loadTeamApplicationsAdmin();
- },30000);
+  if(document.visibilityState==="visible"&&["founder","admin","organizer","tournament_manager"].includes(currentRole))loadTeamApplicationsAdmin();
+ },45000);
 }
 async function loadSiteMonitoring(){
  const host=$("siteMonitoringAccounts");host.textContent="جاري تحميل إحصائيات الموقع...";
@@ -1763,11 +1763,27 @@ window.setScrimMatchStatus=setScrimMatchStatus;
 window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview=scrimReview;window.deleteTournament=deleteTournament;
  $("createScrim").onclick=createScrim;$("grantScrimAccess").onclick=grantScrimAccess;$("sendScrimInvite").onclick=inviteScrimTeam;$("addScrimMatch").onclick=addScrimMatch;
 
-client.auth.onAuthStateChange((_event,session)=>setTimeout(async()=>{await syncPlayerMenu(session?.user||null);await refreshAdmin();await loadPublicScrims();},0));
-setInterval(()=>{refreshScrimCountdowns();},1000);
-setInterval(()=>{document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\"scrim-countdown-status\">انتهت فترة الانسحاب</span>";});},1000);
-setInterval(()=>{loadPublicScrims();},60000);
-setInterval(()=>{loadWeeklyMvp();},60000);
+// Coalesce simultaneous refreshes so slow connections never create duplicate database requests.
+function coalesceRefresh(fn){
+ let pending=null;
+ return function(...args){
+  if(pending)return pending;
+  pending=Promise.resolve().then(()=>fn.apply(this,args)).finally(()=>{pending=null;});
+  return pending;
+ };
+}
+loadPublicScrims=coalesceRefresh(loadPublicScrims);
+loadWeeklyMvp=coalesceRefresh(loadWeeklyMvp);
+loadPublic=coalesceRefresh(loadPublic);
+client.auth.onAuthStateChange((event,session)=>{
+ if(!["SIGNED_IN","SIGNED_OUT","USER_UPDATED","PASSWORD_RECOVERY"].includes(event))return;
+ setTimeout(async()=>{await syncPlayerMenu(session?.user||null);await refreshAdmin();await loadPublicScrims();},0);
+});
+setInterval(()=>{if(document.visibilityState==="visible")refreshScrimCountdowns();},1000);
+setInterval(()=>{if(document.visibilityState==="visible")document.querySelectorAll("[data-withdrawal-deadline]").forEach(el=>{const left=Number(el.dataset.withdrawalDeadline)-Date.now(),target=el.querySelector("[data-withdrawal-countdown]");if(target)target.innerHTML=left>0?countdownUnitsHTML(left):"<span class=\\"scrim-countdown-status\\">انتهت فترة الانسحاب</span>";});},1000);
+// Public refreshes pause in background tabs and while offline.
+setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadPublicScrims();},120000);
+setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadWeeklyMvp();},180000);
 (async()=>{
  await Promise.allSettled([loadPublic(),loadWeeklyMvp(),loadPublicScrims()]);
  try{
