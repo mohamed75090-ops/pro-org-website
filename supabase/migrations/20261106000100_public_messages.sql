@@ -1,5 +1,5 @@
 -- Public community messages for PROFESSIONAL ESPORTS
--- Read is public; posting requires an authenticated player account.
+-- Everyone can read; only authenticated player accounts can post.
 create table if not exists public.public_messages (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -7,6 +7,7 @@ create table if not exists public.public_messages (
   body text not null check (char_length(btrim(body)) between 1 and 500),
   created_at timestamptz not null default now()
 );
+
 create index if not exists public_messages_created_at_idx
   on public.public_messages (created_at desc);
 create index if not exists public_messages_user_created_idx
@@ -47,10 +48,22 @@ set search_path = ''
 as $$
 declare
   v_username text;
+  v_account_type text;
   v_recent_count integer;
 begin
   if auth.uid() is null or new.user_id is distinct from auth.uid() then
     raise exception 'يجب تسجيل الدخول بحساب لاعب لإرسال رسالة';
+  end if;
+
+  select
+    nullif(btrim(u.raw_user_meta_data ->> 'username'), ''),
+    lower(coalesce(u.raw_user_meta_data ->> 'account_type', ''))
+  into v_username, v_account_type
+  from auth.users u
+  where u.id = auth.uid();
+
+  if v_account_type <> 'player' then
+    raise exception 'إرسال الرسائل متاح لحسابات اللاعبين فقط';
   end if;
 
   perform pg_catalog.pg_advisory_xact_lock(
@@ -65,11 +78,6 @@ begin
   if v_recent_count >= 5 then
     raise exception 'أرسلت رسائل كثيرة. انتظر دقيقة ثم حاول مجدداً';
   end if;
-
-  select nullif(btrim(u.raw_user_meta_data ->> 'username'), '')
-    into v_username
-  from auth.users u
-  where u.id = auth.uid();
 
   new.author_username := coalesce(v_username, 'لاعب');
   new.body := btrim(new.body);
@@ -93,13 +101,11 @@ grant execute on function public.prepare_public_message() to service_role;
 
 alter table public.public_messages replica identity full;
 
--- Enable realtime updates when the standard Supabase publication is available.
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
      and not exists (
-       select 1
-       from pg_publication_tables
+       select 1 from pg_publication_tables
        where pubname = 'supabase_realtime'
          and schemaname = 'public'
          and tablename = 'public_messages'
