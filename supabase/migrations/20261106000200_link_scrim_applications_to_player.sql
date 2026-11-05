@@ -16,6 +16,9 @@ DECLARE
     generated_code text;
     current_user_id uuid := auth.uid();
     current_account_type text;
+    v_scrim_status text;
+    v_registration_opens_at timestamptz;
+    v_registration_closes_at timestamptz;
 BEGIN
     IF current_user_id IS NULL THEN
         RAISE EXCEPTION 'يجب تسجيل الدخول بحساب لاعب لإرسال طلب الفريق';
@@ -34,6 +37,21 @@ BEGIN
        OR length(trim(coalesce(p_team_tag, ''))) < 2
        OR length(trim(coalesce(p_team_representative, ''))) < 2 THEN
         RAISE EXCEPTION 'يرجى إكمال بيانات الفريق';
+    END IF;
+
+    SELECT s.status, s.registration_opens_at, s.registration_closes_at
+      INTO v_scrim_status, v_registration_opens_at, v_registration_closes_at
+      FROM public.scrims AS s
+     WHERE s.id = p_scrim_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'السكريم غير موجود';
+    END IF;
+
+    IF v_scrim_status <> 'registration_open'
+       OR (v_registration_opens_at IS NOT NULL AND now() < v_registration_opens_at)
+       OR (v_registration_closes_at IS NOT NULL AND now() > v_registration_closes_at) THEN
+        RAISE EXCEPTION 'التسجيل في هذا السكريم غير متاح حالياً';
     END IF;
 
     INSERT INTO public.scrim_team_applications (
