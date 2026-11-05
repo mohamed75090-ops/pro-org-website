@@ -92,3 +92,19 @@ revoke all on function public.prepare_public_message() from public, anon, authen
 grant execute on function public.prepare_public_message() to service_role;
 
 alter table public.public_messages replica identity full;
+
+-- Enable realtime updates when the standard Supabase publication is available.
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1
+       from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'public_messages'
+     ) then
+    execute 'alter publication supabase_realtime add table public.public_messages';
+  end if;
+end;
+$$;
