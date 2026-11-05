@@ -2207,7 +2207,9 @@ async function loadTeamApplicationsAdmin(){
  <div class="team-status-panel" data-team-panel="accepted">${accepted.length?accepted.map(card).join(""):`<p class="small">لا توجد فرق مقبولة حالياً.</p>`}</div>
  <div class="team-status-panel hidden" data-team-panel="pending">${pending.length?pending.map(card).join(""):`<p class="small">لا توجد طلبات تنتظر المراجعة.</p>`}</div>
  <div class="team-status-panel hidden" data-team-panel="reserve">${reserve.length?reserve.map(card).join(""):`<p class="small">لا توجد فرق في الاحتياط.</p>`}</div>
- <div class="team-status-panel hidden" data-team-panel="rejected">${rejected.length?rejected.map(card).join(""):`<p class="small">لا توجد طلبات مرفوضة.</p>`}</div>`;
+ <div class="team-status-panel hidden" data-team-panel="rejected">${rejected.length?rejected.map(card).join(""):`<p class="small">لا توجد طلبات مرفوضة.</p>`}</div>
+  <button type="button" class="team-status-tab" data-team-status="withdrawn" onclick="setTeamApplicationFilter('withdrawn')">الفرق المنسحبة <span>${withdrawn.length}</span></button>
+  <div class="team-status-panel hidden" data-team-panel="withdrawn">${withdrawn.length?withdrawn.map(card).join(""):`<p class="small">لا توجد فرق منسحبة.</p>`}</div>`;
  }catch(e){el.textContent="حدث خطأ أثناء تحميل طلبات الفرق: "+(e?.message||String(e));console.error("loadTeamApplicationsAdmin:",e);}
 }
 async function withdrawTeamApplicationAdmin(id){
