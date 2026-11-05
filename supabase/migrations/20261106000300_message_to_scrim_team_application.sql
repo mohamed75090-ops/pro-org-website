@@ -224,3 +224,11 @@ REVOKE ALL ON FUNCTION public.review_scrim_team_application(bigint, text, intege
 REVOKE EXECUTE ON FUNCTION public.review_scrim_team_application(bigint, text, integer) FROM anon;
 GRANT EXECUTE ON FUNCTION public.review_scrim_team_application(bigint, text, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.review_scrim_team_application(bigint, text, integer) TO service_role;
+
+
+-- Only accepted teams reserve a unique slot. Legacy pending rows may carry
+-- an old provisional slot from the previous trigger and must not block it.
+DROP INDEX IF EXISTS public.scrim_team_applications_scrim_slot_unique;
+CREATE UNIQUE INDEX scrim_team_applications_scrim_slot_unique
+    ON public.scrim_team_applications (scrim_id, slot_number)
+    WHERE status = 'accepted' AND slot_number IS NOT NULL;
