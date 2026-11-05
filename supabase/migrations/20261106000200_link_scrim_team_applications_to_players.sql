@@ -42,7 +42,7 @@ begin
         raise exception 'يرجى تحديد السكريم';
     end if;
 
-    insert into public.scrim_team_applications (
+    insert into public.scrim_team_applications as app (
         scrim_id,
         team_name,
         team_tag,
@@ -60,7 +60,7 @@ begin
         v_user_id,
         'pending'
     )
-    returning public.scrim_team_applications.access_code
+    returning app.access_code
          into generated_code;
 
     return query select generated_code;
