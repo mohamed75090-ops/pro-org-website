@@ -1713,8 +1713,9 @@ function renderPublicMessages(rows){
   const own=window.__proCurrentMessageUser===row.user_id;
   const canModerate=["founder","admin","organizer"].includes(String(currentRole||"").toLowerCase());
   const remove=(own||canModerate)?'<button type="button" class="secondary public-message-delete" data-message-delete="'+esc(row.id)+'">حذف</button>':"";
+  const addTeam=canModerate&&row.user_id?'<button type="button" class="secondary public-message-add-team" data-message-add-team="'+esc(row.user_id)+'" data-message-author="'+esc(row.author_username||"لاعب")+'">إضافة للسكريم</button>':"";
   const date=row.created_at?new Date(row.created_at).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"}):"";
-  return '<article class="public-message"><div class="public-message-meta"><span class="public-message-author">'+esc(row.author_username||"لاعب")+'</span><span class="public-message-time">'+esc(date)+remove+'</span></div><div class="public-message-body">'+esc(row.body)+'</div></article>';
+  return '<article class="public-message"><div class="public-message-meta"><span class="public-message-author">'+esc(row.author_username||"لاعب")+'</span><span class="public-message-time">'+esc(date)+remove+addTeam+'</span></div><div class="public-message-body">'+esc(row.body)+'</div></article>';
  }).join("");
  host.querySelectorAll("[data-message-delete]").forEach(button=>button.addEventListener("click",async()=>{
   if(!confirm("هل تريد حذف هذه الرسالة؟"))return;
@@ -1723,7 +1724,33 @@ function renderPublicMessages(rows){
   if(error){alert("تعذر حذف الرسالة: "+error.message);button.disabled=false;return;}
   await loadPublicMessages();
  }));
+ host.querySelectorAll("[data-message-add-team]").forEach(button=>button.addEventListener("click",()=>addMessageAuthorToScrim(button.dataset.messageAddTeam,button.dataset.messageAuthor)));
 }
+async function addMessageAuthorToScrim(playerId,authorName){
+ const {data:scrims,error}=await client.from("scrims").select("id,title").eq("status","registration_open").order("scheduled_at",{ascending:true});
+ if(error){alert("تعذر تحميل السكريمات المفتوحة: "+error.message);return;}
+ if(!scrims?.length){alert("لا توجد سكريمات مفتوحة للتسجيل حالياً.");return;}
+ const choices=scrims.map((scrim,index)=>(index+1)+". "+scrim.title).join("\n");
+ const selected=prompt("اختر السكريم بكتابة رقمه:\n"+choices);
+ if(selected===null)return;
+ const scrim=scrims[Number(selected)-1];
+ if(!scrim){alert("اختيار السكريم غير صحيح.");return;}
+ const teamName=prompt("اسم الفريق الكامل لصاحب الرسالة ("+authorName+"):");
+ if(teamName===null)return;
+ const teamTag=prompt("التاق الكامل للفريق:");
+ if(teamTag===null)return;
+ const shortName=prompt("اختصار الفريق:");
+ if(shortName===null)return;
+ if(teamName.trim().length<2||teamTag.trim().length<2||shortName.trim().length<1){alert("يرجى إدخال بيانات الفريق بصورة صحيحة.");return;}
+ const {data,error:submitError}=await client.rpc("submit_team_application_from_message",{
+  p_scrim_id:scrim.id,p_player_id:playerId,p_team_name:teamName.trim(),p_team_tag:teamTag.trim(),p_team_short_name:shortName.trim()
+ });
+ if(submitError){alert("تعذر إرسال طلب الفريق: "+submitError.message);return;}
+ const result=Array.isArray(data)?data[0]:data;
+ alert("تم إنشاء طلب الفريق بحالة قيد الانتظار. كود الفريق: "+(result?.access_code||"سيظهر في قائمة الطلبات"));
+ if(typeof loadTeamApplicationsAdmin==="function")await loadTeamApplicationsAdmin();
+}
+window.addMessageAuthorToScrim=addMessageAuthorToScrim;
 async function loadPublicMessages(){
  const host=$("publicMessagesList");if(host)host.innerHTML='<p class="muted">جاري تحميل الرسائل...</p>';
  try{
@@ -2155,7 +2182,7 @@ window.setTeamApplicationFilter=setTeamApplicationFilter;
 async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
  try{
- const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title)").order("created_at",{ascending:false});
+ const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title,max_teams)").order("created_at",{ascending:false});
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
  const rows=data||[],pending=rows.filter(r=>r.status==="pending"),accepted=rows.filter(r=>r.status==="accepted"),reserve=rows.filter(r=>r.status==="reserve");
  updateTeamApplicationBadge(pending.length);
@@ -2180,13 +2207,31 @@ async function loadTeamApplicationsAdmin(){
 }
 async function reviewTeamApplication(id,status){
  if(!["accepted","rejected","reserve"].includes(status))return;
- const currentStatus=status==="accepted"?"pending,reserve":"pending";
- const confirmText=status==="accepted"?"تأكيد قبول الفريق؟ سيظهر ضمن الفرق المقبولة.":status==="reserve"?"إضافة الفريق إلى قائمة الاحتياط؟ لن يظهر ضمن الفرق المقبولة.":"تأكيد رفض طلب الفريق؟";
+ const confirmText=status==="accepted"?"تأكيد قبول الفريق بعد اختيار الخانة؟":status==="reserve"?"إضافة الفريق إلى قائمة الاحتياط؟ لن يظهر ضمن الفرق المقبولة.":"تأكيد رفض طلب الفريق؟";
  if(!confirm(confirmText))return;
- const {data:{user}}=await client.auth.getUser();
- let query=client.from("scrim_team_applications").update({status,reviewed_by:user?.id,reviewed_at:new Date().toISOString()}).eq("id",id);
- query=status==="accepted"?query.in("status",["pending","reserve"]):query.eq("status","pending");
- const {error}=await query;
+ let slotNumber=null;
+ if(status==="accepted"){
+  const {data:application,error:applicationError}=await client.from("scrim_team_applications").select("scrim_id").eq("id",id).maybeSingle();
+  if(applicationError||!application){alert("تعذر تحميل طلب الفريق.");return;}
+  const [{data:accepted,error:acceptedError},{data:scrim,error:scrimError}]=await Promise.all([
+   client.from("scrim_team_applications").select("slot_number").eq("scrim_id",application.scrim_id).eq("status","accepted").not("slot_number","is",null),
+   client.from("scrims").select("max_teams").eq("id",application.scrim_id).maybeSingle()
+  ]);
+  if(acceptedError||scrimError){alert("تعذر تحميل خانات السكريم.");return;}
+  const occupied=new Set((accepted||[]).map(row=>Number(row.slot_number)).filter(Number.isFinite));
+  const lastAccepted=Math.max(2,...occupied);
+  const configuredMax=Number(scrim?.max_teams)||0;
+  const lastAvailable=Math.max(lastAccepted,configuredMax?configuredMax+2:lastAccepted);
+  const choices=[];
+  for(let slot=3;slot<=lastAvailable;slot++)if(!occupied.has(slot))choices.push(slot);
+  choices.push(lastAvailable+1);
+  const promptText="اختر رقم الخانة للفريق. الخانات المتاحة موضحة أدناه، ويمكن اختيار الخانة التالية لإضافة الفريق في آخر القائمة:\n"+choices.map(slot=>slot+(slot===lastAvailable+1?" (إضافة في آخر القائمة)":" (متاحة)")).join("\n");
+  const chosen=prompt(promptText,String(choices[0]??lastAvailable+1));
+  if(chosen===null)return;
+  slotNumber=Number(chosen);
+  if(!Number.isInteger(slotNumber)||!choices.includes(slotNumber)){alert("اختر خانة من الخانات المتاحة المعروضة.");return;}
+ }
+ const {error}=await client.rpc("review_scrim_team_application",{p_application_id:Number(id),p_status:status,p_slot_number:slotNumber});
  if(error){alert("تعذر تحديث حالة الفريق: "+error.message);return;}
  await loadTeamApplicationsAdmin();await loadScrimAdmin();await loadPublicScrims();
 }
