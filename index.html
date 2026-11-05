@@ -624,6 +624,23 @@ body.gold-mode .notification-item.notification-open{color:#fff0cf;border-color:#
 body.gold-mode .notification-item.notification-open:hover{background:#59401f}
 .notification-highlight{outline:3px solid #e2b85d!important;box-shadow:0 0 0 6px #e2b85d35,0 0 28px #e2b85d55!important;transition:box-shadow .2s ease}
 
+
+/* Public community messages */
+.messages-layout{display:grid;grid-template-columns:minmax(260px,.85fr) minmax(0,1.4fr);gap:16px;align-items:start;margin-top:18px}
+.messages-compose,.messages-feed{padding:18px}
+.messages-compose h3,.messages-feed h3{margin:0 0 10px}
+.messages-compose textarea{width:100%;min-height:110px;resize:vertical;border:1px solid var(--border,#333);border-radius:12px;padding:12px;background:var(--surface-2,transparent);color:inherit;font:inherit;box-sizing:border-box}
+.messages-compose-footer,.messages-feed-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.messages-feed-heading{margin:0 0 14px}
+.messages-feed-heading h3{margin:0}
+.public-message{padding:14px 0;border-bottom:1px solid var(--border,rgba(128,128,128,.25))}
+.public-message:last-child{border-bottom:0}
+.public-message-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.public-message-author{font-weight:800}
+.public-message-time{font-size:12px;opacity:.65;white-space:nowrap}
+.public-message-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
+.public-message-delete{font-size:12px;padding:5px 9px;margin-inline-start:8px}
+@media(max-width:760px){.messages-layout{grid-template-columns:1fr}.messages-compose,.messages-feed{padding:14px}}
 </style>
 </head>
 <body>
@@ -648,6 +665,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
     <button type="button" onclick="openScrimsPage();closeSiteMenu()"><span>◈</span> السكريمات</button>
     <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
     <button type="button" onclick="openTournamentsPage();closeSiteMenu()"><span>🏆</span> البطولات</button>
+    <button type="button" onclick="openMessagesPage();closeSiteMenu()"><span>✉</span> الرسائل</button>
     <a href="#resultsSection"><span>▤</span> النتائج</a>
     <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
     <button type="button" class="admin-menu-link hidden" id="roleManagementMenu"><span>♙</span> إدارة الرولات والصلاحيات</button>
@@ -921,6 +939,29 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
 
  </div>
 
+</section>
+
+<section id="messagesPage" class="section hidden">
+ <div class="section-heading">
+  <div><p class="eyebrow">PRO COMMUNITY</p><h2>الرسائل</h2><p class="muted">مساحة تواصل لمجتمع PROFESSIONAL ESPORTS</p></div>
+  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
+ </div>
+ <div class="messages-layout">
+  <div class="messages-compose card" id="messagesCompose">
+   <h3>اكتب رسالة</h3>
+   <p class="muted" id="messagesAuthHint">سجّل الدخول بحساب اللاعب لإرسال رسالة. قراءة الرسائل متاحة للجميع.</p>
+   <form id="publicMessageForm">
+    <textarea id="publicMessageText" maxlength="500" rows="3" placeholder="اكتب رسالتك للمجتمع..." required></textarea>
+    <div class="messages-compose-footer"><small id="publicMessageCount">0 / 500</small><button type="submit" id="publicMessageSend">إرسال الرسالة</button></div>
+   </form>
+   <div id="publicMessageStatus" class="notice hidden" role="status"></div>
+   <button type="button" class="secondary hidden" id="messagesLoginButton">دخول / إنشاء حساب لاعب</button>
+  </div>
+  <div class="messages-feed card">
+   <div class="messages-feed-heading"><h3>رسائل المجتمع</h3><button type="button" class="secondary" id="refreshPublicMessages">تحديث</button></div>
+   <div id="publicMessagesList" aria-live="polite"><p class="muted">جاري تحميل الرسائل...</p></div>
+  </div>
+ </div>
 </section>
 </main>
 <footer><div class="footer-brand">PROFESSIONAL ESPORTS</div><div>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</div><p class="small">© PROFESSIONAL ESPORTS. جميع الحقوق محفوظة.</p></footer>
@@ -1655,10 +1696,73 @@ function showStandalonePage(pageId){
 }
 function returnToPublicPages(){
  closeSiteMenu();
- ["scrimsPage","tournamentsPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
+
+let publicMessagesChannel=null;
+function showMessagesStatus(message,isError=false){
+ const box=$("publicMessageStatus");if(!box)return;
+ box.textContent=message;box.classList.remove("hidden");box.classList.toggle("err",isError);
+}
+function renderPublicMessages(rows){
+ const host=$("publicMessagesList");if(!host)return;
+ if(!rows?.length){host.innerHTML='<p class="muted">لا توجد رسائل حتى الآن. كن أول من يشارك.</p>';return;}
+ host.innerHTML=rows.map(row=>{
+  const own=window.__proCurrentMessageUser===row.user_id;
+  const canModerate=["founder","admin","organizer"].includes(String(currentRole||"").toLowerCase());
+  const remove=(own||canModerate)?'<button type="button" class="secondary public-message-delete" data-message-delete="'+esc(row.id)+'">حذف</button>':"";
+  const date=row.created_at?new Date(row.created_at).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"}):"";
+  return '<article class="public-message"><div class="public-message-meta"><span class="public-message-author">'+esc(row.author_username||"لاعب")+'</span><span class="public-message-time">'+esc(date)+remove+'</span></div><div class="public-message-body">'+esc(row.body)+'</div></article>';
+ }).join("");
+ host.querySelectorAll("[data-message-delete]").forEach(button=>button.addEventListener("click",async()=>{
+  if(!confirm("هل تريد حذف هذه الرسالة؟"))return;
+  button.disabled=true;
+  const {error}=await client.from("public_messages").delete().eq("id",button.dataset.messageDelete);
+  if(error){alert("تعذر حذف الرسالة: "+error.message);button.disabled=false;return;}
+  await loadPublicMessages();
+ }));
+}
+async function loadPublicMessages(){
+ const host=$("publicMessagesList");if(host)host.innerHTML='<p class="muted">جاري تحميل الرسائل...</p>';
+ try{
+  const {data,error}=await client.from("public_messages").select("id,user_id,author_username,body,created_at").order("created_at",{ascending:false}).limit(100);
+  if(error)throw error;renderPublicMessages(data||[]);
+ }catch(error){if(host)host.innerHTML='<p class="muted">تعذر تحميل الرسائل حالياً. '+esc(error.message||"")+'</p>';}
+}
+async function openMessagesPage(){
+ closeSiteMenu();showStandalonePage("messagesPage");
+ const {data:{user}}=await client.auth.getUser();
+ window.__proCurrentMessageUser=user?.id||null;
+ const isPlayer=!!user&&(user.user_metadata?.account_type==="player"||String(user.email||"").endsWith("@players.professionalesports.com"));
+ $("publicMessageForm").classList.toggle("hidden",!isPlayer);
+ $("messagesLoginButton").classList.toggle("hidden",isPlayer);
+ $("messagesAuthHint").textContent=isPlayer?"رسالتك ستظهر باسم حساب اللاعب. لا يشترط تأكيد رقم الواتساب.":"قراءة الرسائل متاحة للجميع. لإرسال رسالة، سجّل الدخول بحساب لاعب.";
+ await loadPublicMessages();
+ if(publicMessagesChannel){client.removeChannel(publicMessagesChannel);publicMessagesChannel=null;}
+ publicMessagesChannel=client.channel("public-messages-feed").on("postgres_changes",{event:"*",schema:"public",table:"public_messages"},()=>loadPublicMessages()).subscribe();
+}
+window.openMessagesPage=openMessagesPage;
+$("publicMessageText").addEventListener("input",()=>{$("publicMessageCount").textContent=$("publicMessageText").value.length+" / 500";});
+$("refreshPublicMessages").onclick=loadPublicMessages;
+$("messagesLoginButton").onclick=()=>openPlayerAuth("login");
+$("publicMessageForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ const body=$("publicMessageText").value.trim();if(!body)return;
+ const {data:{user}}=await client.auth.getUser();
+ const isPlayer=!!user&&(user.user_metadata?.account_type==="player"||String(user.email||"").endsWith("@players.professionalesports.com"));
+ if(!isPlayer){showMessagesStatus("سجّل الدخول بحساب لاعب لإرسال الرسائل.",true);$("publicMessageForm").classList.add("hidden");$("messagesLoginButton").classList.remove("hidden");return;}
+ const button=$("publicMessageSend");button.disabled=true;button.textContent="جاري الإرسال...";
+ try{
+  const {error}=await client.from("public_messages").insert({user_id:user.id,body});
+  if(error)throw error;
+  $("publicMessageText").value="";$("publicMessageCount").textContent="0 / 500";
+  $("publicMessageStatus").classList.add("hidden");await loadPublicMessages();
+ }catch(error){showMessagesStatus(error.message||"تعذر إرسال الرسالة.",true);}
+ finally{button.disabled=false;button.textContent="إرسال الرسالة";}
+});
+
 function openScrimsPage(){closeSiteMenu();showStandalonePage("scrimsPage");syncPublicScrimsPage();}
 function openTournamentsPage(){closeSiteMenu();showStandalonePage("tournamentsPage");$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");renderTournamentPageList(tournamentsCache||[]);}
 window.openTournamentsPage=openTournamentsPage;
