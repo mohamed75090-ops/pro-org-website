@@ -186,7 +186,7 @@ BEGIN
      WHERE a.id = p_application_id
      FOR UPDATE;
 
-    IF NOT FOUND OR app_status NOT IN ('pending', 'reserve') THEN
+    IF NOT FOUND OR (app_status NOT IN ('pending', 'reserve') AND NOT (app_status = 'accepted' AND p_status = 'reserve')) THEN
         RAISE EXCEPTION 'الطلب غير موجود أو لم يعد قابلاً للمراجعة';
     END IF;
 
