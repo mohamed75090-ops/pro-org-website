@@ -54,7 +54,7 @@ BEGIN
         current_user_id,
         'pending'
     )
-    RETURNING public.scrim_team_applications.access_code
+    RETURNING access_code
          INTO generated_code;
 
     RETURN QUERY SELECT generated_code;
