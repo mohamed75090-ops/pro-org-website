@@ -54,7 +54,7 @@ BEGIN
         RAISE EXCEPTION 'التسجيل في هذا السكريم غير متاح حالياً';
     END IF;
 
-    INSERT INTO public.scrim_team_applications (
+    INSERT INTO public.scrim_team_applications AS app (
         scrim_id,
         team_name,
         team_tag,
@@ -72,7 +72,7 @@ BEGIN
         current_user_id,
         'pending'
     )
-    RETURNING access_code
+    RETURNING app.access_code
          INTO generated_code;
 
     RETURN QUERY SELECT generated_code;
