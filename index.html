@@ -2001,7 +2001,7 @@ async function openScrimTeamCenter(){
   return;
  }
  if(statusRow.status==="withdrawn"){
-  out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class="team-center-section team-center-status"><h3>حالة التسجيل</h3><b>تم انسحاب الفريق من السكريم</b><p>تم تحرير خانة الفريق مع الاحتفاظ بسجل التسجيل وكود الفريق.</p></div>";
+  out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>تم انسحاب الفريق من السكريم</b><p>تم تحرير خانة الفريق مع الاحتفاظ بسجل التسجيل وكود الفريق.</p></div>";
   return;
  }
  if(statusRow.status!=="accepted"){
