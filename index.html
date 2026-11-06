@@ -1983,7 +1983,9 @@ async function openScrimTeamCenter(){
  const code=$("scrimCenterCode")?.value?.trim()||"",out=$("scrimCenterResult");
  if(!out){alert("تعذر العثور على مساحة عرض مركز الفريق. حدّث الصفحة وحاول مجدداً.");return;}
  if(!code){out.textContent="أدخل كود الفريق.";return;}
- out.textContent="جاري التحقق من كود الفريق...";
+ const {data:{user},error:authError}=await client.auth.getUser();
+ if(authError||!user){out.textContent="يجب تسجيل الدخول بحساب اللاعب المرتبط بالفريق قبل فتح مركز الفريق.";openPlayerAuth("login");return;}
+ out.textContent="جاري التحقق من ملكية الفريق...";
  const {data:statusData,error:statusError}=await client.rpc("get_team_application_status",{team_code:code});
  if(statusError){out.textContent="تعذر التحقق من الكود: "+statusError.message;return;}
  const statusRow=Array.isArray(statusData)?statusData[0]:statusData;
