@@ -2000,6 +2000,10 @@ async function openScrimTeamCenter(){
   out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>تم رفض طلب الفريق</b><p>نأسف، لم تتم الموافقة على طلب التسجيل. يُرجى التواصل مع إدارة Professional eSports للاستفسار.</p></div>";
   return;
  }
+ if(statusRow.status==="withdrawn"){
+  out.innerHTML="<h3>"+esc(statusRow.scrim_title||"مركز الفريق")+"</h3><div class="team-center-section team-center-status"><h3>حالة التسجيل</h3><b>تم انسحاب الفريق من السكريم</b><p>تم تحرير خانة الفريق مع الاحتفاظ بسجل التسجيل وكود الفريق.</p></div>";
+  return;
+ }
  if(statusRow.status!=="accepted"){
   out.innerHTML="<div class=\"team-center-section team-center-status\"><h3>حالة التسجيل</h3><b>"+esc(statusRow.status||"قيد المراجعة")+"</b></div>";
   return;
@@ -2203,12 +2207,12 @@ async function loadTeamApplicationsAdmin(){
   <button type="button" class="team-status-tab" data-team-status="pending" onclick="setTeamApplicationFilter('pending')">في الانتظار <span id="teamPendingSectionBadge" class="admin-notification-badge" ${pending.length?"":"hidden"}>${pending.length>99?"99+":pending.length}</span></button>
   <button type="button" class="team-status-tab" data-team-status="reserve" onclick="setTeamApplicationFilter('reserve')">الفرق في الاحتياط <span>${reserve.length}</span></button>
   <button type="button" class="team-status-tab" data-team-status="rejected" onclick="setTeamApplicationFilter('rejected')">الفرق المرفوضة <span>${rejected.length}</span></button>
+  <button type="button" class="team-status-tab" data-team-status="withdrawn" onclick="setTeamApplicationFilter('withdrawn')">الفرق المنسحبة <span>${withdrawn.length}</span></button>
  </nav>
  <div class="team-status-panel" data-team-panel="accepted">${accepted.length?accepted.map(card).join(""):`<p class="small">لا توجد فرق مقبولة حالياً.</p>`}</div>
  <div class="team-status-panel hidden" data-team-panel="pending">${pending.length?pending.map(card).join(""):`<p class="small">لا توجد طلبات تنتظر المراجعة.</p>`}</div>
  <div class="team-status-panel hidden" data-team-panel="reserve">${reserve.length?reserve.map(card).join(""):`<p class="small">لا توجد فرق في الاحتياط.</p>`}</div>
  <div class="team-status-panel hidden" data-team-panel="rejected">${rejected.length?rejected.map(card).join(""):`<p class="small">لا توجد طلبات مرفوضة.</p>`}</div>
-  <button type="button" class="team-status-tab" data-team-status="withdrawn" onclick="setTeamApplicationFilter('withdrawn')">الفرق المنسحبة <span>${withdrawn.length}</span></button>
   <div class="team-status-panel hidden" data-team-panel="withdrawn">${withdrawn.length?withdrawn.map(card).join(""):`<p class="small">لا توجد فرق منسحبة.</p>`}</div>`;
  }catch(e){el.textContent="حدث خطأ أثناء تحميل طلبات الفرق: "+(e?.message||String(e));console.error("loadTeamApplicationsAdmin:",e);}
 }
