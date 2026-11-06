@@ -708,7 +708,9 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
 <section id="teamCenterPage" class="card hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
  <h2>مركز الفريق</h2>
- <p class="small">أدخل الكود الذي حصلت عليه بعد إرسال طلب التسجيل لمتابعة حالته وتفاصيله بعد القبول.</p>
+ <p class="small">تابع طلبات السكريم وأكواد الفرق المرتبطة بحساب اللاعب. لا تظهر إلا الطلبات الخاصة بحسابك.</p>
+ <div id="myScrimApplications" class="notice">سجّل الدخول لعرض طلباتك وأكواد الفرق.</div>
+ <p class="small">يمكنك أيضاً إدخال كود الفريق يدوياً لمتابعة تفاصيله.</p>
  <label for="scrimCenterCode">كود الفريق</label>
  <input id="scrimCenterCode" autocomplete="off" placeholder="أدخل كود الفريق">
  <button id="openScrimCenter" type="button" onclick="openScrimTeamCenter()">فتح مركز الفريق</button>
@@ -1805,8 +1807,20 @@ function openScrimsPage(){closeSiteMenu();showStandalonePage("scrimsPage");syncP
 function openTournamentsPage(){closeSiteMenu();showStandalonePage("tournamentsPage");$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");renderTournamentPageList(tournamentsCache||[]);}
 window.openTournamentsPage=openTournamentsPage;
 window.openScrimsPage=openScrimsPage;
-function openTeamCenterPage(){closeSiteMenu();showStandalonePage("teamCenterPage");$("scrimCenterCode").focus();}
+function openTeamCenterPage(){closeSiteMenu();showStandalonePage("teamCenterPage");renderMyScrimApplications();$("scrimCenterCode").focus();}
 window.openTeamCenterPage=openTeamCenterPage;
+async function renderMyScrimApplications(){
+ const host=$("myScrimApplications");if(!host)return;
+ const {data:{user},error:authError}=await client.auth.getUser();
+ if(authError||!user){host.innerHTML='<p class="small">سجّل الدخول بحساب اللاعب لعرض أكواد فرقك.</p>';return;}
+ host.innerHTML='<p class="small">جاري تحميل طلبات فرقك...</p>';
+ const {data,error}=await client.rpc("get_my_scrim_team_applications");
+ if(error){host.innerHTML='<p class="small">تعذر تحميل طلباتك: '+esc(error.message)+'</p>';return;}
+ const rows=data||[];
+ if(!rows.length){host.innerHTML='<p class="small">لا توجد طلبات سكريم مرتبطة بحسابك حالياً.</p>';return;}
+ const labels={pending:"قيد المراجعة",accepted:"مقبول",reserve:"احتياط",rejected:"مرفوض",withdrawn:"منسحب"};
+ host.innerHTML=rows.map(row=>'<div class="notice" style="margin:10px 0"><b>'+esc(row.scrim_title||"سكريم")+'</b><p>الفريق: '+esc(row.team_name||"—")+' · '+esc(row.team_tag||"")+'</p><p>الحالة: <b>'+esc(labels[row.application_status]||row.application_status||"—")+'</b> · الخانة: '+esc(row.slot_number??"لم تحدد")+'</p><p>كود الفريق الخاص بك:</p><div style="direction:ltr;text-align:center;font-size:25px;font-weight:900;letter-spacing:3px;padding:8px"><code>'+esc(row.team_access_code||"—")+'</code></div></div>').join("");
+}
 window.returnToPublicPages=returnToPublicPages;
 async function openTeamRegistration(scrimId,title){
  const {data:{user}}=await client.auth.getUser();
