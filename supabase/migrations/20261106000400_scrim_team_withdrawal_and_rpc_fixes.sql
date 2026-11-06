@@ -242,6 +242,24 @@ ALTER TABLE public.scrim_team_applications
     ADD CONSTRAINT scrim_team_applications_status_check
     CHECK (status IN ('pending', 'accepted', 'reserve', 'rejected', 'withdrawn'));
 
+-- Admins can load the same management list; all writes still go through
+-- the role-checked SECURITY DEFINER RPCs.
+DROP POLICY IF EXISTS scrim_team_applications_admin_select
+    ON public.scrim_team_applications;
+
+CREATE POLICY scrim_team_applications_admin_select
+    ON public.scrim_team_applications
+    FOR SELECT
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1
+              FROM public.profiles AS p
+             WHERE p.id = auth.uid()
+               AND lower(COALESCE(p.role, '')) = 'admin'
+        )
+    );
+
 -- Check whether the signed-in player owns an accepted team and is still
 -- inside the scrim's withdrawal window. A NULL deadline means no cutoff set.
 CREATE OR REPLACE FUNCTION public.can_withdraw_own_scrim_team_application(
