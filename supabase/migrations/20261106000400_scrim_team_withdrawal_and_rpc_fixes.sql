@@ -219,24 +219,8 @@ REVOKE ALL ON FUNCTION public.review_scrim_team_application(bigint, text, intege
 GRANT EXECUTE ON FUNCTION public.review_scrim_team_application(bigint, text, integer) TO authenticated;
 
 -- Add the withdrawn state without changing any existing application rows.
-DO $migration$
-DECLARE
-    existing_constraint record;
-BEGIN
-    FOR existing_constraint IN
-        SELECT c.conname
-          FROM pg_catalog.pg_constraint AS c
-         WHERE c.conrelid = 'public.scrim_team_applications'::regclass
-           AND c.contype = 'c'
-           AND pg_catalog.pg_get_constraintdef(c.oid) ILIKE '%status%'
-    LOOP
-        EXECUTE format(
-            'ALTER TABLE public.scrim_team_applications DROP CONSTRAINT %I',
-            existing_constraint.conname
-        );
-    END LOOP;
-END;
-$migration$;
+ALTER TABLE public.scrim_team_applications
+    DROP CONSTRAINT IF EXISTS scrim_team_applications_status_check;
 
 ALTER TABLE public.scrim_team_applications
     ADD CONSTRAINT scrim_team_applications_status_check
