@@ -1730,9 +1730,8 @@ function renderPublicMessages(rows){
 async function addMessageAuthorToScrim(playerId,authorName){
  const {data:{user},error:authError}=await client.auth.getUser();
  if(authError||!user){alert("يجب تسجيل الدخول بحساب مشرف.");return;}
- const {data:profile,error:profileError}=await client.from("profiles").select("role").eq("id",user.id).maybeSingle();
- const role=String(profile?.role||"").trim().toLowerCase();
- if(profileError||!["founder","admin","organizer"].includes(role)){window.__proCanAddMessageToScrim=false;alert("ليست لديك صلاحية إضافة صاحب الرسالة إلى السكريم.");return;}
+ const {data:canAdd,error:permissionError}=await client.rpc("can_add_message_author_to_scrim");
+ if(permissionError||canAdd!==true){window.__proCanAddMessageToScrim=false;alert("ليست لديك صلاحية إضافة صاحب الرسالة إلى السكريم.");return;}
  window.__proCanAddMessageToScrim=true;
  const {data:scrims,error}=await client.from("scrims").select("id,title").eq("status","registration_open").order("scheduled_at",{ascending:true});
  if(error){alert("تعذر تحميل السكريمات المفتوحة: "+error.message);return;}
@@ -1771,9 +1770,8 @@ async function openMessagesPage(){
  window.__proCurrentMessageUser=user?.id||null;
  window.__proCanAddMessageToScrim=false;
  if(user){
-  const {data:messageProfile,error:messageProfileError}=await client.from("profiles").select("role").eq("id",user.id).maybeSingle();
-  const messageRole=String(messageProfile?.role||"").trim().toLowerCase();
-  window.__proCanAddMessageToScrim=!messageProfileError&&["founder","admin","organizer"].includes(messageRole);
+  const {data:canAdd,error:permissionError}=await client.rpc("can_add_message_author_to_scrim");
+  window.__proCanAddMessageToScrim=!permissionError&&canAdd===true;
  }
  const isPlayer=!!user&&(user.user_metadata?.account_type==="player"||String(user.email||"").endsWith("@players.professionalesports.com"));
  $("publicMessageForm").classList.toggle("hidden",!isPlayer);
