@@ -1731,7 +1731,7 @@ async function addMessageAuthorToScrim(playerId,authorName){
  const {data:{user},error:authError}=await client.auth.getUser();
  if(authError||!user){alert("يجب تسجيل الدخول بحساب مشرف.");return;}
  const {data:canAdd,error:permissionError}=await client.rpc("can_add_message_author_to_scrim");
- if(permissionError||canAdd!==true){window.__proCanAddMessageToScrim=false;alert("ليست لديك صلاحية إضافة صاحب الرسالة إلى السكريم.");return;}
+ if(permissionError||canAdd!==true){window.__proCanAddMessageToScrim=false;const detail=permissionError?(permissionError.message||String(permissionError)):"Supabase returned: "+JSON.stringify(canAdd);alert("فشل فحص صلاحية Founder. التفاصيل: "+detail);return;}
  window.__proCanAddMessageToScrim=true;
  const {data:scrims,error}=await client.from("scrims").select("id,title").eq("status","registration_open").order("scheduled_at",{ascending:true});
  if(error){alert("تعذر تحميل السكريمات المفتوحة: "+error.message);return;}
