@@ -88,7 +88,7 @@ BEGIN
         p_scrim_id, trim(p_team_name), trim(p_team_tag),
         trim(p_team_short_name), player_username, p_player_id, 'pending'
     )
-    RETURNING app.access_code INTO generated_code;
+    RETURNING access_code INTO generated_code;
 
     RETURN QUERY SELECT generated_code;
 END;
