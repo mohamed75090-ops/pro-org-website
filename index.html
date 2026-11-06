@@ -1713,7 +1713,8 @@ function renderPublicMessages(rows){
   const own=window.__proCurrentMessageUser===row.user_id;
   const canModerate=["founder","admin","organizer"].includes(String(currentRole||"").toLowerCase());
   const remove=(own||canModerate)?'<button type="button" class="secondary public-message-delete" data-message-delete="'+esc(row.id)+'">حذف</button>':"";
-  const addTeam=canModerate&&row.user_id?'<button type="button" class="secondary public-message-add-team" data-message-add-team="'+esc(row.user_id)+'" data-message-author="'+esc(row.author_username||"لاعب")+'">إضافة للسكريم</button>':"";
+  const canAddToScrim=window.__proCanAddMessageToScrim===true;
+  const addTeam=canAddToScrim&&row.user_id?'<button type="button" class="secondary public-message-add-team" data-message-add-team="'+esc(row.user_id)+'" data-message-author="'+esc(row.author_username||"لاعب")+'">إضافة للسكريم</button>':"";
   const date=row.created_at?new Date(row.created_at).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"}):"";
   return '<article class="public-message"><div class="public-message-meta"><span class="public-message-author">'+esc(row.author_username||"لاعب")+'</span><span class="public-message-time">'+esc(date)+remove+addTeam+'</span></div><div class="public-message-body">'+esc(row.body)+'</div></article>';
  }).join("");
@@ -1727,6 +1728,12 @@ function renderPublicMessages(rows){
  host.querySelectorAll("[data-message-add-team]").forEach(button=>button.addEventListener("click",()=>addMessageAuthorToScrim(button.dataset.messageAddTeam,button.dataset.messageAuthor)));
 }
 async function addMessageAuthorToScrim(playerId,authorName){
+ const {data:{user},error:authError}=await client.auth.getUser();
+ if(authError||!user){alert("يجب تسجيل الدخول بحساب مشرف.");return;}
+ const {data:profile,error:profileError}=await client.from("profiles").select("role").eq("id",user.id).maybeSingle();
+ const role=String(profile?.role||"").trim().toLowerCase();
+ if(profileError||!["founder","admin","organizer"].includes(role)){window.__proCanAddMessageToScrim=false;alert("ليست لديك صلاحية إضافة صاحب الرسالة إلى السكريم.");return;}
+ window.__proCanAddMessageToScrim=true;
  const {data:scrims,error}=await client.from("scrims").select("id,title").eq("status","registration_open").order("scheduled_at",{ascending:true});
  if(error){alert("تعذر تحميل السكريمات المفتوحة: "+error.message);return;}
  if(!scrims?.length){alert("لا توجد سكريمات مفتوحة للتسجيل حالياً.");return;}
@@ -1762,6 +1769,12 @@ async function openMessagesPage(){
  closeSiteMenu();showStandalonePage("messagesPage");
  const {data:{user}}=await client.auth.getUser();
  window.__proCurrentMessageUser=user?.id||null;
+ window.__proCanAddMessageToScrim=false;
+ if(user){
+  const {data:messageProfile,error:messageProfileError}=await client.from("profiles").select("role").eq("id",user.id).maybeSingle();
+  const messageRole=String(messageProfile?.role||"").trim().toLowerCase();
+  window.__proCanAddMessageToScrim=!messageProfileError&&["founder","admin","organizer"].includes(messageRole);
+ }
  const isPlayer=!!user&&(user.user_metadata?.account_type==="player"||String(user.email||"").endsWith("@players.professionalesports.com"));
  $("publicMessageForm").classList.toggle("hidden",!isPlayer);
  $("messagesLoginButton").classList.toggle("hidden",isPlayer);
