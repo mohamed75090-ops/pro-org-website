@@ -695,8 +695,6 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
   <input id="applicationTeamName" maxlength="100" required placeholder="اكتب اسم الفريق الكامل">
   <label for="applicationTeamTag">اختصار الفريق</label>
   <input id="applicationTeamTag" maxlength="20" required placeholder="مثال: PRO">
-  <label for="applicationTeamRepresentative">اسم ممثل الفريق</label>
-  <input id="applicationTeamRepresentative" maxlength="100" required placeholder="اسم ممثل الفريق">
   <p class="small">بعد الإرسال سيصل الطلب إلى المشرفين بحالة «قيد الانتظار»، ولن يُحتسب الفريق ضمن الفرق المقبولة إلا بعد الموافقة.</p>
   <div class="row"><button type="submit" id="submitTeamApplication">إرسال الطلب</button></div>
  </form>
@@ -1842,11 +1840,11 @@ async function submitTeamApplication(event){
   $("playerAuthMessage").classList.remove("hidden");
   return;
  }
- const teamName=$("applicationTeamName").value.trim(),tag=$("applicationTeamTag").value.trim(),representative=$("applicationTeamRepresentative").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
- if(teamName.length<2||tag.length<2||representative.length<2){alert("أكمل اسم الفريق واختصاره واسم ممثله.");return;}
+ const teamName=$("applicationTeamName").value.trim(),tag=$("applicationTeamTag").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
+ if(teamName.length<2||tag.length<2){alert("أكمل اسم الفريق واختصاره.");return;}
  if(!scrimId){alert("لم يتم تحديد السكريم.");return;}
  button.disabled=true;button.textContent="جارٍ إرسال الطلب...";
- const {data,error}=await client.rpc("submit_team_application",{p_scrim_id:scrimId,p_team_name:teamName,p_team_tag:tag,p_team_representative:representative});
+ const {data,error}=await client.rpc("submit_team_application",{p_scrim_id:scrimId,p_team_name:teamName,p_team_tag:tag});
  button.disabled=false;button.textContent="إرسال الطلب";
  if(error){message.textContent="تعذر إرسال الطلب: "+error.message;message.classList.remove("hidden");return;}
  const result=Array.isArray(data)?data[0]:data,code=result?.access_code||"";
