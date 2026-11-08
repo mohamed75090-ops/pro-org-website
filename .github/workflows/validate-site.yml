@@ -1,0 +1,45 @@
+name: Validate site JavaScript
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate inline JavaScript in index.html
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]
+            .map(match => match[1].trim())
+            .filter(Boolean);
+          if (!scripts.length) {
+            console.error('No inline JavaScript blocks found.');
+            process.exit(1);
+          }
+          for (let i = 0; i < scripts.length; i++) {
+            const file = path.join(os.tmpdir(), `pro-org-inline-${i + 1}.js`);
+            fs.writeFileSync(file, scripts[i]);
+            const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (result.status !== 0) {
+              console.error(`JavaScript syntax error in inline script #${i + 1}:`);
+              process.stderr.write(result.stderr || result.stdout);
+              process.exit(result.status || 1);
+            }
+          }
+          console.log(`Validated ${scripts.length} inline JavaScript blocks successfully.`);
+          NODE
