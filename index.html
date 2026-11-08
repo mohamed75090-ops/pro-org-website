@@ -1169,6 +1169,7 @@ async function removeMvpPhotoBackground(file,statusId){
  }
 }
 async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
+ const status=$(statusId);
  const file=$(fileInputId).files?.[0];
  if(!file)return $(urlInputId).value||null;
  if(!file.type.startsWith("image/"))throw new Error("الملف المختار ليس صورة.");
@@ -1244,7 +1245,6 @@ async function saveMvpGroup(group,publish=true){
    });
   }
   if(!payload.length)throw new Error(group==="solo"?"أدخل اسم لاعب MVP أولاً.":"أدخل بيانات لاعب واحد على الأقل في أفضل 3.");
-  status.textContent="جاري حفظ البيانات في قاعدة البيانات...";
   status.textContent="جاري حفظ البيانات في قاعدة البيانات...";
   const {error}=await withMvpTimeout(client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"}),30000,"حفظ بيانات أفضل 3 لاعبين");
   if(error)throw new Error(error.message||"تعذر حفظ البيانات.");
