@@ -320,9 +320,16 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  .role-management-hero{border-color:#80612e;background:radial-gradient(ellipse at 10% 0%,#5a45242b,transparent 55%),linear-gradient(145deg,#171a20,#101216)}
  .role-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
  .role-chip,.role-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid currentColor}
- .role-founder{color:#f0c66e;background:#f0c66e18}.role-admin{color:#ff7777;background:#ff777718}
- .role-organizer{color:#62d49b;background:#62d49b18}.role-results{color:#75b9ff;background:#75b9ff18}
- .role-tournament{color:#c49aff;background:#c49aff18}.role-player{color:#aab2bf;background:#aab2bf18}
+ .role-founder{color:#ffd36f;background:rgba(255,199,77,.14);border-color:rgba(255,199,77,.72);box-shadow:0 0 12px rgba(255,199,77,.12)}
+ .role-admin{color:#ff8585;background:rgba(255,93,93,.13);border-color:rgba(255,115,115,.7)}
+ .role-organizer{color:#65e6a8;background:rgba(54,210,139,.13);border-color:rgba(80,220,153,.68)}
+ .role-results{color:#80c7ff;background:rgba(72,166,255,.14);border-color:rgba(112,190,255,.72)}
+ .role-tournament{color:#d0a4ff;background:rgba(174,112,255,.14);border-color:rgba(194,145,255,.72)}
+ .role-player{color:#55e1df;background:rgba(42,202,199,.14);border-color:rgba(75,220,216,.7)}
+ .role-viewer{color:#c2cad5;background:rgba(150,164,181,.12);border-color:rgba(170,183,199,.55)}
+ .role-profile-rank{padding:8px 15px;font-size:14px;letter-spacing:.15px;box-shadow:0 5px 18px rgba(0,0,0,.22)}
+ .profile-rank-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;margin:4px 0 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+ .profile-rank-label{font-size:13px;color:var(--muted);font-weight:700}
  .role-user-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,190px) auto;gap:10px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
  .role-user-name{font-weight:800;overflow-wrap:anywhere}.role-user-id{font-size:10px;color:var(--muted);direction:ltr;text-align:right;overflow-wrap:anywhere}
  .role-user-row select{margin:0}.role-user-row button{white-space:nowrap}
@@ -831,7 +838,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
 <section id="playerProfilePage" class="section hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الموقع</button>
  <div class="auth-card"><div class="auth-heading"><h3>الملف الشخصي</h3><p>بيانات حساب اللاعب</p></div>
-  <div class="card"><p>اسم المستخدم: <b id="playerProfileUsername">—</b></p><p>الرول الحالي: <span id="playerProfileRole" class="role-badge role-player">لاعب</span></p><p>رقم الواتساب: <b id="playerProfileWhatsapp">—</b></p><p>حالة التحقق: <span class="small">غير موثّق حالياً</span></p></div>
+  <div class="card profile-account-card"><p>اسم المستخدم: <b id="playerProfileUsername">—</b></p><div class="profile-rank-row"><span class="profile-rank-label">رتبة الحساب</span><span id="playerProfileRole" class="role-badge role-player role-profile-rank">لاعب محترف</span></div><p>رقم الواتساب: <b id="playerProfileWhatsapp">—</b></p><p>حالة التحقق: <span class="small">غير موثّق حالياً</span></p></div>
   <button type="button" class="danger" id="playerSignOutButton">تسجيل الخروج</button>
  </div>
 </section>
@@ -1683,7 +1690,7 @@ async function loadSiteMonitoring(){
  rows.map(account=>{
   const phone=String(account.whatsapp_number||""),digits=phone.replace(/[^0-9]/g,"");
   const verified=account.whatsapp_verified?'<span class="success">موثّق</span>':'<span class="muted">غير موثّق</span>';
-  const roleMeta={founder:["المؤسس","role-founder"],admin:["المشرف العام","role-admin"],organizer:["المنظّم","role-organizer"],results_manager:["مدير النتائج","role-results"],tournament_manager:["مدير البطولات","role-tournament"],viewer:["مشاهد","role-viewer"],player:["لاعب","role-player"]};
+  const roleMeta={founder:["المؤسس","role-founder"],admin:["المشرف العام","role-admin"],organizer:["المنظّم","role-organizer"],results_manager:["مدير النتائج","role-results"],tournament_manager:["مدير البطولات","role-tournament"],viewer:["مشاهد","role-viewer"],player:["لاعب محترف","role-player"]};
   const role=roleMeta[String(account.role||"player").toLowerCase()]||["غير محدد","role-viewer"];
   const roleBadge='<span class="role-badge '+role[1]+'">'+role[0]+'</span>';
   const contact=digits?'<a class="secondary" style="display:inline-block;padding:8px 12px;text-decoration:none" href="https://wa.me/'+esc(digits)+'" target="_blank" rel="noopener noreferrer">فتح واتساب</a>':'<span class="muted">لا يوجد رقم</span>';
@@ -1703,7 +1710,7 @@ function recordAnonymousSiteVisit(){
  }catch(error){console.warn("Anonymous visit tracking unavailable:",error?.message||error);}
 }
 let roleManagementCache=[];
-const ROLE_DEFINITIONS=[["founder","المؤسس","role-founder","كل صلاحيات الموقع، وإدارة الرولات وسجل عمليات المشرفين."],["admin","المشرف العام","role-admin","التحكم الكامل في السكريمات والرومات والبطولات والنتائج وMVP، ومتابعة الموقع."],["organizer","المنظّم","role-organizer","إدارة السكريمات والرومات وطلبات الفرق والدعوات فقط."],["results_manager","مدير النتائج","role-results","إدارة النتائج فقط، بما يشمل مراجعتها واعتمادها ونشر نتائج السكريم."],["tournament_manager","مدير البطولات","role-tournament","إدارة الرومات والبطولات والنتائج وMVP فقط."],["player","لاعب","role-player","استخدام حساب اللاعب والتسجيل في السكريمات والبطولات ومركز الفريق، دون أدوات تنظيمية."]];
+const ROLE_DEFINITIONS=[["founder","المؤسس","role-founder","كل صلاحيات الموقع، وإدارة الرولات وسجل عمليات المشرفين."],["admin","المشرف العام","role-admin","التحكم الكامل في السكريمات والرومات والبطولات والنتائج وMVP، ومتابعة الموقع."],["organizer","المنظّم","role-organizer","إدارة السكريمات والرومات وطلبات الفرق والدعوات فقط."],["results_manager","مدير النتائج","role-results","إدارة النتائج فقط، بما يشمل مراجعتها واعتمادها ونشر نتائج السكريم."],["tournament_manager","مدير البطولات","role-tournament","إدارة الرومات والبطولات والنتائج وMVP فقط."],["player","لاعب محترف","role-player","استخدام حساب اللاعب والتسجيل في السكريمات والبطولات ومركز الفريق، دون أدوات تنظيمية."]];
 async function fetchRoleUsers(){
  if(currentRole!=="founder")throw new Error("هذه الصفحة للمؤسس فقط.");
  const {data,error}=await client.rpc("get_role_management_users");if(error)throw error;
@@ -1936,7 +1943,7 @@ async function openPlayerProfile(){
  roleEl.className="role-badge role-player";
  const {data:profile,error}=await client.from("profiles").select("role").eq("id",user.id).single();
  if(error){roleEl.textContent="تعذر تحميل الرول";console.warn("Profile role:",error.message);}
- else{const meta=roleLabels[String(profile?.role||"player").toLowerCase()]||["غير محدد","role-viewer"];roleEl.textContent=meta[0];roleEl.className="role-badge "+meta[1];}
+ else{const meta=roleLabels[String(profile?.role||"player").toLowerCase()]||["غير محدد","role-viewer"];roleEl.textContent=meta[0];roleEl.className="role-badge role-profile-rank "+meta[1];}
  showStandalonePage("playerProfilePage");
 }
 window.openPlayerProfile=openPlayerProfile;
