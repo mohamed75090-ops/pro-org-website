@@ -78,6 +78,16 @@ td{color:#e2e3e7}
 .ok{color:#8cdb9b}.err{color:#ff9292}
 .small{font-size:12px;color:var(--muted)}
 footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid var(--line);margin-top:45px;background:#090a0d}
+.community-support{margin:18px auto 0;max-width:360px}
+.community-support-title{font-size:12px;font-weight:800;color:var(--gold2);margin-bottom:10px}
+.community-support-title span{font-size:10px;letter-spacing:.5px;color:var(--muted)}
+.community-support-links{display:flex;justify-content:center;gap:12px;min-height:54px}
+.community-support-link{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#171a20;border:1px solid var(--line);transition:transform .2s,border-color .2s}
+.community-support-link:hover{transform:translateY(-3px);border-color:var(--gold)}
+.community-support-link svg{width:28px;height:28px;display:block}
+.community-support-link.instagram svg{filter:drop-shadow(0 1px 2px #0005)}
+.community-support-link.whatsapp svg{color:#25D366}
+
 .footer-brand{color:var(--gold);font-weight:bold;letter-spacing:2px}
 .pill{display:inline-block;padding:5px 10px;border:1px solid #66532d;border-radius:30px;color:var(--gold2);font-size:11px}
 /* PRO scrim control visual upgrades */
@@ -838,6 +848,12 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الموقع</button>
  <div class="section-heading"><div><span class="pill">FOUNDER CONTROL</span><h2>إدارة الرولات والصلاحيات</h2><p>عرض جميع الرولات وعدد الحسابات والأسماء المسجلة تحت كل رول. إدارة الصلاحيات متاحة من متابعة الموقع للمالك فقط.</p></div><button type="button" class="secondary" id="refreshRoleDirectory">تحديث القائمة</button></div>
  <div id="roleDirectoryStatus" class="notice">جاري تحميل الرولات...</div><div id="roleDirectoryList" class="grid"></div>
+ <div class="card" id="communitySupportAdmin" style="margin-top:18px">
+  <h3>إدارة روابط الدعم والتواصل</h3><p class="small">هذا القسم للمؤسس فقط. أضف رابط حساب إنستغرام ورابط واتساب، وستظهر أيقونتاهما أسفل الموقع لجميع المستخدمين.</p>
+  <label for="supportInstagramUrl">رابط إنستغرام</label><input id="supportInstagramUrl" type="url" placeholder="https://instagram.com/youraccount" dir="ltr">
+  <label for="supportWhatsappUrl">رابط واتساب</label><input id="supportWhatsappUrl" type="url" placeholder="https://wa.me/249XXXXXXXXX" dir="ltr">
+  <button type="button" id="saveCommunitySupportLinks">حفظ روابط التواصل</button><div id="communitySupportAdminStatus" class="notice">جاري تحميل الروابط...</div>
+ </div>
 </section>
 <section id="admin" class="hidden">
  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
@@ -996,7 +1012,9 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
  </div>
 </section>
 </main>
-<footer><div class="footer-brand">PROFESSIONAL ESPORTS</div><div>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</div><p class="small">© PROFESSIONAL ESPORTS. جميع الحقوق محفوظة.</p></footer>
+<footer><div class="footer-brand">PROFESSIONAL ESPORTS</div><div>PRO ORG · PUBG MOBILE COMPETITIVE COMMUNITY</div><p class="small">© PROFESSIONAL ESPORTS. جميع الحقوق محفوظة.</p>
+ <div class="community-support"><div class="community-support-title">الدعم والتواصل <span>• COMMUNITY &amp; SUPPORT</span></div><div id="communitySupportLinks" class="community-support-links"><span class="small">جاري تحميل روابط التواصل...</span></div></div>
+</footer>
 <script>
 const bootStatus=document.getElementById("status");const bootMessage=(m)=>{if(bootStatus)bootStatus.textContent=m;};bootMessage("تم تشغيل JavaScript؛ جاري بدء فحص مكتبة الاتصال...");
 (async()=>{
@@ -1558,8 +1576,49 @@ function saveApprovedResults(button){
 }
 window.saveApprovedResults=saveApprovedResults;
 
+const COMMUNITY_SUPPORT_DEFAULTS={instagram_url:"",whatsapp_url:""};
+function validSupportUrl(value,kind){
+ const raw=String(value||"").trim();if(!raw)return "";
+ try{const u=new URL(raw);if(u.protocol!=="https:"&&u.protocol!=="http:")return "";
+  const host=u.hostname.toLowerCase();
+  if(kind==="instagram"&&!/(^|\\.)instagram\\.com$/.test(host))return "";
+  if(kind==="whatsapp"&&!(/(^|\\.)wa\\.me$/.test(host)||/(^|\\.)whatsapp\\.com$/.test(host)))return "";
+  return u.href;
+ }catch{return "";}
+}
+function renderCommunitySupportLinks(settings){
+ const host=$("communitySupportLinks");if(!host)return;
+ const instagram=validSupportUrl(settings?.instagram_url,"instagram"),whatsapp=validSupportUrl(settings?.whatsapp_url,"whatsapp");
+ host.innerHTML=(instagram?'<a class="community-support-link instagram" href="'+esc(instagram)+'" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><defs><linearGradient id="proInstagramGradient" x1="3" y1="21" x2="21" y2="3"><stop stop-color="#FFB13D"/><stop offset=".5" stop-color="#E1306C"/><stop offset="1" stop-color="#833AB4"/></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="5" stroke="url(#proInstagramGradient)" stroke-width="2.2"/><circle cx="12" cy="12" r="4.2" stroke="url(#proInstagramGradient)" stroke-width="2.2"/><circle cx="17.7" cy="6.5" r="1.2" fill="#E1306C"/></svg></a>':"")+(whatsapp?'<a class="community-support-link whatsapp" href="'+esc(whatsapp)+'" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 2 17.7L.5 23.5l5.9-1.5A11.8 11.8 0 0 0 20.5 3.5ZM12 21a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.5.9.9-3.4-.2-.4A9.8 9.8 0 1 1 12 21Zm5.4-7.3c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-.9 1.1-.3.2-.6.1a8 8 0 0 1-2.4-1.5 9 9 0 0 1-1.7-2.1c-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6s-.7-1.7-1-2.3c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4s-1.2 1.2-1.2 2.8 1.2 3.2 1.4 3.4c.2.2 2.4 3.7 5.8 5.1.8.3 1.4.5 1.9.6.8.2 1.5.2 2 .1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.1-1.4s-.3-.2-.6-.4Z"/></svg></a>':"");
+ if(!instagram&&!whatsapp)host.innerHTML='<span class="small">قريباً — روابط التواصل غير متاحة حالياً.</span>';
+}
+async function loadCommunitySupportLinks(){
+ const {data,error}=await client.from("community_support_links").select("instagram_url,whatsapp_url").eq("id",1).maybeSingle();
+ if(error){console.warn("Community support links:",error.message);renderCommunitySupportLinks(COMMUNITY_SUPPORT_DEFAULTS);return null;}
+ renderCommunitySupportLinks(data||COMMUNITY_SUPPORT_DEFAULTS);return data||COMMUNITY_SUPPORT_DEFAULTS;
+}
+async function loadCommunitySupportAdmin(){
+ if(currentRole!=="founder")return;
+ const status=$("communitySupportAdminStatus");
+ try{const data=await loadCommunitySupportLinks();$("supportInstagramUrl").value=data?.instagram_url||"";$("supportWhatsappUrl").value=data?.whatsapp_url||"";if(status)status.textContent="يمكنك تعديل الروابط ثم الضغط على حفظ.";}
+ catch(error){if(status)status.textContent="تعذر تحميل الروابط: "+(error.message||error);}
+}
+async function saveCommunitySupportLinks(){
+ if(currentRole!=="founder"){alert("إدارة روابط التواصل متاحة للمؤسس فقط.");return;}
+ const status=$("communitySupportAdminStatus"),button=$("saveCommunitySupportLinks");
+ const instagramRaw=$("supportInstagramUrl").value.trim(),whatsappRaw=$("supportWhatsappUrl").value.trim();
+ const instagram=validSupportUrl(instagramRaw,"instagram"),whatsapp=validSupportUrl(whatsappRaw,"whatsapp");
+ if(instagramRaw&&!instagram){status.textContent="رابط إنستغرام غير صحيح. استخدم رابط instagram.com.";return;}
+ if(whatsappRaw&&!whatsapp){status.textContent="رابط واتساب غير صحيح. استخدم wa.me أو whatsapp.com.";return;}
+ button.disabled=true;status.textContent="جاري حفظ الروابط...";
+ try{const {error}=await client.from("community_support_links").upsert({id:1,instagram_url:instagram||null,whatsapp_url:whatsapp||null,updated_at:new Date().toISOString()},{onConflict:"id"});
+  if(error)throw error;renderCommunitySupportLinks({instagram_url:instagram,whatsapp_url:whatsapp});status.textContent="تم حفظ روابط التواصل وتحديثها لجميع المستخدمين.";
+ }catch(error){status.textContent="تعذر حفظ الروابط: "+(error.message||error);}
+ finally{button.disabled=false;}
+}
 async function loadPublic(){
  const targets=["tournaments","teams","results"];
+ loadCommunitySupportLinks();
  let timer;
  try{
   const pending=Promise.all([
@@ -1654,7 +1713,7 @@ async function loadRoleManagement(){
   }).join("");
  }catch(error){status.textContent="تعذر تحميل الرولات: "+(error.message||error);host.innerHTML="";}
 }
-function openRoleManagementPage(){if(currentRole!=="founder"){alert("إدارة الرولات متاحة للمالك فقط.");return;}showStandalonePage("roleManagementPage");loadRoleManagement();}
+function openRoleManagementPage(){if(currentRole!=="founder"){alert("إدارة الرولات متاحة للمالك فقط.");return;}showStandalonePage("roleManagementPage");loadRoleManagement();loadCommunitySupportAdmin();}
 async function openMonitoringRoleEditor(userId,displayName){
  if(currentRole!=="founder"){alert("إعطاء الرولات متاح للمالك فقط.");return;}
  const panel=$("siteMonitoringRoleEditor");
@@ -1875,6 +1934,7 @@ $("playerRegisterForm").onsubmit=async(event)=>{
 $("siteMonitoringMenu").onclick=()=>{closeSiteMenu();showStandalonePage("siteMonitoringPage");loadSiteMonitoring();};
 $("roleManagementMenu").onclick=()=>{closeSiteMenu();openRoleManagementPage();};
 $("refreshRoleDirectory").onclick=loadRoleManagement;
+$("saveCommunitySupportLinks").onclick=saveCommunitySupportLinks;
 $("refreshSiteMonitoring").onclick=loadSiteMonitoring;
 $("closeLogin").onclick=returnToPublicPages;
 $("adminLoginForm").addEventListener("submit",async(event)=>{event.preventDefault();const button=$("signIn");button.disabled=true;button.textContent="جاري تسجيل الدخول...";try{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");}finally{button.disabled=false;button.textContent="تسجيل الدخول";}});
