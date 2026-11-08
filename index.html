@@ -1518,6 +1518,9 @@ async function refreshAdmin(){
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
  currentRole=String(profile.role||"").trim().toLowerCase();
+ const canManageWeeklyMvp=["founder","admin","results_manager","tournament_manager"].includes(currentRole);
+ show("weeklyMvpAdmin",canManageWeeklyMvp);
+ if(canManageWeeklyMvp) loadWeeklyMvpAdmin().catch(e=>{const status=$("mvpAdminStatus");if(status)status.textContent="تعذر تحميل بيانات MVP: "+(e?.message||"خطأ غير معروف");});
  if(!["founder","admin","organizer","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);returnToPublicPages();return;}
  showStandalonePage("admin");
  if(typeof window.activateAdminMainTab==="function")window.activateAdminMainTab("tournaments");
@@ -1540,8 +1543,6 @@ async function refreshAdmin(){
  if(["founder","admin","organizer","tournament_manager"].includes(currentRole)) startTeamApplicationNotifications();
  show("resultForm",currentRole!=="organizer"); // المنظّم لا يملك صلاحية إدخال النتائج
  show("aiScanner",currentRole!=="organizer"); // المنظّم لا يملك صلاحية مراجعة النتائج
- show("weeklyMvpAdmin",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
- if(["founder","admin","results_manager","tournament_manager"].includes(currentRole)) await loadWeeklyMvpAdmin();
  if(currentRole==="founder") await loadRoleManagement();
  const [ts,ms,tm,rs]=await Promise.all([
   client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled").order("created_at",{ascending:false}),
