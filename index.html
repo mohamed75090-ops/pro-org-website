@@ -1958,7 +1958,11 @@ $("addResult").onclick=async()=>{
 $("scanImages").onclick=async()=>{
  const files=[...($("aiImages").files||[])],matchId=$("aiMatch").value;
  if(!matchId){alert("اختار المباراة أولاً.");return;}if(!files.length){alert("اختار صورة واحدة على الأقل.");return;}
- if(files.some(f=>!f.type.startsWith("image/"))){alert("ارفع ملفات صور فقط.");return;}
+ if(files.length>8){alert("يمكن رفع 8 صور كحد أقصى في المرة الواحدة.");return;}
+ const allowedImageTypes=new Set(["image/jpeg","image/png","image/webp"]);
+ if(files.some(f=>!allowedImageTypes.has(f.type))){alert("ارفع صور JPG أو PNG أو WEBP فقط.");return;}
+ if(files.some(f=>f.size>8*1024*1024)){alert("حجم كل صورة يجب ألا يتجاوز 8 ميجابايت.");return;}
+ if(files.reduce((sum,f)=>sum+f.size,0)>32*1024*1024){alert("إجمالي حجم الصور يجب ألا يتجاوز 32 ميجابايت.");return;}
  $("scanImages").disabled=true;$("aiStatus").textContent="جاري رفع الصور وتحليلها... انتظر.";$("aiOutput").innerHTML="";
  try{
   // إصلاح المشكلة: الحصول على جلسة المستخدم وتمرير access token صراحةً إلى Edge Function.
