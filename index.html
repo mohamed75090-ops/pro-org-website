@@ -1643,8 +1643,8 @@ function saveApprovedResults(button){
   const original=originalText.get(node),trim=original.trim();
   if(!trim)return;
   const translated=dict[trim];
-  if(en&&translated)node.nodeValue=original.replace(trim,translated);
-  else if(!en)node.nodeValue=original;
+  if(en&&translated){const next=original.replace(trim,translated);if(node.nodeValue!==next)node.nodeValue=next;}
+  else if(!en&&node.nodeValue!==original)node.nodeValue=original;
  }
  function translateElement(el,en){
   if(el.nodeType===3){translateText(el,en);return;}
