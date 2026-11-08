@@ -1867,7 +1867,11 @@ async function refreshAdmin(){
  if(canTournaments)loadTournamentApplicationsAdmin();
  show("scrimAdmin",canScrims);
  if(canScrims)await loadScrimAdmin();
- else if(canRooms)await loadScrimMatchAdmin();
+ else if(canRooms){
+  const {data:roomScrims,error:roomScrimsError}=await client.from("scrims").select("id,title").order("created_at",{ascending:false});
+  if(!roomScrimsError)$("scrimMatchSelect").innerHTML=(roomScrims||[]).map(s=>'<option value="'+s.id+'">'+esc(s.title)+'</option>').join("");
+  await loadScrimMatchAdmin();
+ }
  if(canScrims){await loadTeamApplicationsAdmin();startTeamApplicationNotifications();}
  show("resultForm",canResults);
  show("aiScanner",canResults);
