@@ -1741,13 +1741,12 @@ async function addMessageAuthorToScrim(playerId,authorName){
  if(selected===null)return;
  const scrim=scrims[Number(selected)-1];
  if(!scrim){alert("اختيار السكريم غير صحيح.");return;}
- const teamName=prompt("اسم الفريق الكامل لصاحب الرسالة ("+authorName+"):");
- if(teamName===null)return;
+ const teamName=String(authorName||"").trim();
  const teamTag=prompt("التاق الكامل للفريق:");
  if(teamTag===null)return;
  const shortName=prompt("اختصار الفريق:");
  if(shortName===null)return;
- if(teamName.trim().length<2||teamTag.trim().length<2||shortName.trim().length<1){alert("يرجى إدخال بيانات الفريق بصورة صحيحة.");return;}
+ if(teamName.length<2||teamTag.trim().length<2||shortName.trim().length<1){alert("تعذر تحديد اسم صاحب الرسالة أو توجد بيانات فريق غير مكتملة.");return;}
  const {data,error:submitError}=await client.rpc("submit_team_application_from_message",{
   p_scrim_id:scrim.id,p_player_id:playerId,p_team_name:teamName.trim(),p_team_tag:teamTag.trim(),p_team_short_name:shortName.trim()
  });
