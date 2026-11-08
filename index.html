@@ -1582,7 +1582,7 @@ function validSupportUrl(value,kind){
  try{const u=new URL(raw);if(u.protocol!=="https:"&&u.protocol!=="http:")return "";
   const host=u.hostname.toLowerCase();
   if(kind==="instagram"&&!/(^|\.)instagram\.com$/.test(host))return "";
-  if(kind==="whatsapp"&&!(/(^|\.)wa\.me$/.test(host)||/(^|\.)whatsapp\.com$/.test(host)))return "";
+  if(kind==="whatsapp"&&host!=="wa.me"&&!host.endsWith(".wa.me")&&host!=="whatsapp.com"&&!host.endsWith(".whatsapp.com"))return "";
   return u.href;
  }catch{return "";}
 }
