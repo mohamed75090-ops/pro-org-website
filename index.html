@@ -1703,7 +1703,7 @@ function recordAnonymousSiteVisit(){
  }catch(error){console.warn("Anonymous visit tracking unavailable:",error?.message||error);}
 }
 let roleManagementCache=[];
-const ROLE_DEFINITIONS=[["founder","المؤسس","role-founder"],["admin","المشرف العام","role-admin"],["organizer","المنظّم","role-organizer"],["results_manager","مدير النتائج","role-results"],["tournament_manager","مدير البطولات","role-tournament"],["player","لاعب","role-player"]];
+const ROLE_DEFINITIONS=[["founder","المؤسس","role-founder","كل صلاحيات الموقع، وإدارة الرولات وسجل عمليات المشرفين."],["admin","المشرف العام","role-admin","التحكم الكامل في السكريمات والرومات والبطولات والنتائج وMVP، ومتابعة الموقع."],["organizer","المنظّم","role-organizer","إدارة السكريمات والرومات وطلبات الفرق والدعوات فقط."],["results_manager","مدير النتائج","role-results","إدارة النتائج فقط، بما يشمل مراجعتها واعتمادها ونشر نتائج السكريم."],["tournament_manager","مدير البطولات","role-tournament","إدارة الرومات والبطولات والنتائج وMVP فقط."],["player","لاعب","role-player","استخدام حساب اللاعب والتسجيل في السكريمات والبطولات ومركز الفريق، دون أدوات تنظيمية."]];
 async function fetchRoleUsers(){
  if(currentRole!=="founder")throw new Error("هذه الصفحة للمؤسس فقط.");
  const {data,error}=await client.rpc("get_role_management_users");if(error)throw error;
@@ -1715,9 +1715,9 @@ async function loadRoleManagement(){
  status.textContent="جاري تحميل الرولات والحسابات...";
  try{
   const users=await fetchRoleUsers();status.textContent="إجمالي الحسابات: "+users.length+" · عدد الرولات: "+ROLE_DEFINITIONS.length;
-  host.innerHTML=ROLE_DEFINITIONS.map(([key,label,cls])=>{
+  host.innerHTML=ROLE_DEFINITIONS.map(([key,label,cls,scope])=>{
    const members=users.filter(u=>String(u.role||"player").toLowerCase()===key);
-   return '<article class="role-directory-card"><h3><span class="role-chip '+cls+'">'+label+'</span><span class="role-directory-count">'+members.length+' شخص</span></h3><div class="role-directory-names">'+(members.length?members.map(u=>'<div class="role-directory-name">'+esc(u.display_name||u.username||"مستخدم")+'</div>').join(""):'<div class="small">لا يوجد أشخاص بهذا الرول حالياً.</div>')+'</div></article>';
+   return '<article class="role-directory-card"><h3><span class="role-chip '+cls+'">'+label+'</span><span class="role-directory-count">'+members.length+' شخص</span></h3><p class="small role-directory-scope">'+esc(scope)+'</p><div class="role-directory-names">'+(members.length?members.map(u=>'<div class="role-directory-name">'+esc(u.display_name||u.username||"مستخدم")+'</div>').join(""):'<div class="small">لا يوجد أشخاص بهذا الرول حالياً.</div>')+'</div></article>';
   }).join("");
  }catch(error){status.textContent="تعذر تحميل الرولات: "+(error.message||error);host.innerHTML="";}
 }
