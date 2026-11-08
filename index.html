@@ -1080,7 +1080,7 @@ async function loadWeeklyMvp(){
   clearTimeout(timer);data=result.data;error=result.error;
  }catch(e){clearTimeout(timer);feature.innerHTML='<div class="mvp-empty">'+esc(e?.message||"تعذر تحميل بيانات MVP حالياً.")+'</div>';top.innerHTML="";return;}
  if(error){feature.innerHTML='<div class="mvp-empty">تعذر تحميل بيانات MVP: '+esc(error.message)+'</div>';top.innerHTML="";return;}
- const allRows=data||[],latestWeek=allRows[0]?.week_label,rows=allRows.filter(x=>x.week_label===latestWeek&&x.is_published),solo=rows.find(x=>Number(x.rank_position)===0),leaders=rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).sort((a,b)=>Number(a.rank_position)-Number(b.rank_position));
+ const allRows=data||[],latestWeek=allRows[0]?.week_label,rows=allRows.filter(x=>x.week_label===latestWeek),solo=allRows.find(x=>Number(x.rank_position)===0&&x.is_published),leaders=rows.filter(x=>x.is_published&&Number(x.rank_position)>=1&&Number(x.rank_position)<=3).sort((a,b)=>Number(a.rank_position)-Number(b.rank_position));
  if(!solo&&!leaders.length){feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div>';top.innerHTML='<div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة أفضل 3 منشورة حالياً.</div>';return;}
  if(solo){
   const photo=solo.photo_url?'<img class="mvp-photo" src="'+esc(solo.photo_url)+'" alt="'+esc(solo.player_name)+'" onerror="this.style.display=\'none\'">':'';
