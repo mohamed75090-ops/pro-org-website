@@ -1670,7 +1670,7 @@ async function loadSiteMonitoring(){
  $("siteAnonymousTotal").textContent=Number(stats.anonymous_visits_total||0).toLocaleString("en-US");
  $("siteAnonymousToday").textContent="اليوم: "+Number(stats.anonymous_visits_today||0).toLocaleString("en-US");
  const rows=Array.isArray(stats.accounts)?stats.accounts:[];
- if(!rows.length){host.innerHTML='<div class="notice">لا توجد حسابات مسجلة حتى الآن.</div>';return;}
+ if(!rows.length){const canSeeAccounts=["founder","admin"].includes(currentRole);host.innerHTML=canSeeAccounts?'<div class="notice">لا توجد حسابات مسجلة حتى الآن.</div>':'<div class="notice">عرض قائمة الحسابات وبيانات التواصل متاح للمؤسس والمشرف العام فقط.</div>';return;}}
  host.innerHTML='<div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr><th>اسم المستخدم</th><th>الرول</th><th>رقم الواتساب</th><th>حالة التحقق</th><th>التواصل</th><th>إدارة</th></tr></thead><tbody>'+
  rows.map(account=>{
   const phone=String(account.whatsapp_number||""),digits=phone.replace(/[^0-9]/g,"");
