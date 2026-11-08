@@ -1402,7 +1402,7 @@ async function createTournamentAnnouncement(){
    const pub=client.storage.from("tournament-posters").getPublicUrl(path);
    const upd=await client.from("tournaments").update({poster_url:pub.data.publicUrl}).eq("id",data.id);if(upd.error)throw upd.error;
   }
-  $("tournamentName").value="";$("tournamentDesc").value="";$("tournamentPoster").value="";$("tournamentOpensAt").value="";$("tournamentClosesAt").value="";$("tournamentMaxTeams").value="25";$("tournamentRegistrationEnabled").checked=false;
+  $("tournamentName").value="";$("tournamentDesc").value="";$("tournamentPoster").value="";$("tournamentOpensAt").value="";$("tournamentClosesAt").value="";$("tournamentMaxTeams").value="25";$("tournamentRegistrationEnabled").checked=false;$("tournamentDetailsVisible").checked=true;
   alert("تم إنشاء ونشر إعلان البطولة بنجاح. سيظهر في صفحة البطولات والصفحة الرئيسية.");
   await refreshAdmin();await loadPublic();
  }catch(e){alert("تعذر إنشاء البطولة: "+(e.message||e));}
