@@ -1866,7 +1866,8 @@ async function refreshAdmin(){
  show("tournamentApplicationsSection",canTournaments);
  if(canTournaments)loadTournamentApplicationsAdmin();
  show("scrimAdmin",canScrims);
- if(canRooms)await loadScrimAdmin();
+ if(canScrims)await loadScrimAdmin();
+ else if(canRooms)await loadScrimMatchAdmin();
  if(canScrims){await loadTeamApplicationsAdmin();startTeamApplicationNotifications();}
  show("resultForm",canResults);
  show("aiScanner",canResults);
@@ -2513,7 +2514,7 @@ function setupAdminMainTabs(){
   Object.entries(panels).forEach(([key,panel])=>{if(panel)panel.classList.toggle("hidden",key!==name);});
   if(name==="rooms"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();if(roomPanel)roomPanel.classList.remove("hidden");}
   if(name==="scrims"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();}
-  if(name==="tournaments"&&currentRole)loadAdminTournamentManagement();
+  if(name==="tournaments"&&["founder","admin","tournament_manager"].includes(currentRole))loadAdminTournamentManagement();
   window.scrollTo({top:0,behavior:"smooth"});
  }
  window.activateAdminMainTab=activate;
