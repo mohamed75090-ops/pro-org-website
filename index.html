@@ -1514,6 +1514,28 @@ async function deleteScrimResultPost(id){
 }
 $("saveScrimResultPost")?.addEventListener("click",createScrimResultPost);
 
+async function downloadScrimResultImage(button){
+ const url=button?.dataset?.imageUrl;
+ const rawName=button?.dataset?.fileName||"scrim-result";
+ if(!url)return alert("رابط صورة النتيجة غير متوفر.");
+ const safeName=rawName.replace(/[\\\\/:*?"<>|]+/g,"-").trim().slice(0,90)||"scrim-result";
+ const originalText=button.textContent;
+ button.disabled=true;button.textContent="جاري تجهيز الصورة...";
+ try{
+  const response=await fetch(url,{mode:"cors"});
+  if(!response.ok)throw new Error("تعذر تحميل الصورة");
+  const blob=await response.blob();
+  const objectUrl=URL.createObjectURL(blob);
+  const link=document.createElement("a");link.href=objectUrl;link.download=safeName+(blob.type.includes("png")?".png":blob.type.includes("webp")?".webp":".jpg");
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(objectUrl),1500);
+ }catch(error){
+  window.open(url,"_blank","noopener");
+  alert("تعذر تنزيل الصورة مباشرة. فتحنا الصورة في نافذة جديدة؛ اضغط مطولاً عليها واختر حفظ الصورة.");
+ }finally{button.disabled=false;button.textContent=originalText;}
+}
+window.downloadScrimResultImage=downloadScrimResultImage;
+
 async function loadPublic(){
  const targets=["tournaments","teams","results"];
  let timer;
@@ -1534,7 +1556,7 @@ async function loadPublic(){
   tournamentsCache=t.data||[];teamsCache=tm.data||[];
   $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>"<p>🏆 "+esc(x.name)+"</p>").join(""):"لا توجد بطولات منشورة حالياً."; await refreshTournamentStats(tournamentsCache); 
   $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>"<p><b>"+esc(x.tag)+"</b> — "+esc(x.name)+"</p>").join(""):"لا توجد فرق مسجلة حالياً."; 
-  const uploadedResults=(srp.data||[]).map(x=>'<article class="card" style="margin:12px 0;padding:16px"><h3>'+esc(x.title)+'</h3>'+(x.description?'<p class="small">'+esc(x.description)+'</p>':'')+'<img src="'+esc(x.image_url)+'" alt="'+esc(x.title)+'" loading="lazy" style="width:100%;max-height:520px;object-fit:contain;border-radius:10px;background:#0b1018"></article>').join("");
+  const uploadedResults=(srp.data||[]).map(x=>'<article class="card" style="margin:12px 0;padding:16px"><h3>'+esc(x.title)+'</h3>'+(x.description?'<p class="small">'+esc(x.description)+'</p>':'')+'<img src="'+esc(x.image_url)+'" alt="'+esc(x.title)+'" loading="lazy" style="width:100%;max-height:520px;object-fit:contain;border-radius:10px;background:#0b1018"><div class="row" style="margin-top:12px"><button type="button" class="secondary" onclick="downloadScrimResultImage(this)" data-image-url="'+esc(x.image_url)+'" data-file-name="'+esc(x.title)+'">⬇ حفظ النتيجة</button></div></article>').join("");
   const matchResults=(r.data||[]).length?'<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>'+r.data.map(x=>'<tr><td>'+esc(x.teams?.name||"-")+'</td><td>'+esc(x.matches?.name||"-")+'</td><td>'+x.placement+'</td><td>'+x.kills+'</td><td>'+(x.total_points??((x.placement_points||0)+(x.kills||0)))+'</td></tr>').join("")+"</table>":"لا توجد نتائج فرق معتمدة بعد.";
   $("results").innerHTML=uploadedResults+matchResults; 
  }catch(e){
