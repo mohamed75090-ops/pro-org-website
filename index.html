@@ -649,7 +649,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
 .mvp-top3.weekly-leaders-grid .mvp-rank-card.rank-2{border-color:#9ba5b2}
 .mvp-top3.weekly-leaders-grid .mvp-rank-card.rank-3{border-color:#a87550}
 .weekly-leaders-photo{position:relative;width:100%;height:210px;overflow:hidden;border-radius:11px;background:radial-gradient(ellipse at 50% 35%,#70401f 0%,#25202a 48%,#0b1018 82%);border:1px solid #d18a4355;box-shadow:inset 0 0 35px #f39a4b18,0 8px 20px #0007}
-.weekly-leaders-photo img{position:relative;z-index:1;display:block;width:100%;height:100%;padding:5px;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 7px 9px #0009)}
+.weekly-leaders-photo img{position:relative;z-index:1;display:block;width:100%;height:100%;padding:0;object-fit:contain;object-position:center bottom;transform:scale(1.14);transform-origin:center bottom;filter:drop-shadow(0 7px 9px #0009)}
 .weekly-leaders-info{padding:12px 5px 3px}
 .weekly-leaders-grid .mvp-rank-number{font-size:14px;letter-spacing:.4px;color:#d8b15b}
 .weekly-leaders-grid .rank-2 .mvp-rank-number{color:#c5ccd5}
@@ -1109,10 +1109,33 @@ function withMvpTimeout(promise,milliseconds,label){
   new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+" استغرق وقتاً أطول من اللازم. تحقق من الاتصال ثم أعد المحاولة.")),milliseconds);})
  ]).finally(()=>clearTimeout(timer));
 }
+async function prepareMvpImageForBackgroundRemoval(file,statusId){
+ const status=$(statusId);
+ let bitmap=null,canvas=null;
+ try{
+  if(status)status.textContent="جاري تصغير الصورة لتناسب ذاكرة الهاتف...";
+  bitmap=await createImageBitmap(file,{resizeWidth:1024,resizeQuality:"high"});
+  const scale=Math.min(1,1024/bitmap.width,1024/bitmap.height);
+  const width=Math.max(1,Math.round(bitmap.width*scale));
+  const height=Math.max(1,Math.round(bitmap.height*scale));
+  canvas=document.createElement("canvas");
+  canvas.width=width;canvas.height=height;
+  const context=canvas.getContext("2d");
+  if(!context)throw new Error("تعذر تجهيز الصورة قبل المعالجة.");
+  context.drawImage(bitmap,0,0,width,height);
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("تعذر ضغط الصورة.")),"image/jpeg",.88));
+  return new File([blob],"player-optimized.jpg",{type:"image/jpeg"});
+ }finally{
+  bitmap?.close?.();
+  if(canvas){canvas.width=0;canvas.height=0;}
+ }
+}
 async function removeMvpPhotoBackground(file,statusId){
  const status=$(statusId);
- if(status)status.textContent="جاري تجهيز الصورة وإزالة الخلفية... أول مرة قد يستغرق تنزيل نموذج المعالجة بعض الوقت.";
+ let optimizedFile=null;
  try{
+  if(status)status.textContent="جاري تجهيز الصورة وإزالة الخلفية...";
+  optimizedFile=await prepareMvpImageForBackgroundRemoval(file,statusId);
   if(!mvpBackgroundRemovalModulePromise){
    mvpBackgroundRemovalModulePromise=withMvpTimeout(import("https://esm.sh/@imgly/background-removal@1.7.0?bundle"),60000,"تحميل أداة إزالة الخلفية");
   }
@@ -1120,13 +1143,14 @@ async function removeMvpPhotoBackground(file,statusId){
   const removeBackground=module.default||module.removeBackground;
   if(typeof removeBackground!=="function")throw new Error("تعذر تحميل أداة إزالة الخلفية.");
   if(status)status.textContent="الذكاء الاصطناعي يعمل على فصل اللاعب عن الخلفية...";
-  const cutout=await withMvpTimeout(removeBackground(file,{
+  const cutout=await withMvpTimeout(removeBackground(optimizedFile,{
    model:"small",
    output:{format:"image/png"},
    progress:(key,current,total)=>{
     if(status&&total>0)status.textContent="جاري تحميل نموذج إزالة الخلفية... "+Math.round(current/total*100)+"%";
    }
   }),120000,"معالجة الصورة وإزالة الخلفية");
+  optimizedFile=null;
   if(!cutout||!cutout.size)throw new Error("لم تنتج معالجة الصورة ملفاً صالحاً.");
   const cutoutBitmap=await createImageBitmap(cutout);
   let canvas=null;
@@ -1157,8 +1181,7 @@ async function removeMvpPhotoBackground(file,statusId){
    }
    context.restore();
    context.drawImage(cutoutBitmap,0,0,canvas.width,canvas.height);
-   cutoutBitmap.close?.();
-   const result=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("تعذر حفظ الصورة بعد تركيب الخلفية.")),"image/jpeg",.94));
+   const result=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("تعذر حفظ الصورة بعد تركيب الخلفية.")),"image/jpeg",.92));
    if(result.size>8*1024*1024)throw new Error("الصورة بعد المعالجة أكبر من 8MB؛ اختر صورة بدقة أقل.");
    return new File([result],"player-background.jpg",{type:"image/jpeg"});
   }finally{
@@ -1168,6 +1191,8 @@ async function removeMvpPhotoBackground(file,statusId){
  }catch(error){
   mvpBackgroundRemovalModulePromise=null;
   throw new Error("تعذرت إزالة خلفية الصورة: "+(error?.message||"خطأ غير معروف")+". تأكد من الاتصال بالإنترنت ثم أعد المحاولة.");
+ }finally{
+  optimizedFile=null;
  }
 }
 async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
