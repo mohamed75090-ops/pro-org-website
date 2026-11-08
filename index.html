@@ -1581,8 +1581,8 @@ function validSupportUrl(value,kind){
  const raw=String(value||"").trim();if(!raw)return "";
  try{const u=new URL(raw);if(u.protocol!=="https:"&&u.protocol!=="http:")return "";
   const host=u.hostname.toLowerCase();
-  if(kind==="instagram"&&!/(^|\\.)instagram\\.com$/.test(host))return "";
-  if(kind==="whatsapp"&&!(/(^|\\.)wa\\.me$/.test(host)||/(^|\\.)whatsapp\\.com$/.test(host)))return "";
+  if(kind==="instagram"&&!/(^|\.)instagram\.com$/.test(host))return "";
+  if(kind==="whatsapp"&&!(/(^|\.)wa\.me$/.test(host)||/(^|\.)whatsapp\.com$/.test(host)))return "";
   return u.href;
  }catch{return "";}
 }
