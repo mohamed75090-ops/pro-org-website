@@ -641,6 +641,25 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
 .public-message-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
 .public-message-delete{font-size:12px;padding:5px 9px;margin-inline-start:8px}
 @media(max-width:760px){.messages-layout{grid-template-columns:1fr}.messages-compose,.messages-feed{padding:14px}}
+
+/* WEEKLY LEADERS — official gold, silver and bronze podium */
+.mvp-top3.weekly-leaders-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch;max-width:900px;margin:20px auto 34px}
+.mvp-top3.weekly-leaders-grid .mvp-rank-card{display:flex;flex-direction:column;gap:0;padding:14px;text-align:center;border:1px solid #4a4d55;border-radius:16px;background:radial-gradient(ellipse at 50% 0%,#d8b15b16,transparent 58%),linear-gradient(145deg,#171a20,#090b10 82%);box-shadow:0 14px 34px #0008,inset 0 1px #ffffff12}
+.mvp-top3.weekly-leaders-grid .mvp-rank-card.rank-1{grid-column:1/-1;justify-self:center;width:min(48%,360px);border-color:#d8b15b;box-shadow:0 0 0 1px #d8b15b22,0 16px 42px #0009,0 0 28px #d8b15b20}
+.mvp-top3.weekly-leaders-grid .mvp-rank-card.rank-2{border-color:#9ba5b2}
+.mvp-top3.weekly-leaders-grid .mvp-rank-card.rank-3{border-color:#a87550}
+.weekly-leaders-photo{width:100%;height:210px;overflow:hidden;border-radius:11px;background:linear-gradient(145deg,#303640,#11151c);border:1px solid #ffffff18}
+.weekly-leaders-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.weekly-leaders-info{padding:12px 5px 3px}
+.weekly-leaders-grid .mvp-rank-number{font-size:14px;letter-spacing:.4px;color:#d8b15b}
+.weekly-leaders-grid .rank-2 .mvp-rank-number{color:#c5ccd5}
+.weekly-leaders-grid .rank-3 .mvp-rank-number{color:#d49a70}
+.weekly-leaders-grid .mvp-rank-card h3{margin:7px 0;color:#f5f1e8;font-size:clamp(16px,2.2vw,21px);overflow-wrap:anywhere}
+.weekly-leaders-grid .mvp-rank-stats{justify-content:center;margin:6px 0 0;padding:9px 0 0;border-top:1px solid #ffffff18;color:#d8b15b;font-size:11px;letter-spacing:1px}
+.weekly-leaders-grid .mvp-rank-stats b{display:inline;color:#f5d58a;font-size:20px;margin-inline-end:5px}
+.weekly-leaders-admin{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:700px){.mvp-top3.weekly-leaders-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px auto 24px}.mvp-top3.weekly-leaders-grid .mvp-rank-card{padding:8px;border-radius:12px}.mvp-top3.weekly-leaders-grid .mvp-rank-card.rank-1{width:min(68%,260px)}.weekly-leaders-photo{height:clamp(105px,34vw,155px)}.weekly-leaders-info{padding:8px 2px 2px}.weekly-leaders-grid .mvp-rank-number{font-size:10px}.weekly-leaders-grid .mvp-rank-card h3{font-size:13px;margin:5px 0}.weekly-leaders-grid .mvp-rank-stats{font-size:9px;padding-top:6px}.weekly-leaders-grid .mvp-rank-stats b{font-size:16px}.weekly-leaders-admin{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -920,10 +939,12 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
   <div class="mvp-admin-player" style="margin:12px 0;border-color:#9b7837">
    <h3>⭐ لاعب MVP الأسبوع</h3><label>اسم اللاعب</label><input id="mvpSoloName" placeholder="اسم لاعب MVP"><label>الفريق</label><input id="mvpSoloTeam" placeholder="اسم الفريق أو TAG"><label>صورة لاعب MVP</label><input id="mvpSoloPhotoFile" type="file" accept="image/*"><input id="mvpSoloPhoto" type="hidden"><div class="small" id="mvpSoloPhotoStatus">اختر صورة من الموبايل.</div><label>Eliminations</label><input id="mvpSoloKills" type="number" min="0" value="0"><label>Damage</label><input id="mvpSoloDamage" type="number" min="0" value="0">
   </div>
-  <h3>أفضل 3 لاعبين</h3>
-  <div class="mvp-admin-grid">
-   <div class="mvp-admin-player"><h3>المركز 1</h3><label>اسم اللاعب</label><input id="mvpName1" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam1" placeholder="اسم الفريق أو TAG"><label>صورة اللاعب</label><input id="mvpPhoto1File" type="file" accept="image/*"><input id="mvpPhoto1" type="hidden"><div class="small" id="mvpPhoto1Status">اختر صورة من الموبايل.</div><label>Eliminations</label><input id="mvpKills1" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage1" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 2</h3><label>اسم اللاعب</label><input id="mvpName2" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam2" placeholder="اسم الفريق أو TAG"><label>صورة اللاعب</label><input id="mvpPhoto2File" type="file" accept="image/*"><input id="mvpPhoto2" type="hidden"><div class="small" id="mvpPhoto2Status">اختر صورة من الموبايل.</div><label>Eliminations</label><input id="mvpKills2" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage2" type="number" min="0" value="0"></div><div class="mvp-admin-player"><h3>المركز 3</h3><label>اسم اللاعب</label><input id="mvpName3" placeholder="اسم اللاعب"><label>الفريق</label><input id="mvpTeam3" placeholder="اسم الفريق أو TAG"><label>صورة اللاعب</label><input id="mvpPhoto3File" type="file" accept="image/*"><input id="mvpPhoto3" type="hidden"><div class="small" id="mvpPhoto3Status">اختر صورة من الموبايل.</div><label>Eliminations</label><input id="mvpKills3" type="number" min="0" value="0"><label>Damage</label><input id="mvpDamage3" type="number" min="0" value="0"></div>
-  </div>
+  <h3>WEEKLY LEADERS — أفضل 3 لاعبين في الأسبوع</h3>
+  <div class="mvp-admin-grid weekly-leaders-admin">
+    <div class="mvp-admin-player"><h3>🥇 المركز الأول</h3><label>اسم اللاعب</label><input id="mvpName1" placeholder="اسم اللاعب"><label>صورة اللاعب</label><input id="mvpPhoto1File" type="file" accept="image/jpeg,image/png,image/webp"><input id="mvpPhoto1" type="hidden"><div class="small" id="mvpPhoto1Status">اختر صورة اللاعب.</div><label>عدد القتلات</label><input id="mvpKills1" type="number" min="0" step="1" value="0"></div>
+    <div class="mvp-admin-player"><h3>🥈 المركز الثاني</h3><label>اسم اللاعب</label><input id="mvpName2" placeholder="اسم اللاعب"><label>صورة اللاعب</label><input id="mvpPhoto2File" type="file" accept="image/jpeg,image/png,image/webp"><input id="mvpPhoto2" type="hidden"><div class="small" id="mvpPhoto2Status">اختر صورة اللاعب.</div><label>عدد القتلات</label><input id="mvpKills2" type="number" min="0" step="1" value="0"></div>
+    <div class="mvp-admin-player"><h3>🥉 المركز الثالث</h3><label>اسم اللاعب</label><input id="mvpName3" placeholder="اسم اللاعب"><label>صورة اللاعب</label><input id="mvpPhoto3File" type="file" accept="image/jpeg,image/png,image/webp"><input id="mvpPhoto3" type="hidden"><div class="small" id="mvpPhoto3Status">اختر صورة اللاعب.</div><label>عدد القتلات</label><input id="mvpKills3" type="number" min="0" step="1" value="0"></div>
+   </div>
   <div class="mvp-admin-player" style="margin-top:14px">
    <h3>إدارة لاعب MVP فقط</h3>
    <div class="row"><button id="saveSoloMvp">حفظ ونشر لاعب MVP</button><button class="secondary" id="hideSoloMvp">إخفاء لاعب MVP</button></div>
@@ -931,8 +952,8 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
   </div>
   <div class="mvp-admin-player" style="margin-top:14px">
    <h3>إدارة أفضل 3 لاعبين فقط</h3>
-   <div class="row"><button id="saveTop3Mvp">حفظ ونشر أفضل 3 لاعبين</button><button class="secondary" id="hideTop3Mvp">إخفاء أفضل 3 لاعبين</button></div>
-   <div id="top3MvpStatus" class="notice">حفظ ونشر قائمة أفضل 3 بشكل مستقل عن لاعب MVP.</div>
+   <div class="row"><button id="saveTop3DraftMvp" class="secondary">حفظ كمسودة</button><button id="saveTop3Mvp">نشر أفضل 3 لاعبين</button><button class="secondary" id="hideTop3Mvp">إلغاء النشر</button></div>
+   <div id="top3MvpStatus" class="notice">احفظ القائمة كمسودة أو انشرها للجمهور. يمكنك تعديلها وإعادة نشرها في أي وقت.</div>
   </div>
  </div>
 
@@ -1067,7 +1088,8 @@ async function loadWeeklyMvp(){
  }else{
   feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">لم تتم إضافة لاعب MVP المستقل لهذا الأسبوع بعد.</div></div>';
  }
- top.innerHTML=leaders.length?leaders.map((x,i)=>'<article class="mvp-rank-card '+(i===0?'first':'')+'"><img src="'+esc(x.photo_url||'')+'" alt="'+esc(x.player_name)+'" onerror="this.style.visibility=\'hidden\'"><div><div class="mvp-rank-number">#'+Number(x.rank_position)+'</div><h3>'+esc(x.player_name)+'</h3><p>'+esc(x.team_name||"—")+'</p><div class="mvp-rank-stats"><span><b>'+Number(x.eliminations||0)+'</b>Kills</span><span><b>'+Number(x.damage||0).toLocaleString("en-US")+'</b>Damage</span></div></div></article>').join(""):'<div class="mvp-empty" style="grid-column:1/-1">لم تتم إضافة أفضل 3 لاعبين بعد.</div>';
+ top.classList.add("weekly-leaders-grid");
+ top.innerHTML=leaders.length?leaders.map(x=>'<article class="mvp-rank-card rank-'+Number(x.rank_position)+'"><div class="weekly-leaders-photo"><img src="'+esc(x.photo_url||'')+'" alt="'+esc(x.player_name)+'" onerror="this.style.visibility=\\'hidden\\'"></div><div class="weekly-leaders-info"><div class="mvp-rank-number">'+(Number(x.rank_position)===1?'🥇 المركز الأول':Number(x.rank_position)===2?'🥈 المركز الثاني':'🥉 المركز الثالث')+'</div><h3>'+esc(x.player_name)+'</h3><div class="mvp-rank-stats"><span><b>'+Number(x.eliminations||0)+'</b> KILLS</span></div></div></article>').join(""):'<div class="mvp-empty" style="grid-column:1/-1">لم تتم إضافة أفضل 3 لاعبين بعد.</div>';
 }
 async function loadWeeklyMvpAdmin(){
  const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position,is_published").order("rank_position",{ascending:true});
@@ -1076,7 +1098,7 @@ async function loadWeeklyMvpAdmin(){
  const week=rows[0].week_label;$("mvpWeekLabel").value=week||"";
  const solo=rows.find(x=>Number(x.rank_position)===0);
  if(solo){$("mvpSoloName").value=solo.player_name||"";$("mvpSoloTeam").value=solo.team_name||"";$("mvpSoloPhoto").value=solo.photo_url||"";$("mvpSoloPhotoStatus").textContent=solo.photo_url?"توجد صورة محفوظة؛ اختر صورة جديدة لاستبدالها.":"لم يتم اختيار صورة بعد.";$("mvpSoloKills").value=solo.eliminations||0;$("mvpSoloDamage").value=solo.damage||0;}
- rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).forEach(x=>{const n=Number(x.rank_position);$("mvpName"+n).value=x.player_name||"";$("mvpTeam"+n).value=x.team_name||"";$("mvpPhoto"+n).value=x.photo_url||"";$("mvpPhoto"+n+"Status").textContent=x.photo_url?"توجد صورة محفوظة؛ اختر صورة جديدة لاستبدالها.":"لم يتم اختيار صورة بعد.";$("mvpKills"+n).value=x.eliminations||0;$("mvpDamage"+n).value=x.damage||0;});
+ rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).forEach(x=>{const n=Number(x.rank_position);$("mvpName"+n).value=x.player_name||"";$("mvpPhoto"+n).value=x.photo_url||"";$("mvpPhoto"+n+"Status").textContent=x.photo_url?"توجد صورة محفوظة؛ اختر صورة جديدة لاستبدالها.":"لم يتم اختيار صورة بعد.";$("mvpKills"+n).value=x.eliminations||0;});
  $("mvpAdminStatus").textContent=rows.some(x=>x.is_published)?"بيانات الأسبوع منشورة حالياً. يمكنك تعديلها وإعادة النشر أو الإخفاء.":"البيانات محفوظة كمسودة.";
 }
 async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
@@ -1114,12 +1136,18 @@ async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
  $(statusId).textContent="تم اختيار الصورة ورفعها بنجاح.";
  return data.publicUrl;
 }
-async function saveMvpGroup(group){
+async function saveMvpGroup(group,publish=true){
  const week=$("mvpWeekLabel").value.trim();
  const statusId=group==="solo"?"soloMvpStatus":"top3MvpStatus";
  const status=$(statusId);
  if(!week){status.textContent="اكتب عنوان الأسبوع أولاً.";return;}
  const positions=group==="solo"?[0]:[1,2,3];
+ if(group==="top3"&&publish){
+  for(const n of positions){
+   if(!$("mvpName"+n).value.trim()){status.textContent="أدخل اسم اللاعب في المراكز الثلاثة قبل النشر.";return;}
+   if(!$("mvpPhoto"+n).value.trim()&&!$("mvpPhoto"+n+"File").files?.[0]){status.textContent="ارفع صورة لكل لاعب قبل النشر.";return;}
+  }
+ }
  const payload=[];
  try{
   for(const n of positions){
@@ -1131,11 +1159,11 @@ async function saveMvpGroup(group){
     :await uploadMvpPhoto("mvpPhoto"+n+"File","mvpPhoto"+n,"mvpPhoto"+n+"Status",week,String(n));
    payload.push({
     week_label:week,rank_position:n,player_name:name,
-    team_name:$(solo?"mvpSoloTeam":"mvpTeam"+n).value.trim(),
+    team_name:solo?$("mvpSoloTeam").value.trim():"",
     photo_url:photo,
     eliminations:Number($(solo?"mvpSoloKills":"mvpKills"+n).value)||0,
-    damage:Number($(solo?"mvpSoloDamage":"mvpDamage"+n).value)||0,
-    is_published:true,updated_at:new Date().toISOString()
+    damage:solo?Number($("mvpSoloDamage").value)||0:0,
+    is_published:group==="solo"?true:publish,updated_at:new Date().toISOString()
    });
   }
  }catch(e){status.textContent="تعذر رفع الصورة: "+(e.message||"خطأ غير معروف");return;}
@@ -1143,7 +1171,7 @@ async function saveMvpGroup(group){
  const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
  if(error){status.textContent="تعذر الحفظ: "+error.message;return;}
  for(const n of positions){const id=n===0?"mvpSoloPhotoFile":"mvpPhoto"+n+"File";$(id).value="";}
- status.textContent=group==="solo"?"تم حفظ ونشر لاعب MVP فقط بنجاح.":"تم حفظ ونشر أفضل 3 لاعبين فقط بنجاح.";
+ status.textContent=group==="solo"?"تم حفظ ونشر لاعب MVP فقط بنجاح.":(publish?"تم نشر أفضل 3 لاعبين في الأسبوع بنجاح.":"تم حفظ أفضل 3 لاعبين كمسودة دون عرضها للجمهور.");
  await loadWeeklyMvp();await loadWeeklyMvpAdmin();
 }
 async function hideMvpGroup(group){
@@ -1156,7 +1184,8 @@ async function hideMvpGroup(group){
  await loadWeeklyMvp();
 }
 $("saveSoloMvp").addEventListener("click",()=>saveMvpGroup("solo"));
-$("saveTop3Mvp").addEventListener("click",()=>saveMvpGroup("top3"));
+$("saveTop3Mvp").addEventListener("click",()=>saveMvpGroup("top3",true));
+$("saveTop3DraftMvp").addEventListener("click",()=>saveMvpGroup("top3",false));
 $("hideSoloMvp").addEventListener("click",()=>hideMvpGroup("solo"));
 $("hideTop3Mvp").addEventListener("click",()=>hideMvpGroup("top3"));
 
