@@ -1741,15 +1741,13 @@ async function addMessageAuthorToScrim(playerId,authorName){
  if(selected===null)return;
  const scrim=scrims[Number(selected)-1];
  if(!scrim){alert("اختيار السكريم غير صحيح.");return;}
- const teamName=prompt("اسم الفريق الكامل لصاحب الرسالة ("+authorName+"):");
- if(teamName===null)return;
- const teamTag=prompt("التاق الكامل للفريق:");
+ const teamTag=prompt("تاق الفريق كامل:");
  if(teamTag===null)return;
  const shortName=prompt("اختصار الفريق:");
  if(shortName===null)return;
- if(teamName.trim().length<2||teamTag.trim().length<2||shortName.trim().length<1){alert("يرجى إدخال بيانات الفريق بصورة صحيحة.");return;}
+ if(teamTag.trim().length<2||shortName.trim().length<1){alert("يرجى إدخال بيانات الفريق بصورة صحيحة.");return;}
  const {data,error:submitError}=await client.rpc("submit_team_application_from_message",{
-  p_scrim_id:scrim.id,p_player_id:playerId,p_team_name:teamName.trim(),p_team_tag:teamTag.trim(),p_team_short_name:shortName.trim()
+  p_scrim_id:scrim.id,p_player_id:playerId,p_team_name:teamTag.trim(),p_team_tag:teamTag.trim(),p_team_short_name:shortName.trim()
  });
  if(submitError){alert("تعذر إرسال طلب الفريق: "+submitError.message);return;}
  const result=Array.isArray(data)?data[0]:data;
