@@ -1078,7 +1078,7 @@ function restorePublicSectionCache(){
   if(!saved||Date.now()-Number(saved.savedAt||0)>604800000)return;
   PUBLIC_SECTION_CACHE_IDS.forEach(id=>{
    const el=$(id),html=saved.sections&&saved.sections[id];
-   if(el&&typeof html==="string"&&html.trim()&&!/جاري (?:تحميل|الاتصال)/.test(html))el.innerHTML=html;
+   if(el&&typeof html==="string"&&html.trim()&&!/جاري (?:تحميل|الاتصال)|تعذر تحميل|فشل تحميل|انتهت مهلة|خطأ في تشغيل/.test(html))el.innerHTML=html;
   });
  }catch(e){}
 }
@@ -1087,7 +1087,7 @@ function savePublicSectionCache(){
   const sections={};
   PUBLIC_SECTION_CACHE_IDS.forEach(id=>{
    const el=$(id),html=el?el.innerHTML:"";
-   if(html.trim()&&!/جاري (?:تحميل|الاتصال)/.test(html))sections[id]=html;
+   if(html.trim()&&!/جاري (?:تحميل|الاتصال)|تعذر تحميل|فشل تحميل|انتهت مهلة|خطأ في تشغيل/.test(html))sections[id]=html;
   });
   if(Object.keys(sections).length)localStorage.setItem(PUBLIC_SECTION_CACHE_KEY,JSON.stringify({savedAt:Date.now(),sections}));
  }catch(e){}
@@ -1629,9 +1629,9 @@ async function loadPublic(){
   ]);
   const [t,tm,r,srp]=await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات (15 ثانية). تحقق من الإنترنت وإعدادات Supabase.")),15000);})]);
   clearTimeout(timer);
-  if(t.error||tm.error||r.error){
-   const detail=t.error?.message||tm.error?.message||r.error?.message||"تحقق من صلاحيات الجداول وسياسات RLS.";
-   targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'</div>');
+  if(t.error||tm.error||r.error||srp.error){
+   const detail=t.error?.message||tm.error?.message||r.error?.message||srp.error?.message||"تحقق من صلاحيات الجداول وسياسات RLS.";
+   targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'<p><button type="button" onclick="loadPublic()">إعادة المحاولة</button></p></div>');
    msg("تعذر تحميل البيانات العامة من قاعدة البيانات.","err");return;
   }
   tournamentsCache=t.data||[];teamsCache=tm.data||[];
@@ -1643,7 +1643,7 @@ async function loadPublic(){
  }catch(e){
   clearTimeout(timer);
   const detail=e?.message||"تعذر الاتصال بالخادم.";
-  targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'</div>');
+  targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'<p><button type="button" onclick="loadPublic()">إعادة المحاولة</button></p></div>');
   msg("فشل تحميل الأقسام العامة: "+detail,"err");
  }
 }
@@ -2214,8 +2214,8 @@ async function loadPublicScrims(){
    client.rpc("get_public_scrim_accepted_teams")
   ]),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة تحميل السكريمات. تحقق من اتصال قاعدة البيانات.")),12000);})]);
   clearTimeout(timer);[{data,error},{data:acceptedRows,error:acceptedError}]=result;
- }catch(e){clearTimeout(timer);el.innerHTML='<div class="card">'+esc(e?.message||"تعذر تحميل السكريمات.")+'</div>';syncPublicScrimsPage();return;}
- if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات: '+esc(error.message)+'</div>';syncPublicScrimsPage();return;}
+ }catch(e){clearTimeout(timer);el.innerHTML='<div class="card">'+esc(e?.message||"تعذر تحميل السكريمات.")+'<p><button type="button" onclick="loadPublicScrims()">إعادة المحاولة</button></p></div>';syncPublicScrimsPage();return;}
+ if(error){el.innerHTML='<div class="card">تعذر تحميل السكريمات: '+esc(error.message)+'<p><button type="button" onclick="loadPublicScrims()">إعادة المحاولة</button></p></div>';syncPublicScrimsPage();return;}
  const rows=data||[],acceptedByScrim=new Map();
  if(!acceptedError)(acceptedRows||[]).forEach(r=>{if(!acceptedByScrim.has(r.scrim_id))acceptedByScrim.set(r.scrim_id,[]);acceptedByScrim.get(r.scrim_id).push({teams:{name:r.team_name||r.team_tag,tag:r.team_tag||""},slot_number:r.slot_number});});
  el.innerHTML=rows.length?rows.map(s=>{
