@@ -1836,6 +1836,7 @@ async function toggleTournamentAcceptedTeams(id,visible){
 }
 window.toggleTournamentAcceptedTeams=toggleTournamentAcceptedTeams;
 
+// Role-specific dashboard access is mirrored by Supabase RLS policies.
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
  if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);show("founderAuditMenu",false);return;}
