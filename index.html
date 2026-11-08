@@ -1102,24 +1102,31 @@ async function loadWeeklyMvpAdmin(){
  $("mvpAdminStatus").textContent=rows.some(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3&&x.is_published)?"بيانات الأسبوع منشورة حالياً. يمكنك تعديلها وإعادة النشر أو الإخفاء.":"البيانات محفوظة كمسودة.";
 }
 let mvpBackgroundRemovalModulePromise=null;
+function withMvpTimeout(promise,milliseconds,label){
+ let timer;
+ return Promise.race([
+  Promise.resolve(promise),
+  new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+" استغرق وقتاً أطول من اللازم. تحقق من الاتصال ثم أعد المحاولة.")),milliseconds);})
+ ]).finally(()=>clearTimeout(timer));
+}
 async function removeMvpPhotoBackground(file,statusId){
  const status=$(statusId);
  if(status)status.textContent="جاري تجهيز الصورة وإزالة الخلفية... أول مرة قد يستغرق تنزيل نموذج المعالجة بعض الوقت.";
  try{
   if(!mvpBackgroundRemovalModulePromise){
-   mvpBackgroundRemovalModulePromise=import("https://esm.sh/@imgly/background-removal@1.7.0?bundle");
+   mvpBackgroundRemovalModulePromise=withMvpTimeout(import("https://esm.sh/@imgly/background-removal@1.7.0?bundle"),60000,"تحميل أداة إزالة الخلفية");
   }
   const module=await mvpBackgroundRemovalModulePromise;
   const removeBackground=module.default||module.removeBackground;
   if(typeof removeBackground!=="function")throw new Error("تعذر تحميل أداة إزالة الخلفية.");
   if(status)status.textContent="الذكاء الاصطناعي يعمل على فصل اللاعب عن الخلفية...";
-  const cutout=await removeBackground(file,{
+  const cutout=await withMvpTimeout(removeBackground(file,{
    model:"small",
    output:{format:"image/png"},
    progress:(key,current,total)=>{
     if(status&&total>0)status.textContent="جاري تحميل نموذج إزالة الخلفية... "+Math.round(current/total*100)+"%";
    }
-  });
+  }),120000,"معالجة الصورة وإزالة الخلفية");
   if(!cutout||!cutout.size)throw new Error("لم تنتج معالجة الصورة ملفاً صالحاً.");
   const [originalBitmap,cutoutBitmap]=await Promise.all([createImageBitmap(file),createImageBitmap(cutout)]);
   try{
@@ -1166,7 +1173,8 @@ async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
  if(!file)return $(urlInputId).value||null;
  if(!file.type.startsWith("image/"))throw new Error("الملف المختار ليس صورة.");
  if(file.size>8*1024*1024)throw new Error("حجم الصورة أكبر من 8MB. اختر صورة أصغر.");
- const {data:sessionData,error:sessionError}=await client.auth.refreshSession();
+ if(status)status.textContent="جاري التحقق من جلسة الإدارة...";
+ const {data:sessionData,error:sessionError}=await withMvpTimeout(client.auth.refreshSession(),25000,"التحقق من جلسة الدخول");
  if(sessionError)throw new Error("تعذر تحديث جلسة الدخول: "+sessionError.message);
  const session=sessionData?.session;
  if(!session?.access_token||!session?.user?.id)throw new Error("انتهت جلسة الدخول. سجّل الخروج ثم ادخل بحساب الإدارة مرة أخرى.");
@@ -1182,14 +1190,17 @@ async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
  if(jwtRole!=="authenticated"||!userMatch){
   throw new Error("بيانات JWT المرسلة لا تطابق جلسة المستخدم."+authDiagnostic);
  }
- const {data:profile,error:profileError}=await client.from("profiles").select("role").eq("id",session.user.id).single();
+ if(status)status.textContent="جاري التحقق من صلاحيات حساب الإدارة...";
+ const {data:profile,error:profileError}=await withMvpTimeout(client.from("profiles").select("role").eq("id",session.user.id).single(),20000,"التحقق من صلاحيات الإدارة");
  if(profileError)throw new Error("تعذر التحقق من صلاحية الحساب: "+profileError.message);
  const role=String(profile?.role||"").trim().toLowerCase();
  if(!["founder","admin","results_manager","tournament_manager"].includes(role))throw new Error("الحساب الحالي لا يملك صلاحية رفع صور MVP. الصلاحية: "+(role||"غير محددة"));
- const processedFile=await removeMvpPhotoBackground(file,statusId);
+ if(status)status.textContent="جاري تجهيز الصورة وإزالة الخلفية...";
+ const processedFile=await withMvpTimeout(removeMvpPhotoBackground(file,statusId),150000,"تجهيز صورة اللاعب");
  const safeWeek=week.replace(/[^\\w\\u0600-\\u06FF-]+/g,"-").slice(0,60)||"week";
- const path=safeWeek+"/"+rank+"-"+Date.now()+".png";
- const {error}=await client.storage.from("weekly-mvp-photos").upload(path,processedFile,{cacheControl:"3600",upsert:false,contentType:"image/jpeg"});
+ const path=safeWeek+"/"+rank+"-"+Date.now()+".jpg";
+ if(status)status.textContent="تم تجهيز الصورة؛ جاري رفعها إلى التخزين...";
+ const {error}=await withMvpTimeout(client.storage.from("weekly-mvp-photos").upload(path,processedFile,{cacheControl:"3600",upsert:false,contentType:"image/jpeg"}),60000,"رفع صورة اللاعب");
  if(error)throw new Error("Storage upload ("+(error.statusCode||"RLS")+"): "+error.message+authDiagnostic+"؛ profile role="+role);
  const {data}=client.storage.from("weekly-mvp-photos").getPublicUrl(path);
  $(urlInputId).value=data.publicUrl;
@@ -1219,6 +1230,7 @@ async function saveMvpGroup(group,publish=true){
    const solo=n===0;
    const name=$(solo?"mvpSoloName":"mvpName"+n).value.trim();
    if(!name)continue;
+   status.textContent="جاري تجهيز صورة اللاعب "+(solo?"MVP":n)+"...";
    const photo=solo
     ?await uploadMvpPhoto("mvpSoloPhotoFile","mvpSoloPhoto","mvpSoloPhotoStatus",week,"mvp")
     :await uploadMvpPhoto("mvpPhoto"+n+"File","mvpPhoto"+n,"mvpPhoto"+n+"Status",week,String(n));
@@ -1233,7 +1245,8 @@ async function saveMvpGroup(group,publish=true){
   }
   if(!payload.length)throw new Error(group==="solo"?"أدخل اسم لاعب MVP أولاً.":"أدخل بيانات لاعب واحد على الأقل في أفضل 3.");
   status.textContent="جاري حفظ البيانات في قاعدة البيانات...";
-  const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
+  status.textContent="جاري حفظ البيانات في قاعدة البيانات...";
+  const {error}=await withMvpTimeout(client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"}),30000,"حفظ بيانات أفضل 3 لاعبين");
   if(error)throw new Error(error.message||"تعذر حفظ البيانات.");
   for(const n of positions){const id=n===0?"mvpSoloPhotoFile":"mvpPhoto"+n+"File";$(id).value="";}
   status.textContent=group==="solo"?"تم حفظ ونشر لاعب MVP فقط بنجاح.":(publish?"تم نشر أفضل 3 لاعبين في الأسبوع بنجاح.":"تم حفظ أفضل 3 لاعبين كمسودة دون عرضها للجمهور.");
