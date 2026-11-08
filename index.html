@@ -1873,17 +1873,19 @@ async function refreshAdmin(){
  show("tournamentApplicationsSection",canTournaments);
  if(canTournaments)loadTournamentApplicationsAdmin();
  show("scrimAdmin",canScrims);
- if(canScrims)await loadScrimAdmin();
- else if(canRooms){
-  const {data:roomScrims,error:roomScrimsError}=await client.from("scrims").select("id,title").order("created_at",{ascending:false});
-  if(!roomScrimsError)$("scrimMatchSelect").innerHTML=(roomScrims||[]).map(s=>'<option value="'+s.id+'">'+esc(s.title)+'</option>').join("");
-  await loadScrimMatchAdmin();
- }
- if(canScrims){await loadTeamApplicationsAdmin();startTeamApplicationNotifications();}
+ // أظهر أدوات الإدارة فور تحديد الصلاحيات، قبل أي طلبات شبكة قد تتأخر.
  show("resultForm",canResults);
  show("aiScanner",canResults);
  show("weeklyMvpAdmin",canMvp);
  if(canMvp)loadWeeklyMvpAdmin().catch(e=>{const status=$("mvpAdminStatus");if(status)status.textContent="تعذر تحميل بيانات MVP: "+(e?.message||"خطأ غير معروف");});
+ if(canScrims)loadScrimAdmin().catch(e=>console.error("تعذر تحميل إدارة السكريمات:",e));
+ else if(canRooms){
+  client.from("scrims").select("id,title").order("created_at",{ascending:false}).then(({data:roomScrims,error:roomScrimsError})=>{
+   if(!roomScrimsError)$("scrimMatchSelect").innerHTML=(roomScrims||[]).map(s=>'<option value="'+s.id+'">'+esc(s.title)+'</option>').join("");
+   return loadScrimMatchAdmin();
+  }).catch(e=>console.error("تعذر تحميل الرومات:",e));
+ }
+ if(canScrims){loadTeamApplicationsAdmin().catch(e=>console.error("تعذر تحميل طلبات الفرق:",e));startTeamApplicationNotifications();}
  if(currentRole==="founder")await loadRoleManagement();
  const firstTab=canScrims?"scrims":canRooms?"rooms":canTournaments?"tournaments":canResults?"results":"mvp";
  if(typeof window.activateAdminMainTab==="function")window.activateAdminMainTab(firstTab);
