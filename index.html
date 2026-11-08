@@ -1525,8 +1525,8 @@ async function loadPublic(){
   ]);
   const [t,tm,r,srp]=await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات (15 ثانية). تحقق من الإنترنت وإعدادات Supabase.")),15000);})]);
   clearTimeout(timer);
-  if(t.error||tm.error||r.error||srp.error){
-   const detail=t.error?.message||tm.error?.message||r.error?.message||srp.error?.message||"تحقق من صلاحيات الجداول وسياسات RLS.";
+  if(t.error||tm.error||r.error){
+   const detail=t.error?.message||tm.error?.message||r.error?.message||"تحقق من صلاحيات الجداول وسياسات RLS.";
    targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'</div>');
    msg("تعذر تحميل البيانات العامة من قاعدة البيانات.","err");return;
   }
