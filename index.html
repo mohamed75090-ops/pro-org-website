@@ -1076,11 +1076,11 @@ async function loadWeeklyMvp(){
  const feature=$("weeklyMvpFeature"),top=$("weeklyMvpTop3");
  let data=null,error=null,timer;
  try{
-  const result=await Promise.race([client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position").eq("is_published",true).order("rank_position",{ascending:true}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة تحميل بيانات MVP.")),12000);})]);
+  const result=await Promise.race([client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position,updated_at").eq("is_published",true).order("updated_at",{ascending:false}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة تحميل بيانات MVP.")),12000);})]);
   clearTimeout(timer);data=result.data;error=result.error;
  }catch(e){clearTimeout(timer);feature.innerHTML='<div class="mvp-empty">'+esc(e?.message||"تعذر تحميل بيانات MVP حالياً.")+'</div>';top.innerHTML="";return;}
  if(error){feature.innerHTML='<div class="mvp-empty">تعذر تحميل بيانات MVP: '+esc(error.message)+'</div>';top.innerHTML="";return;}
- const rows=data||[],solo=rows.find(x=>Number(x.rank_position)===0),leaders=rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).sort((a,b)=>Number(a.rank_position)-Number(b.rank_position));
+ const allRows=data||[],latestWeek=allRows[0]?.week_label,rows=allRows.filter(x=>x.week_label===latestWeek),solo=rows.find(x=>Number(x.rank_position)===0),leaders=rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).sort((a,b)=>Number(a.rank_position)-Number(b.rank_position));
  if(!solo&&!leaders.length){feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">سيتم عرض نجم الأسبوع هنا بعد اعتماد بياناته من الإدارة.</div></div>';top.innerHTML='<div class="mvp-empty" style="grid-column:1/-1">لا توجد قائمة أفضل 3 منشورة حالياً.</div>';return;}
  if(solo){
   const photo=solo.photo_url?'<img class="mvp-photo" src="'+esc(solo.photo_url)+'" alt="'+esc(solo.player_name)+'" onerror="this.style.display=\'none\'">':'';
@@ -1089,13 +1089,13 @@ async function loadWeeklyMvp(){
   feature.innerHTML='<div><div class="mvp-kicker">PROFESSIONAL ESPORTS · WEEKLY MVP</div><div class="mvp-title">MVP OF THE WEEK</div><div class="mvp-empty">لم تتم إضافة لاعب MVP المستقل لهذا الأسبوع بعد.</div></div>';
  }
  top.classList.add("weekly-leaders-grid");
- top.innerHTML=leaders.length?leaders.map(x=>'<article class="mvp-rank-card rank-'+Number(x.rank_position)+'"><div class="weekly-leaders-photo"><img src="'+esc(x.photo_url||'')+'" alt="'+esc(x.player_name)+'" onerror="this.style.visibility=\\'hidden\\'"></div><div class="weekly-leaders-info"><div class="mvp-rank-number">'+(Number(x.rank_position)===1?'🥇 المركز الأول':Number(x.rank_position)===2?'🥈 المركز الثاني':'🥉 المركز الثالث')+'</div><h3>'+esc(x.player_name)+'</h3><div class="mvp-rank-stats"><span><b>'+Number(x.eliminations||0)+'</b> KILLS</span></div></div></article>').join(""):'<div class="mvp-empty" style="grid-column:1/-1">لم تتم إضافة أفضل 3 لاعبين بعد.</div>';
+ top.innerHTML=leaders.length?leaders.map(x=>'<article class="mvp-rank-card rank-'+Number(x.rank_position)+'"><div class="weekly-leaders-photo"><img src="'+esc(x.photo_url||'')+'" alt="'+esc(x.player_name)+'" onerror="this.remove()"></div><div class="weekly-leaders-info"><div class="mvp-rank-number">'+(Number(x.rank_position)===1?'🥇 المركز الأول':Number(x.rank_position)===2?'🥈 المركز الثاني':'🥉 المركز الثالث')+'</div><h3>'+esc(x.player_name)+'</h3><div class="mvp-rank-stats"><span><b>'+Number(x.eliminations||0)+'</b> KILLS</span></div></div></article>').join(""):'<div class="mvp-empty" style="grid-column:1/-1">لم تتم إضافة أفضل 3 لاعبين بعد.</div>';
 }
 async function loadWeeklyMvpAdmin(){
- const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position,is_published").order("rank_position",{ascending:true});
+ const {data,error}=await client.from("weekly_mvp_players").select("week_label,player_name,team_name,photo_url,eliminations,damage,rank_position,is_published,updated_at").order("updated_at",{ascending:false});
  if(error){$("mvpAdminStatus").textContent="تعذر تحميل بيانات MVP: "+error.message;return;}
- const rows=data||[];if(!rows.length)return;
- const week=rows[0].week_label;$("mvpWeekLabel").value=week||"";
+ const allRows=data||[];if(!allRows.length)return;
+ const week=allRows[0].week_label;const rows=allRows.filter(x=>x.week_label===week);$("mvpWeekLabel").value=week||"";
  const solo=rows.find(x=>Number(x.rank_position)===0);
  if(solo){$("mvpSoloName").value=solo.player_name||"";$("mvpSoloTeam").value=solo.team_name||"";$("mvpSoloPhoto").value=solo.photo_url||"";$("mvpSoloPhotoStatus").textContent=solo.photo_url?"توجد صورة محفوظة؛ اختر صورة جديدة لاستبدالها.":"لم يتم اختيار صورة بعد.";$("mvpSoloKills").value=solo.eliminations||0;$("mvpSoloDamage").value=solo.damage||0;}
  rows.filter(x=>Number(x.rank_position)>=1&&Number(x.rank_position)<=3).forEach(x=>{const n=Number(x.rank_position);$("mvpName"+n).value=x.player_name||"";$("mvpPhoto"+n).value=x.photo_url||"";$("mvpPhoto"+n+"Status").textContent=x.photo_url?"توجد صورة محفوظة؛ اختر صورة جديدة لاستبدالها.":"لم يتم اختيار صورة بعد.";$("mvpKills"+n).value=x.eliminations||0;});
