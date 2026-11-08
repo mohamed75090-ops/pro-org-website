@@ -1536,6 +1536,21 @@ async function downloadScrimResultImage(button){
 }
 window.downloadScrimResultImage=downloadScrimResultImage;
 
+function saveApprovedResults(button){
+ const source=button?.parentElement;
+ if(!source)return alert("تعذر تجهيز النتائج للحفظ.");
+ const copy=source.cloneNode(true);
+ copy.querySelectorAll("button").forEach(el=>el.remove());
+ const popup=window.open("","_blank");
+ if(!popup)return alert("اسمح بفتح النوافذ المنبثقة حتى تتمكن من حفظ النتائج.");
+ const title="النتائج المعتمدة - Professional eSports";
+ popup.document.open();
+ popup.document.write("<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+title+"</title><style>body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:24px;direction:rtl}h2,h3,p{color:#111}article,.card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:14px 0;break-inside:avoid}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #bbb;padding:9px;text-align:center}th{background:#eee}button{display:none}@media print{body{padding:8px}}</style></head><body><h2>"+title+"</h2>"+copy.innerHTML+"</body></html>");
+ popup.document.close();
+ popup.onload=function(){popup.focus();popup.print();};
+}
+window.saveApprovedResults=saveApprovedResults;
+
 async function loadPublic(){
  const targets=["tournaments","teams","results"];
  let timer;
@@ -1558,7 +1573,7 @@ async function loadPublic(){
   $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>"<p><b>"+esc(x.tag)+"</b> — "+esc(x.name)+"</p>").join(""):"لا توجد فرق مسجلة حالياً."; 
   const uploadedResults=(srp.data||[]).map(x=>'<article class="card" style="margin:12px 0;padding:16px"><h3>'+esc(x.title)+'</h3>'+(x.description?'<p class="small">'+esc(x.description)+'</p>':'')+'<img src="'+esc(x.image_url)+'" alt="'+esc(x.title)+'" loading="lazy" style="width:100%;max-height:520px;object-fit:contain;border-radius:10px;background:#0b1018"><div class="row" style="margin-top:12px"><button type="button" class="secondary" onclick="downloadScrimResultImage(this)" data-image-url="'+esc(x.image_url)+'" data-file-name="'+esc(x.title)+'">⬇ حفظ النتيجة</button></div></article>').join("");
   const matchResults=(r.data||[]).length?'<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>'+r.data.map(x=>'<tr><td>'+esc(x.teams?.name||"-")+'</td><td>'+esc(x.matches?.name||"-")+'</td><td>'+x.placement+'</td><td>'+x.kills+'</td><td>'+(x.total_points??((x.placement_points||0)+(x.kills||0)))+'</td></tr>').join("")+"</table>":"لا توجد نتائج فرق معتمدة بعد.";
-  $("results").innerHTML=uploadedResults+matchResults; 
+  $("results").innerHTML=(uploadedResults||matchResults?'<div style="display:flex;justify-content:flex-end;margin:10px 0"><button type="button" class="secondary" onclick="saveApprovedResults(this)">⬇ حفظ النتائج المعتمدة</button></div>':"")+uploadedResults+matchResults; 
  }catch(e){
   clearTimeout(timer);
   const detail=e?.message||"تعذر الاتصال بالخادم.";
