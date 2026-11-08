@@ -952,7 +952,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
   </div>
   <div class="mvp-admin-player" style="margin-top:14px">
    <h3>إدارة أفضل 3 لاعبين فقط</h3>
-   <div class="row"><button id="saveTop3DraftMvp" class="secondary">حفظ كمسودة</button><button id="saveTop3Mvp">نشر أفضل 3 لاعبين</button><button class="secondary" id="hideTop3Mvp">إلغاء النشر</button></div>
+   <div class="row"><button id="saveTop3DraftMvp" class="secondary">حفظ كمسودة</button><button type="button" id="saveTop3Mvp">نشر أفضل 3 لاعبين</button><button class="secondary" id="hideTop3Mvp">إلغاء النشر</button></div>
    <div id="top3MvpStatus" class="notice">احفظ القائمة كمسودة أو انشرها للجمهور. يمكنك تعديلها وإعادة نشرها في أي وقت.</div>
   </div>
  </div>
@@ -1208,8 +1208,13 @@ async function saveMvpGroup(group,publish=true){
    if(!$("mvpPhoto"+n).value.trim()&&!$("mvpPhoto"+n+"File").files?.[0]){status.textContent="ارفع صورة لكل لاعب قبل النشر.";return;}
   }
  }
- const payload=[];
+ const actionIds=group==="solo"?["saveSoloMvp"]:["saveTop3DraftMvp","saveTop3Mvp","hideTop3Mvp"];
+ const actionButtons=actionIds.map(id=>$(id)).filter(Boolean);
+ const originalLabels=actionButtons.map(button=>button.textContent);
+ actionButtons.forEach(button=>button.disabled=true);
+ status.textContent=publish?"جاري تجهيز البيانات ونشر أفضل 3 لاعبين...":"جاري تجهيز البيانات وحفظ أفضل 3 لاعبين كمسودة...";
  try{
+  const payload=[];
   for(const n of positions){
    const solo=n===0;
    const name=$(solo?"mvpSoloName":"mvpName"+n).value.trim();
@@ -1226,13 +1231,19 @@ async function saveMvpGroup(group,publish=true){
     is_published:group==="solo"?true:publish,updated_at:new Date().toISOString()
    });
   }
- }catch(e){status.textContent="تعذر رفع الصورة: "+(e.message||"خطأ غير معروف");return;}
- if(!payload.length){status.textContent=group==="solo"?"أدخل اسم لاعب MVP أولاً.":"أدخل بيانات لاعب واحد على الأقل في أفضل 3.";return;}
- const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
- if(error){status.textContent="تعذر الحفظ: "+error.message;return;}
- for(const n of positions){const id=n===0?"mvpSoloPhotoFile":"mvpPhoto"+n+"File";$(id).value="";}
- status.textContent=group==="solo"?"تم حفظ ونشر لاعب MVP فقط بنجاح.":(publish?"تم نشر أفضل 3 لاعبين في الأسبوع بنجاح.":"تم حفظ أفضل 3 لاعبين كمسودة دون عرضها للجمهور.");
- await loadWeeklyMvp();await loadWeeklyMvpAdmin();
+  if(!payload.length)throw new Error(group==="solo"?"أدخل اسم لاعب MVP أولاً.":"أدخل بيانات لاعب واحد على الأقل في أفضل 3.");
+  status.textContent="جاري حفظ البيانات في قاعدة البيانات...";
+  const {error}=await client.from("weekly_mvp_players").upsert(payload,{onConflict:"week_label,rank_position"});
+  if(error)throw new Error(error.message||"تعذر حفظ البيانات.");
+  for(const n of positions){const id=n===0?"mvpSoloPhotoFile":"mvpPhoto"+n+"File";$(id).value="";}
+  status.textContent=group==="solo"?"تم حفظ ونشر لاعب MVP فقط بنجاح.":(publish?"تم نشر أفضل 3 لاعبين في الأسبوع بنجاح.":"تم حفظ أفضل 3 لاعبين كمسودة دون عرضها للجمهور.");
+  try{await loadWeeklyMvp();await loadWeeklyMvpAdmin();}
+  catch(refreshError){status.textContent+=" لكن تعذر تحديث العرض تلقائياً؛ حدّث الصفحة للتأكد من البيانات.";}
+ }catch(e){
+  status.textContent="تعذر "+(publish?"نشر":"حفظ")+" البيانات: "+(e?.message||"خطأ غير معروف");
+ }finally{
+  actionButtons.forEach((button,index)=>{button.disabled=false;button.textContent=originalLabels[index];});
+ }
 }
 async function hideMvpGroup(group){
  const week=$("mvpWeekLabel").value.trim();
