@@ -1678,10 +1678,8 @@ function saveApprovedResults(button){
   busy=false;
  });
  function start(){
+  window.__applySiteLanguage=apply;
   apply();observer.observe(document.body,{subtree:true,childList:true,characterData:true});
-  document.getElementById("languageToggle")?.addEventListener("click",()=>{
-   localStorage.setItem(KEY,localStorage.getItem(KEY)==="en"?"ar":"en");apply();
-  });
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
 })();
@@ -2810,6 +2808,7 @@ window.scrimStatus=scrimStatus;window.scrimDelete=scrimDelete;window.scrimReview
   const b=$id("languageToggle");if(b)b.textContent=en?"ع":"EN";
   const title=$id("notificationsTitle");if(title)title.textContent=en?"Notifications":"الإشعارات";
   const read=$id("markNotificationsRead");if(read)read.textContent=en?"Mark all as read":"تحديد الكل كمقروء";
+  window.__applySiteLanguage?.();
  }
  $id("themeToggle")?.addEventListener("click",()=>{localStorage.setItem(themeKey,document.body.classList.contains("gold-mode")?"dark":"gold");applyTheme();});
  $id("languageToggle")?.addEventListener("click",()=>{localStorage.setItem(langKey,localStorage.getItem(langKey)==="en"?"ar":"en");applyLanguage();});
