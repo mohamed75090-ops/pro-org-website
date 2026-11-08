@@ -1520,19 +1520,22 @@ async function loadPublic(){
   const pending=Promise.all([
    client.from("tournaments").select("id,name,description,status,start_date,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,details_visible").in("status",["published","completed"]).order("created_at",{ascending:false}),
    client.from("teams").select("id,name,tag").eq("status","active").order("name"),
-   client.from("match_results").select("placement,kills,placement_points,total_points,teams(name,tag),matches(name)").eq("status","approved").order("total_points",{ascending:false}).limit(30)
+   client.from("match_results").select("placement,kills,placement_points,total_points,teams(name,tag),matches(name)").eq("status","approved").order("total_points",{ascending:false}).limit(30),
+   client.from("scrim_result_posts").select("id,title,description,image_url,created_at").eq("status","published").order("created_at",{ascending:false}).limit(30)
   ]);
-  const [t,tm,r]=await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات (15 ثانية). تحقق من الإنترنت وإعدادات Supabase.")),15000);})]);
+  const [t,tm,r,srp]=await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات (15 ثانية). تحقق من الإنترنت وإعدادات Supabase.")),15000);})]);
   clearTimeout(timer);
-  if(t.error||tm.error||r.error){
-   const detail=t.error?.message||tm.error?.message||r.error?.message||"تحقق من صلاحيات الجداول وسياسات RLS.";
+  if(t.error||tm.error||r.error||srp.error){
+   const detail=t.error?.message||tm.error?.message||r.error?.message||srp.error?.message||"تحقق من صلاحيات الجداول وسياسات RLS.";
    targets.forEach(id=>$(id).innerHTML='<div class="mvp-empty">تعذر تحميل البيانات: '+esc(detail)+'</div>');
    msg("تعذر تحميل البيانات العامة من قاعدة البيانات.","err");return;
   }
   tournamentsCache=t.data||[];teamsCache=tm.data||[];
   $("tournaments").innerHTML=tournamentsCache.length?tournamentsCache.map(x=>"<p>🏆 "+esc(x.name)+"</p>").join(""):"لا توجد بطولات منشورة حالياً."; await refreshTournamentStats(tournamentsCache); 
   $("teams").innerHTML=teamsCache.length?teamsCache.map(x=>"<p><b>"+esc(x.tag)+"</b> — "+esc(x.name)+"</p>").join(""):"لا توجد فرق مسجلة حالياً."; 
-  $("results").innerHTML=(r.data||[]).length?'<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>'+r.data.map(x=>'<tr><td>'+esc(x.teams?.name||"-")+'</td><td>'+esc(x.matches?.name||"-")+'</td><td>'+x.placement+'</td><td>'+x.kills+'</td><td>'+(x.total_points??((x.placement_points||0)+(x.kills||0)))+'</td></tr>').join("")+"</table>":"لا توجد نتائج معتمدة بعد."; 
+  const uploadedResults=(srp.data||[]).map(x=>'<article class="card" style="margin:12px 0;padding:16px"><h3>'+esc(x.title)+'</h3>'+(x.description?'<p class="small">'+esc(x.description)+'</p>':'')+'<img src="'+esc(x.image_url)+'" alt="'+esc(x.title)+'" loading="lazy" style="width:100%;max-height:520px;object-fit:contain;border-radius:10px;background:#0b1018"></article>').join("");
+  const matchResults=(r.data||[]).length?'<table><tr><th>الفريق</th><th>المباراة</th><th>المركز</th><th>Kills</th><th>النقاط</th></tr>'+r.data.map(x=>'<tr><td>'+esc(x.teams?.name||"-")+'</td><td>'+esc(x.matches?.name||"-")+'</td><td>'+x.placement+'</td><td>'+x.kills+'</td><td>'+(x.total_points??((x.placement_points||0)+(x.kills||0)))+'</td></tr>').join("")+"</table>":"لا توجد نتائج فرق معتمدة بعد.";
+  $("results").innerHTML=uploadedResults+matchResults; 
  }catch(e){
   clearTimeout(timer);
   const detail=e?.message||"تعذر الاتصال بالخادم.";
