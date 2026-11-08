@@ -1327,7 +1327,7 @@ function tournamentCountdownHTML(t){
 }
 function tournamentCardHTML(t){
  const state=tournamentRegistrationState(t),stats=tournamentStatsCache[t.id]||{},max=Math.max(1,Number(t.max_teams)||25),registered=Number(stats.registered_count)||0,accepted=Number(stats.accepted_count)||0,pct=Math.min(100,Math.round(registered/max*100));
- const poster=t.poster_url?'<img src="'+esc(t.poster_url)+'" alt="إعلان '+esc(t.name)+'" '+(t.details_visible===false?'':'data-open-tournament="'+t.id+'" style="cursor:pointer;')+'width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px">':'<div class="mvp-empty" '+(t.details_visible===false?'':'data-open-tournament="'+t.id+'" style="cursor:pointer;')+'aspect-ratio:16/9;display:grid;place-items:center">🏆 إعلان البطولة</div>';
+ const poster=t.poster_url?'<img src="'+esc(t.poster_url)+'" alt="إعلان '+esc(t.name)+'" '+(t.details_visible===false?'':'data-open-tournament="'+t.id+'"')+' style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px">':'<div class="mvp-empty" '+(t.details_visible===false?'':'data-open-tournament="'+t.id+'"')+' style="aspect-ratio:16/9;display:grid;place-items:center">🏆 إعلان البطولة</div>';
  const acceptedRows=(stats.accepted_teams||[]).map((a,i)=>'<div class="tournament-accepted-row"><span>'+esc(a.team_tag||a.team_name||"فريق")+'</span><b>'+tournamentDigits(a.slot_number??i+1)+'</b></div>').join("");
  const acceptedSection=stats.accepted_teams_visible!==false?'<section class="tournament-accepted-section"><div class="tournament-accepted-heading"><b>الفرق المقبولة</b><span>'+tournamentDigits(accepted)+'</span></div>'+(acceptedRows?'<div class="tournament-accepted-list">'+acceptedRows+'</div>':'<p class="small">لا توجد فرق مقبولة حتى الآن.</p>')+'</section>':'';
  if(t.details_visible===false)return '<article class="card tournament-public-card tournament-announcement-only">'+poster+'<h3>'+esc(t.name)+'</h3></article>';
@@ -1595,7 +1595,7 @@ async function loadAdminTournamentManagement(){
  host.querySelectorAll("[data-tournament-id]").forEach(card=>{
   const id=card.dataset.tournamentId,name=card.querySelector("h3")?.textContent||"البطولة";
   card.querySelectorAll("[data-status]").forEach(button=>button.addEventListener("click",()=>setTournamentStatus(id,button.dataset.status)));
-  const detailsToggle=card.querySelector("[data-toggle-details]");if(detailsToggle)detailsToggle.addEventListener("click",()=>toggleTournamentDetailsVisibility(id,t.details_visible===false));
+  const detailsToggle=card.querySelector("[data-toggle-details]");if(detailsToggle)detailsToggle.addEventListener("click",()=>toggleTournamentDetailsVisibility(id,detailsToggle.textContent.includes("إظهار")));
   const saveSchedule=card.querySelector("[data-save-schedule]");if(saveSchedule)saveSchedule.addEventListener("click",()=>saveTournamentSchedule(id,card));
   const toggle=card.querySelector("[data-toggle-accepted]");
   if(toggle)toggle.addEventListener("click",()=>toggleTournamentAcceptedTeams(id,toggle.textContent.includes("إخفاء")));
