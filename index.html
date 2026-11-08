@@ -1571,7 +1571,123 @@ function saveApprovedResults(button){
  if(!popup)return alert("اسمح بفتح النوافذ المنبثقة حتى تتمكن من حفظ النتائج.");
  const title="النتائج المعتمدة - Professional eSports";
  popup.document.open();
- popup.document.write("<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+title+"</title><style>body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:24px;direction:rtl}h2,h3,p{color:#111}article,.card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:14px 0;break-inside:avoid}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #bbb;padding:9px;text-align:center}th{background:#eee}button{display:none}@media print{body{padding:8px}}</style></head><body><h2>"+title+"</h2>"+copy.innerHTML+"</body></html>");
+ popup.document.write("<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+title+"</title><style>body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:24px;direction:rtl}h2,h3,p{color:#111}article,.card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:14px 0;break-inside:avoid}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #bbb;padding:9px;text-align:center}th{background:#eee}button{display:none}@media print{body{padding:8px}}</style></head><body><h2>"+title+"</h2>"+copy.innerHTML+"
+<script>
+/* Full-site interface localization. User-generated content remains in its original language. */
+(function(){
+ const KEY="proorg_language_v1";
+ const dict={
+ "الرئيسية":"Home","السكريمات":"Scrims","السكريمات والإعلانات":"Scrims & Announcements",
+ "مركز الفريق":"Team Center","البطولات":"Tournaments","الرسائل":"Messages","النتائج":"Results",
+ "إنشاء حساب لاعب":"Create Player Account","دخول المشرفين":"Staff Login",
+ "الملف الشخصي":"Profile","إدارة الرولات والصلاحيات":"Roles & Permissions","متابعة الموقع":"Site Monitoring",
+ "الإشعارات":"Notifications","تحديد الكل كمقروء":"Mark all as read","لا توجد إشعارات جديدة حالياً.":"No new notifications.",
+ "اضغط للانتقال للقسم ←":"Click to open section →","تغيير اللغة":"Change language",
+ "إعدادات الموقع":"Site settings","العودة إلى الرئيسية":"Back to Home","العودة للموقع":"Back to Website",
+ "العودة":"Back","إغلاق":"Close","حفظ":"Save","إلغاء":"Cancel","تأكيد":"Confirm","حذف":"Delete",
+ "تعديل":"Edit","إضافة":"Add","بحث":"Search","إعادة المحاولة":"Try Again","تحميل":"Loading",
+ "جاري التحميل...":"Loading...","جاري تحميل السكريمات...":"Loading scrims...",
+ "جاري تحميل النتائج...":"Loading results...","عرض التفاصيل":"View Details","التفاصيل":"Details",
+ "الوصف":"Description","موعد السكريم":"Scrim Time","موعد البطولة":"Tournament Date",
+ "بداية التسجيل":"Registration Opens","ينتهي التسجيل خلال":"Registration Closes In",
+ "التسجيل مفتوح":"Registration Open","التسجيل مغلق":"Registration Closed",
+ "التسجيل غير مفعّل":"Registration Disabled","انتهى التسجيل":"Registration Closed",
+ "يفتح التسجيل":"Registration Opens","لم يتم تحديد الموعد بعد":"Date not announced yet",
+ "تم فتح التسجيل":"Registration is now open","لا توجد سكريمات بعد.":"No scrims yet.",
+ "قائمة الفرق لم تُنشر بعد.":"The team list has not been published yet.",
+ "اسم الفريق":"Team Name","رقم الخانة":"Slot","الفرق المقبولة":"Accepted Teams",
+ "عدد الفرق":"Teams","المقاعد المتبقية":"Slots Remaining","تسجيل الفريق":"Register Team",
+ "التسجيل في السكريم":"Register for Scrim","تسجيل":"Register","إنشاء الحساب":"Create Account",
+ "اسم المستخدم":"Username","كلمة المرور":"Password","رقم الواتساب":"WhatsApp Number",
+ "اختر الدولة":"Select Country","رقم الهاتف":"Phone Number","تسجيل الدخول":"Log In",
+ "تسجيل الخروج":"Log Out","ليس لديك حساب؟":"Don't have an account?","لديك حساب بالفعل؟":"Already have an account?",
+ "الاسم":"Name","البريد الإلكتروني":"Email","الحالة":"Status","الإعدادات":"Settings",
+ "لوحة المشرفين":"Admin Dashboard","لوحة التحكم":"Dashboard","إدارة السكريمات":"Manage Scrims",
+ "إدارة البطولات":"Manage Tournaments","إدارة النتائج":"Manage Results","إدارة الرسائل":"Manage Messages",
+ "رفع النتائج":"Upload Results","النتائج المعتمدة":"Approved Results","النتائج المنشورة":"Published Results",
+ "لا توجد نتائج منشورة حالياً.":"No published results yet.",
+ "جميع إعلانات البطولات المنشورة. اختر بطولة لعرض تفاصيلها والتسجيل فيها.":"All published tournament announcements. Select a tournament to view details and register.",
+ "جميع إعلانات السكريمات المنشورة ومواعيد التسجيل والفرق المقبولة.":"All published scrim announcements, registration times and accepted teams.",
+ "بوابتك الرسمية لعالم المنافسات الإلكترونية":"Your official gateway to competitive esports",
+ "تحت إشراف Professional eSports.":"Under the supervision of Professional eSports.",
+ "قريباً":"Coming Soon","قريبًا":"Coming Soon","قيد المراجعة":"Pending Review",
+ "تم القبول":"Accepted","مرفوض":"Rejected","منسحب":"Withdrawn","احتياطي":"Reserve",
+ "قيد انتظار موافقة المشرفين":"Awaiting staff approval","لم يتم تحديده":"Not specified",
+ "لا توجد بيانات":"No data available","لا توجد رسائل":"No messages",
+ "إرسال":"Send","إرسال رسالة":"Send Message","اكتب رسالتك هنا":"Write your message here",
+ "الرسائل العامة":"Public Messages","اكتب رسالة":"Write a message",
+ "الوضع الليلي / الفاتح":"Dark / Gold theme","تفعيل الثيم الذهبي الفاخر":"Enable premium gold theme",
+ "الرجوع للوضع الداكن":"Switch to dark mode","العربية / English":"Arabic / English",
+ "البطولات الرسمية":"Official Tournaments","النتائج الرسمية":"Official Results",
+ "إعلان سكريم":"Scrim Announcement","تفاصيل السكريم":"Scrim Details",
+ "تفاصيل البطولة":"Tournament Details","الفرق المشاركة":"Participating Teams",
+ "عدد الفرق المسجلة":"Registered Teams","الفرق المقبولة":"Accepted Teams",
+ "لم يتم العثور على بيانات":"No data found","يرجى المحاولة مرة أخرى":"Please try again",
+ "المستخدم":"User","الدور":"Role","الصلاحيات":"Permissions","حساب لاعب":"Player Account",
+ "الملف الشخصي للاعب":"Player Profile","مركز الفريق الخاص بك":"Your Team Center",
+ "كود الفريق":"Team Code","كود الدخول":"Access Code","معرّف الغرفة":"Room ID",
+ "كلمة مرور الغرفة":"Room Password","نشر":"Publish","إخفاء":"Hide","إنهاء":"Finish",
+ "إظهار قائمة الفرق للمستخدمين؟":"Show the team list to users?",
+ "إخفاء قائمة الفرق عن المستخدمين؟":"Hide the team list from users?",
+ "لا توجد سكريمات مفتوحة للتسجيل حالياً.":"There are no scrims currently open for registration.",
+ "يجب تسجيل الدخول بحساب مشرف.":"You must log in with a staff account.",
+ "لا يمكن إرسال طلب لهذا السكريم حالياً.":"Applications are currently closed for this scrim.",
+ "Professional eSports":"Professional eSports"
+ };
+ const attrs=["placeholder","title","aria-label"];
+ const originalText=new WeakMap(),originalAttrs=new WeakMap();
+ let busy=false;
+ function translateText(node,en){
+  if(!node||node.nodeType!==3)return;
+  if(!originalText.has(node))originalText.set(node,node.nodeValue);
+  const original=originalText.get(node),trim=original.trim();
+  if(!trim)return;
+  const translated=dict[trim];
+  if(en&&translated)node.nodeValue=original.replace(trim,translated);
+  else if(!en)node.nodeValue=original;
+ }
+ function translateElement(el,en){
+  if(el.nodeType===3){translateText(el,en);return;}
+  if(el.nodeType!==1)return;
+  for(const a of attrs){
+   if(el.hasAttribute(a)){
+    let saved=originalAttrs.get(el);if(!saved){saved={};originalAttrs.set(el,saved);}
+    if(!(a in saved))saved[a]=el.getAttribute(a);
+    const v=saved[a];if(en&&dict[v])el.setAttribute(a,dict[v]);else if(!en)el.setAttribute(a,v);
+   }
+  }
+  for(const child of el.childNodes)translateElement(child,en);
+ }
+ function apply(){
+  const en=localStorage.getItem(KEY)==="en";
+  document.documentElement.lang=en?"en":"ar";
+  document.documentElement.dir=en?"ltr":"rtl";
+  document.body.classList.toggle("site-language-en",en);
+  const b=document.getElementById("languageToggle");
+  if(b){b.textContent=en?"ع":"EN";b.title=en?"Switch to Arabic":"العربية / English";b.setAttribute("aria-label",en?"Switch to Arabic":"تغيير اللغة");}
+  busy=true;translateElement(document.body,en);busy=false;
+ }
+ const observer=new MutationObserver(records=>{
+  if(busy)return;
+  const en=localStorage.getItem(KEY)==="en";if(!en)return;
+  busy=true;
+  for(const record of records){
+   if(record.type==="childList")record.addedNodes.forEach(n=>translateElement(n,true));
+   else if(record.type==="characterData")translateText(record.target,true);
+  }
+  busy=false;
+ });
+ function start(){
+  apply();observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+  document.getElementById("languageToggle")?.addEventListener("click",()=>{
+   localStorage.setItem(KEY,localStorage.getItem(KEY)==="en"?"ar":"en");apply();
+  });
+ }
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
+})();
+</script>
+
+</body></html>");
  popup.document.close();
  popup.onload=function(){popup.focus();popup.print();};
 }
