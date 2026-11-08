@@ -699,6 +699,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
     <button type="button" onclick="openResultsPage();closeSiteMenu()"><span>▤</span> النتائج</button>
     <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
     <button type="button" class="admin-menu-link hidden" id="roleManagementMenu"><span>♙</span> إدارة الرولات والصلاحيات</button>
+    <button type="button" class="admin-menu-link hidden" id="founderAuditMenu"><span>▤</span> سجل عمليات المشرفين</button>
     <div class="menu-divider"></div>
     <button type="button" id="playerRegisterMenu"><span>＋</span> إنشاء حساب لاعب</button>
     <button type="button" class="admin-menu-link" id="loginToggle"><span>♙</span> دخول المشرفين</button>
@@ -855,6 +856,12 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
   <label for="supportWhatsappUrl">رابط واتساب</label><input id="supportWhatsappUrl" type="url" placeholder="https://wa.me/249XXXXXXXXX" dir="ltr">
   <button type="button" id="saveCommunitySupportLinks">حفظ روابط التواصل</button><div id="communitySupportAdminStatus" class="notice">جاري تحميل الروابط...</div>
  </div>
+</section>
+<section id="founderAuditPage" class="section hidden">
+ <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الموقع</button>
+ <div class="section-heading"><div><span class="pill">FOUNDER ONLY</span><h2>سجل عمليات المشرفين</h2><p>سجل موثّق للعمليات الإدارية، مع اسم المنفّذ ونوع العملية والتوقيت والتفاصيل المتاحة.</p></div><button type="button" class="secondary" id="refreshFounderAudit">تحديث السجل</button></div>
+ <div id="founderAuditStatus" class="notice">جاري تحميل سجل العمليات...</div>
+ <div id="founderAuditList" class="grid"></div>
 </section>
 <section id="admin" class="hidden">
  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>لوحة الإدارة</h2><div id="who" class="muted"></div></div><button class="danger" id="signOut">تسجيل الخروج</button></div><div id="roleNote" class="notice"></div></div>
@@ -1715,6 +1722,40 @@ async function loadRoleManagement(){
  }catch(error){status.textContent="تعذر تحميل الرولات: "+(error.message||error);host.innerHTML="";}
 }
 function openRoleManagementPage(){if(currentRole!=="founder"){alert("إدارة الرولات متاحة للمالك فقط.");return;}showStandalonePage("roleManagementPage");loadRoleManagement();loadCommunitySupportAdmin();}
+const AUDIT_TABLE_LABELS={scrims:"السكريمات",scrim_team_applications:"طلبات فرق السكريم",scrim_rooms:"رومات السكريم",scrim_matches:"مواجهات السكريم",scrim_result_posts:"نتائج السكريم",scrim_registrations:"تسجيلات السكريم",scrim_invitations:"دعوات السكريم",scrim_team_access:"صلاحيات فرق السكريم",match_results:"نتائج المباريات",matches:"المباريات",tournaments:"البطولات",tournament_team_applications:"طلبات فرق البطولات",weekly_mvp_players:"لاعبو MVP الأسبوعي",public_messages:"الرسائل العامة",teams:"الفرق",role_change_audit:"تغييرات الرولات"};
+const AUDIT_FIELD_LABELS={name:"الاسم",title:"العنوان",status:"الحالة",team_name:"اسم الفريق",team_tag:"اختصار الفريق",slot_number:"رقم المقعد",room_id:"معرّف الروم",scrim_id:"السكريم",tournament_id:"البطولة",description:"الوصف",registration_opens_at:"بداية التسجيل",registration_closes_at:"نهاية التسجيل",is_published:"حالة النشر",published:"منشور",old_role:"الرول السابق",new_role:"الرول الجديد",target_user_id:"الحساب المستهدف",body:"نص الرسالة",placement:"المركز",kills:"الإقصاءات",points:"النقاط",match_number:"رقم المباراة",result_id:"النتيجة"};
+function auditValue(value){if(value===null||value===undefined||value==="")return "—";if(typeof value==="object")return JSON.stringify(value);return String(value);}
+async function loadFounderAuditLog(){
+ const status=$("founderAuditStatus"),host=$("founderAuditList");
+ if(!status||!host)return;
+ if(currentRole!=="founder"){status.textContent="غير مصرح. هذه الصفحة متاحة للمالك المؤسس فقط.";host.innerHTML="";return;}
+ status.textContent="جاري تحميل سجل العمليات...";host.innerHTML="";
+ try{
+  const {data,error}=await client.rpc("get_founder_admin_activity",{p_limit:200});
+  if(error)throw error;
+  const rows=Array.isArray(data)?data:[];
+  status.textContent="عدد العمليات المعروضة: "+rows.length+" · يتم الاحتفاظ بالسجل داخل قاعدة البيانات.";
+  if(!rows.length){host.innerHTML='<div class="card"><p class="small">لا توجد عمليات مسجلة بعد. ستظهر هنا العمليات الإدارية الجديدة من الآن فصاعداً.</p></div>';return;}
+  host.innerHTML=rows.map(row=>{
+   const action={insert:"إضافة",update:"تعديل",delete:"حذف"}[row.action]||row.action;
+   const table=AUDIT_TABLE_LABELS[row.table_name]||row.table_name;
+   const details=[],oldData=row.old_data||{},newData=row.new_data||{};
+   const keys=[...new Set([...Object.keys(oldData),...Object.keys(newData)])].filter(k=>!["id","created_at","updated_at","actor_user_id","actor_name","actor_role"].includes(k));
+   for(const key of keys){
+    const before=oldData[key],after=newData[key];
+    if(row.action==="update"&&JSON.stringify(before)===JSON.stringify(after))continue;
+    const label=AUDIT_FIELD_LABELS[key]||key;
+    const value=row.action==="insert"?auditValue(after):row.action==="delete"?auditValue(before):auditValue(before)+" ← "+auditValue(after);
+    details.push('<div class="audit-detail"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>');
+    if(details.length>=7)break;
+   }
+   const when=row.created_at?new Date(row.created_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}):"";
+   const roleNames={founder:"المؤسس",admin:"المشرف العام",organizer:"المنظّم",results_manager:"مدير النتائج",tournament_manager:"مدير البطولات"};
+   return '<article class="card founder-audit-card"><div class="row" style="justify-content:space-between"><b>'+esc(row.actor_name||"مشرف")+'</b><span class="pill">'+esc(roleNames[row.actor_role]||row.actor_role||"")+'</span></div><h3>'+esc(action)+' · '+esc(table)+'</h3><div class="small">'+esc(when)+(row.record_id?' · سجل #'+esc(row.record_id.slice(0,8)):"")+'</div>'+(details.length?'<div class="audit-details">'+details.join("")+'</div>':'<p class="small">تم تنفيذ العملية.</p>')+'</article>';
+  }).join("");
+ }catch(error){status.textContent="تعذر تحميل سجل العمليات: "+(error.message||error);host.innerHTML="";}
+}
+function openFounderAuditPage(){if(currentRole!=="founder"){alert("سجل العمليات متاح للمالك المؤسس فقط.");return;}showStandalonePage("founderAuditPage");loadFounderAuditLog();}
 async function openMonitoringRoleEditor(userId,displayName){
  if(currentRole!=="founder"){alert("إعطاء الرولات متاح للمالك فقط.");return;}
  const panel=$("siteMonitoringRoleEditor");
@@ -1797,18 +1838,19 @@ window.toggleTournamentAcceptedTeams=toggleTournamentAcceptedTeams;
 
 async function refreshAdmin(){
  const {data:{user}}=await client.auth.getUser();
- if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);return;}
+ if(!user){currentRole=null;show("admin",false);show("teamScrimPanel",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);show("founderAuditMenu",false);return;}
  const {data:profile,error}=await client.from("profiles").select("role,display_name").eq("id",user.id).single();
  if(error||!profile){msg("تعذر قراءة صلاحية الحساب. راجع سجل profiles وسياسات RLS.","err");return;}
  currentRole=String(profile.role||"").trim().toLowerCase();
  const canManageWeeklyMvp=["founder","admin","results_manager","tournament_manager"].includes(currentRole);
  show("weeklyMvpAdmin",canManageWeeklyMvp);
  if(canManageWeeklyMvp) loadWeeklyMvpAdmin().catch(e=>{const status=$("mvpAdminStatus");if(status)status.textContent="تعذر تحميل بيانات MVP: "+(e?.message||"خطأ غير معروف");});
- if(!["founder","admin","organizer","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);returnToPublicPages();return;}
+ if(!["founder","admin","organizer","results_manager","tournament_manager"].includes(currentRole)){show("admin",false);show("siteMonitoringMenu",false);show("roleManagementMenu",false);show("founderAuditMenu",false);returnToPublicPages();return;}
  showStandalonePage("admin");
  if(typeof window.activateAdminMainTab==="function")window.activateAdminMainTab("tournaments");
  show("siteMonitoringMenu",["founder","admin","results_manager","tournament_manager"].includes(currentRole));
  show("roleManagementMenu",currentRole==="founder");
+ show("founderAuditMenu",currentRole==="founder");
  const roleMeta={founder:["المؤسس","role-founder"],admin:["المشرف العام","role-admin"],organizer:["المنظّم","role-organizer"],results_manager:["مدير النتائج","role-results"],tournament_manager:["مدير البطولات","role-tournament"],player:["لاعب","role-player"]};
  const activeRole=roleMeta[currentRole]||[currentRole,"role-player"];
  $("who").innerHTML=esc(profile.display_name||user.email)+" <span class=\"role-badge "+activeRole[1]+"\">"+esc(activeRole[0])+"</span>";
@@ -1936,12 +1978,14 @@ $("playerRegisterForm").onsubmit=async(event)=>{
 };
 $("siteMonitoringMenu").onclick=()=>{closeSiteMenu();showStandalonePage("siteMonitoringPage");loadSiteMonitoring();};
 $("roleManagementMenu").onclick=()=>{closeSiteMenu();openRoleManagementPage();};
+$("founderAuditMenu").onclick=()=>{closeSiteMenu();openFounderAuditPage();};
+$("refreshFounderAudit").onclick=loadFounderAuditLog;
 $("refreshRoleDirectory").onclick=loadRoleManagement;
 $("saveCommunitySupportLinks").onclick=saveCommunitySupportLinks;
 $("refreshSiteMonitoring").onclick=loadSiteMonitoring;
 $("closeLogin").onclick=returnToPublicPages;
 $("adminLoginForm").addEventListener("submit",async(event)=>{event.preventDefault();const button=$("signIn");button.disabled=true;button.textContent="جاري تسجيل الدخول...";try{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");}finally{button.disabled=false;button.textContent="تسجيل الدخول";}});
-$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
+$("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);show("founderAuditMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
 $("playerSignOutButton").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();};
 $("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
 $("addTournament").onclick=createTournamentAnnouncement;
@@ -2011,12 +2055,12 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage","founderAuditPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
  closeSiteMenu();
- ["scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage","founderAuditPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -2898,6 +2942,7 @@ setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadW
  "لا توجد سكريمات مفتوحة للتسجيل حالياً.":"There are no scrims currently open for registration.",
  "يجب تسجيل الدخول بحساب مشرف.":"You must log in with a staff account.",
  "لا يمكن إرسال طلب لهذا السكريم حالياً.":"Applications are currently closed for this scrim.",
+ "سجل عمليات المشرفين":"Admin Activity Log","تحديث السجل":"Refresh Log","جاري تحميل سجل العمليات...":"Loading activity log...","سجل موثّق للعمليات الإدارية، مع اسم المنفّذ ونوع العملية والتوقيت والتفاصيل المتاحة.":"A verified record of administrative actions, including the actor, action type, time, and available details.","العودة إلى الموقع":"Back to Website","لا توجد عمليات مسجلة بعد. ستظهر هنا العمليات الإدارية الجديدة من الآن فصاعداً.":"No activity has been recorded yet. New administrative actions will appear here.","إضافة":"Create","تعديل":"Update","حذف":"Delete","عدد العمليات المعروضة: ":"Activities shown: ","المؤسس":"Founder","المشرف العام":"Administrator","المنظّم":"Organizer","مدير النتائج":"Results Manager","مدير البطولات":"Tournament Manager",
  "Professional eSports":"Professional eSports"
  };
  const attrs=["placeholder","title","aria-label"];
