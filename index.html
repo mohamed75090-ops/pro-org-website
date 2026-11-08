@@ -1571,9 +1571,7 @@ function saveApprovedResults(button){
  if(!popup)return alert("اسمح بفتح النوافذ المنبثقة حتى تتمكن من حفظ النتائج.");
  const title="النتائج المعتمدة - Professional eSports";
  popup.document.open();
- popup.document.write("<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+title+"</title><style>body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:24px;direction:rtl}h2,h3,p{color:#111}article,.card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:14px 0;break-inside:avoid}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #bbb;padding:9px;text-align:center}th{background:#eee}button{display:none}@media print{body{padding:8px}}</style></head><body><h2>"+title+"</h2>"+copy.innerHTML+"
-
-</body></html>");
+ popup.document.write("<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+title+"</title><style>body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:24px;direction:rtl}h2,h3,p{color:#111}article,.card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:14px 0;break-inside:avoid}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #bbb;padding:9px;text-align:center}th{background:#eee}button{display:none}@media print{body{padding:8px}}</style></head><body><h2>"+title+"</h2>"+copy.innerHTML+"</body></html>");
  popup.document.close();
  popup.onload=function(){popup.focus();popup.print();};
 }
