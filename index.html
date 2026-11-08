@@ -1877,23 +1877,26 @@ async function refreshAdmin(){
  if(typeof window.activateAdminMainTab==="function")window.activateAdminMainTab(firstTab);
 
  const [ts,ms,tm,rs]=await Promise.all([
-  client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,details_visible").order("created_at",{ascending:false}),
-  client.from("matches").select("id,name,tournament_id,status").order("created_at",{ascending:false}),
-  client.from("teams").select("id,name,tag").order("name"),
-  client.from("match_results").select("id,placement,kills,placement_points,total_points,status,teams(name,tag),matches(name)").eq("status","pending").order("created_at",{ascending:false})
+  (canTournaments||canResults)?client.from("tournaments").select("id,name,status,description,poster_url,registration_opens_at,registration_closes_at,max_teams,registration_enabled,details_visible").order("created_at",{ascending:false}):Promise.resolve({data:[],error:null}),
+  (canTournaments||canResults)?client.from("matches").select("id,name,tournament_id,status").order("created_at",{ascending:false}):Promise.resolve({data:[],error:null}),
+  (canTournaments||canResults)?client.from("teams").select("id,name,tag").order("name"):Promise.resolve({data:[],error:null}),
+  canResults?client.from("match_results").select("id,placement,kills,placement_points,total_points,status,teams(name,tag),matches(name)").eq("status","pending").order("created_at",{ascending:false}):Promise.resolve({data:[],error:null})
  ]);
- if(ts.error){tournamentsCache=[];$("tournamentManagement").innerHTML='<h3>البطولات</h3><div class="notice" style="border:1px solid #b94a48">تعذر تحميل البطولات من قاعدة البيانات: <b>'+esc(ts.error.message)+'</b><p class="small">راجع سياسات RLS وصلاحيات جدول tournaments في Supabase.</p></div>';}else{tournamentsCache=ts.data||[];}
- matchesCache=ms.data||[];teamsCache=tm.data||[];
- $("matchTournament").innerHTML=tournamentsCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
- $("resultMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
- $("aiMatch").innerHTML=matchesCache.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
- $("resultTeam").innerHTML=teamsCache.map(x=>`<option value="${x.id}">${esc(x.name)} (${esc(x.tag)})</option>`).join("");
- await loadAdminTournamentManagement();
- $("matchManagement").innerHTML="<h3>الرومات والمباريات</h3>"+(matchesCache.length?matchesCache.map(x=>`<div class="card"><b>${esc(x.name)}</b><p>الحالة: ${esc(x.status||"غير محددة")}</p><div class="row"><button onclick="setMatchStatus('${x.id}','published')">فتح الروم</button><button class="secondary" onclick="setMatchStatus('${x.id}','paused')">إيقاف مؤقت</button><button class="secondary" onclick="setMatchStatus('${x.id}','draft')">مسودة</button><button class="danger" onclick="setMatchStatus('${x.id}','completed')">إنهاء</button></div></div>`).join(""):"لا توجد مباريات.");
- const canReview=["founder","admin","results_manager","tournament_manager"].includes(currentRole);
- const pendingCount=(rs.data||[]).length,quickResults=$("adminPendingResults");
- if(quickResults)quickResults.textContent=String(pendingCount);
- $("pendingResults").innerHTML=pendingCount?rs.data.map(x=>`<div class="card"><b>${esc(x.teams?.name||"-")}</b> · ${esc(x.matches?.name||"-")}<p>المركز ${x.placement} | Kills ${x.kills} | النقاط ${x.total_points}</p>${canReview?`<button onclick="approveResult('${x.id}')">اعتماد</button> <button class="danger" onclick="rejectResult('${x.id}')">رفض</button>`:""}</div>`).join(""):"لا توجد نتائج معلّقة.";
+ tournamentsCache=ts.data||[];matchesCache=ms.data||[];teamsCache=tm.data||[];
+ if(canTournaments){
+  if(ts.error)$("tournamentManagement").innerHTML='<div class="notice">تعذر تحميل البطولات: '+esc(ts.error.message)+'</div>';
+  $("matchTournament").innerHTML=tournamentsCache.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join("");
+  await loadAdminTournamentManagement();
+  $("matchManagement").innerHTML="<h3>رومات ومباريات البطولات</h3>"+(matchesCache.length?matchesCache.map(x=>'<div class="card"><b>'+esc(x.name)+'</b><p>الحالة: '+esc(x.status||"غير محددة")+'</p><div class="row"><button onclick="setMatchStatus(\''+x.id+'\',\'published\')">فتح الروم</button><button class="secondary" onclick="setMatchStatus(\''+x.id+'\',\'paused\')">إيقاف مؤقت</button><button class="secondary" onclick="setMatchStatus(\''+x.id+'\',\'draft\')">مسودة</button><button class="danger" onclick="setMatchStatus(\''+x.id+'\',\'completed\')">إنهاء</button></div></div>').join(""):"لا توجد مباريات.");
+ }
+ if(canResults){
+  $("resultMatch").innerHTML=matchesCache.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join("");
+  $("aiMatch").innerHTML=matchesCache.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join("");
+  $("resultTeam").innerHTML=teamsCache.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.tag||"")+')</option>').join("");
+  const pending=rs.data||[],quickResults=$("adminPendingResults");
+  if(quickResults)quickResults.textContent=String(pending.length);
+  $("pendingResults").innerHTML=pending.length?pending.map(x=>'<div class="card"><b>'+esc(x.teams?.name||"-")+'</b> · '+esc(x.matches?.name||"-")+'<p>المركز '+x.placement+' | Kills '+x.kills+' | النقاط '+x.total_points+'</p><button onclick="approveResult(\''+x.id+'\')">اعتماد</button> <button class="danger" onclick="rejectResult(\''+x.id+'\')">رفض</button></div>').join(""):"لا توجد نتائج معلّقة.";
+ }
 }
 async function setTournamentStatus(id,status){const {error}=await client.from("tournaments").update({status}).eq("id",id);if(error){alert("تعذر تغيير حالة البطولة: "+error.message);return;}await refreshAdmin();await loadPublic();}
 async function setMatchStatus(id,status){const {error}=await client.from("matches").update({status}).eq("id",id);if(error){alert("تعذر تغيير حالة المباراة: "+error.message);return;}await refreshAdmin();}
