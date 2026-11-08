@@ -685,7 +685,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
     <button type="button" onclick="openTeamCenterPage();closeSiteMenu()"><span>◎</span> مركز الفريق</button>
     <button type="button" onclick="openTournamentsPage();closeSiteMenu()"><span>🏆</span> البطولات</button>
     <button type="button" onclick="openMessagesPage();closeSiteMenu()"><span>✉</span> الرسائل</button>
-    <a href="#resultsSection"><span>▤</span> النتائج</a>
+    <button type="button" onclick="openResultsPage();closeSiteMenu()"><span>▤</span> النتائج</button>
     <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
     <button type="button" class="admin-menu-link hidden" id="roleManagementMenu"><span>♙</span> إدارة الرولات والصلاحيات</button>
     <div class="menu-divider"></div>
@@ -703,6 +703,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
  <div id="publicScrimsPage" class="grid"><div class="card">جاري تحميل السكريمات...</div></div>
 </section>
 <section id="tournamentsPage" class="section hidden"><button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button><div class="section-heading"><div><span class="pill">OFFICIAL TOURNAMENTS</span><h2>البطولات</h2><p>جميع إعلانات البطولات المنشورة. اختر بطولة لعرض تفاصيلها والتسجيل فيها.</p></div></div><div id="tournamentsPageList" class="grid"></div><div id="tournamentsPageDetail" class="hidden"></div></section>
+ <section id="resultsPage" class="section hidden"><button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button><div class="section-heading"><div><span class="pill">OFFICIAL RESULTS</span><h2>النتائج المنشورة</h2><p>جميع النتائج التي تم نشرها واعتمادها من إدارة Professional eSports.</p></div></div><div class="card"><div id="resultsPageContent"><p class="muted">جاري تحميل النتائج...</p></div></div></section>
 <section id="registrationPage" class="card hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
  <h2 id="teamRegistrationTitle">تسجيل الفريق في السكريم</h2>
@@ -1899,12 +1900,12 @@ function scrimRegistrationIsOpen(scrim){
  return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
 }
 function showStandalonePage(pageId){
- ["public","scrimPublic","scrimsPage","tournamentsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
  closeSiteMenu();
- ["scrimsPage","tournamentsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
+ ["scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage"].forEach(id=>{const el=$(id);if(el)el.classList.add("hidden");});
  $("public").classList.remove("hidden");$("scrimPublic").classList.remove("hidden");
  window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -2008,6 +2009,8 @@ $("publicMessageForm").addEventListener("submit",async event=>{
 });
 
 function openScrimsPage(){closeSiteMenu();showStandalonePage("scrimsPage");syncPublicScrimsPage();}
+async function openResultsPage(){closeSiteMenu();showStandalonePage("resultsPage");const host=$("resultsPageContent");if(host)host.innerHTML='<p class="muted">جاري تحميل النتائج المنشورة...</p>';await loadPublic();if(host){const source=$("results");host.innerHTML=source?.innerHTML||'<p class="muted">لا توجد نتائج منشورة حالياً.</p>';if(!host.textContent.trim())host.innerHTML='<p class="muted">لا توجد نتائج منشورة حالياً.</p>';}}
+window.openResultsPage=openResultsPage;
 function openTournamentsPage(){closeSiteMenu();showStandalonePage("tournamentsPage");$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");renderTournamentPageList(tournamentsCache||[]);}
 window.openTournamentsPage=openTournamentsPage;
 window.openScrimsPage=openScrimsPage;
