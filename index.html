@@ -242,7 +242,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
 .mvp-photo-wrap{position:absolute;z-index:1;inset:0;width:100%;height:100%;display:grid;place-items:center;overflow:hidden;border:0;border-radius:0;background:radial-gradient(ellipse at 50% 35%,#754426 0%,#1c1b1c 45%,#090c12 78%);box-shadow:none}
 .mvp-photo-wrap:before{content:"";position:absolute;z-index:2;inset:0;background:linear-gradient(180deg,#080b1240 0%,transparent 24%,transparent 48%,#080b1270 68%,#080b12 100%),radial-gradient(ellipse at 50% 32%,#ffb56b28,transparent 50%);pointer-events:none}
 .mvp-photo-wrap:after{content:"";position:absolute;z-index:3;left:12%;right:12%;bottom:0;height:3px;background:linear-gradient(90deg,transparent,#ffb56c,#e47725,transparent);box-shadow:0 0 20px #ff9b4caa}
-.mvp-photo{width:100%;height:100%;object-fit:contain;object-position:center center;filter:saturate(1.04) contrast(1.07);-webkit-mask-image:linear-gradient(180deg,#000 0%,#000 72%,transparent 100%);mask-image:linear-gradient(180deg,#000 0%,#000 72%,transparent 100%)}
+.mvp-photo{width:100%;height:100%;object-fit:cover;object-position:center 20%;filter:saturate(1.04) contrast(1.07)}
 .mvp-feature-copy{position:absolute;z-index:4;left:0;right:0;bottom:28px;width:min(900px,90%);margin:0 auto;padding:0 20px 12px;text-align:center}
 .mvp-feature-copy:before{content:"♛  OFFICIAL WEEKLY MVP";display:inline-flex;align-items:center;margin:0 0 13px;padding:8px 14px;border:1px solid #d18a43;border-radius:3px;background:#120e0bd9;color:#ffc184;font-size:9px;font-weight:1000;letter-spacing:1.7px;box-shadow:0 5px 25px #0008}
 .mvp-player-name{font-size:clamp(34px,5vw,62px);line-height:1;font-weight:1000;margin:0 0 9px;color:#ffc184;text-shadow:0 3px 20px #000,0 0 18px #e47c3450}
@@ -272,7 +272,7 @@ footer{text-align:center;padding:38px 18px;color:#85868d;border-top:1px solid va
  .mvp-title{top:52px;left:0;right:0;text-align:center;font-size:clamp(39px,11vw,55px);letter-spacing:-1.5px}
  .mvp-title:after{margin:13px auto 0;width:75px}
  .mvp-photo-wrap{inset:105px 0 135px;height:auto}
- .mvp-photo{object-fit:contain;object-position:center center}
+ .mvp-photo{object-fit:cover;object-position:center 20%}
  .mvp-feature-copy{bottom:18px;width:96%;padding:0 8px 8px}
  .mvp-feature-copy:before{margin-bottom:10px;font-size:8px;padding:7px 11px}
  .mvp-player-name{font-size:clamp(29px,8.5vw,42px)}
@@ -1112,31 +1112,50 @@ async function removeMvpPhotoBackground(file,statusId){
   const module=await mvpBackgroundRemovalModulePromise;
   const removeBackground=module.default||module.removeBackground;
   if(typeof removeBackground!=="function")throw new Error("تعذر تحميل أداة إزالة الخلفية.");
-  let source=file;
-  if(typeof createImageBitmap==="function"){
-   const bitmap=await createImageBitmap(file);
-   const scale=Math.min(1,1500/Math.max(bitmap.width,bitmap.height));
-   if(scale<1){
-    const canvas=document.createElement("canvas");
-    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
-    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-    const context=canvas.getContext("2d");
-    context.drawImage(bitmap,0,0,canvas.width,canvas.height);
-    source=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("تعذر تجهيز الصورة.")),"image/png"));
-   }
-   bitmap.close?.();
-  }
   if(status)status.textContent="الذكاء الاصطناعي يعمل على فصل اللاعب عن الخلفية...";
-  const result=await removeBackground(source,{
+  const cutout=await removeBackground(file,{
    model:"small",
-   output:{format:"image/png",quality:0.92},
+   output:{format:"image/png"},
    progress:(key,current,total)=>{
     if(status&&total>0)status.textContent="جاري تحميل نموذج إزالة الخلفية... "+Math.round(current/total*100)+"%";
    }
   });
-  if(!result||!result.size)throw new Error("لم تنتج معالجة الصورة ملفاً صالحاً.");
-  if(result.size>8*1024*1024)throw new Error("الصورة بعد إزالة الخلفية أكبر من 8MB؛ جرّب صورة أصغر أو بدقة أقل.");
-  return new File([result],"player-cutout.png",{type:"image/png"});
+  if(!cutout||!cutout.size)throw new Error("لم تنتج معالجة الصورة ملفاً صالحاً.");
+  const [originalBitmap,cutoutBitmap]=await Promise.all([createImageBitmap(file),createImageBitmap(cutout)]);
+  try{
+   const canvas=document.createElement("canvas");
+   canvas.width=originalBitmap.width;
+   canvas.height=originalBitmap.height;
+   const context=canvas.getContext("2d");
+   if(!context)throw new Error("تعذر تجهيز خلفية الصورة.");
+   context.fillStyle="#111318";
+   context.fillRect(0,0,canvas.width,canvas.height);
+   const glow=context.createRadialGradient(canvas.width*.5,canvas.height*.34,0,canvas.width*.5,canvas.height*.34,Math.max(canvas.width,canvas.height)*.72);
+   glow.addColorStop(0,"#8b4b2b");
+   glow.addColorStop(.42,"#39251e");
+   glow.addColorStop(1,"#0b0e14");
+   context.fillStyle=glow;
+   context.fillRect(0,0,canvas.width,canvas.height);
+   context.save();
+   context.globalAlpha=.13;
+   context.strokeStyle="#ffb16c";
+   context.lineWidth=Math.max(1,canvas.width*.0015);
+   const step=Math.max(28,Math.round(canvas.width*.035));
+   for(let x=-canvas.height;x<canvas.width;x+=step){
+    context.beginPath();
+    context.moveTo(x,0);
+    context.lineTo(x+canvas.height,canvas.height);
+    context.stroke();
+   }
+   context.restore();
+   context.drawImage(cutoutBitmap,0,0,canvas.width,canvas.height);
+   const result=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("تعذر حفظ الصورة بعد تركيب الخلفية.")),"image/jpeg",.94));
+   if(result.size>8*1024*1024)throw new Error("الصورة بعد المعالجة أكبر من 8MB؛ اختر صورة بدقة أقل.");
+   return new File([result],"player-background.jpg",{type:"image/jpeg"});
+  }finally{
+   originalBitmap.close?.();
+   cutoutBitmap.close?.();
+  }
  }catch(error){
   mvpBackgroundRemovalModulePromise=null;
   throw new Error("تعذرت إزالة خلفية الصورة: "+(error?.message||"خطأ غير معروف")+". تأكد من الاتصال بالإنترنت ثم أعد المحاولة.");
@@ -1170,7 +1189,7 @@ async function uploadMvpPhoto(fileInputId, urlInputId, statusId, week, rank){
  const processedFile=await removeMvpPhotoBackground(file,statusId);
  const safeWeek=week.replace(/[^\\w\\u0600-\\u06FF-]+/g,"-").slice(0,60)||"week";
  const path=safeWeek+"/"+rank+"-"+Date.now()+".png";
- const {error}=await client.storage.from("weekly-mvp-photos").upload(path,processedFile,{cacheControl:"3600",upsert:false,contentType:"image/png"});
+ const {error}=await client.storage.from("weekly-mvp-photos").upload(path,processedFile,{cacheControl:"3600",upsert:false,contentType:"image/jpeg"});
  if(error)throw new Error("Storage upload ("+(error.statusCode||"RLS")+"): "+error.message+authDiagnostic+"؛ profile role="+role);
  const {data}=client.storage.from("weekly-mvp-photos").getPublicUrl(path);
  $(urlInputId).value=data.publicUrl;
