@@ -2657,15 +2657,31 @@ window.setTeamApplicationFilter=setTeamApplicationFilter;
 async function loadTeamApplicationsAdmin(){
  const el=$("teamApplicationsAdmin");if(!el)return;
  try{
- const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title,max_teams)").order("created_at",{ascending:false});
+ const {data,error}=await client.from("scrim_team_applications").select("id,scrim_id,submitted_by,team_tag,team_name,team_short_name,team_representative,contact_phone,status,access_code,slot_number,created_at,scrims(title,max_teams)").order("created_at",{ascending:false});
  if(error){el.textContent="تعذر تحميل طلبات الفرق: "+error.message;return;}
- const rows=data||[],pending=rows.filter(r=>r.status==="pending"),accepted=rows.filter(r=>r.status==="accepted"),reserve=rows.filter(r=>r.status==="reserve"),withdrawn=rows.filter(r=>r.status==="withdrawn");
+ const rows=data||[];
+ const applicantIds=[...new Set(rows.map(r=>r.submitted_by).filter(Boolean))];
+ const [accountResult,contactResult]=applicantIds.length?await Promise.all([
+  client.from("player_account_profiles").select("user_id,username").in("user_id",applicantIds),
+  client.from("user_contact_details").select("user_id,whatsapp_number").in("user_id",applicantIds)
+ ]):[{data:[],error:null},{data:[],error:null}];
+ if(accountResult.error)console.warn("تعذر تحميل أسماء حسابات مقدمي الطلبات:",accountResult.error.message);
+ if(contactResult.error)console.warn("تعذر تحميل أرقام واتساب مقدمي الطلبات:",contactResult.error.message);
+ const usernames=new Map((accountResult.data||[]).map(x=>[x.user_id,x.username]));
+ const whatsappNumbers=new Map((contactResult.data||[]).map(x=>[x.user_id,x.whatsapp_number]));
+ const pending=rows.filter(r=>r.status==="pending"),accepted=rows.filter(r=>r.status==="accepted"),reserve=rows.filter(r=>r.status==="reserve"),withdrawn=rows.filter(r=>r.status==="withdrawn");
  updateTeamApplicationBadge(pending.length);
  const acceptedCountEl=$("teamAcceptedCount"),pendingCountEl=$("teamPendingCount"),reserveCountEl=$("teamReserveCount");
  if(acceptedCountEl)acceptedCountEl.textContent=String(accepted.length);
  if(pendingCountEl)pendingCountEl.textContent=String(pending.length);
  if(reserveCountEl)reserveCountEl.textContent=String(reserve.length);
- const card=r=>`<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"في الانتظار":r.status==="accepted"?"مقبول":r.status==="reserve"?"احتياط":r.status==="withdrawn"?"منسحب":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">إضافة للاحتياط</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:r.status==="reserve"?`<button onclick="reviewTeamApplication('${r.id}','accepted')">تحويل إلى مقبول</button>`:r.status==="accepted"?`<div class="row"><button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">تحويل إلى الاحتياط</button><button class="danger" onclick="withdrawTeamApplicationAdmin('${r.id}')">سحب الفريق</button></div>`:""}</div>`;
+ const card=r=>{
+  const username=usernames.get(r.submitted_by)||"غير متوفر";
+  const phone=String(whatsappNumbers.get(r.submitted_by)||"");
+  const digits=phone.replace(/[^0-9]/g,"");
+  const whatsapp=digits?'<a href="https://wa.me/'+esc(digits)+'" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:7px;color:#7ee0a5;font-weight:800;text-decoration:underline" aria-label="فتح واتساب مع '+esc(username)+'">فتح محادثة واتساب ↗</a>':'<span class="small">لا يوجد رقم واتساب محفوظ في الملف الشخصي</span>';
+  return `<div class="card"><b>${esc(r.team_name||r.team_tag)}</b><p>اختصار الفريق: <b>${esc(r.team_short_name||r.team_tag)}</b></p><p>اسم المستخدم في الملف الشخصي: <b>${esc(username)}</b></p><p>رقم الواتساب في الملف الشخصي: <b dir="ltr">${esc(phone||"غير مسجل")}</b></p><p>${whatsapp}</p><p>ممثل الفريق: <b>${esc(r.team_representative||"—")}</b></p><p class="small">السكريم: ${esc(r.scrims?.title||"—")}</p>${r.status==="accepted"?`<p>رقم الخانة: <b>${r.slot_number??"—"}</b></p><p class="notice">كود الفريق: <b dir="ltr" style="letter-spacing:2px">${esc(r.access_code||"—")}</b></p>`:""}<p>الحالة: <b>${r.status==="pending"?"في الانتظار":r.status==="accepted"?"مقبول":r.status==="reserve"?"احتياط":r.status==="withdrawn"?"منسحب":"مرفوض"}</b> · تاريخ الطلب: ${formatScrimDate(r.created_at)}</p>${r.status==="pending"?`<div class="row"><button onclick="reviewTeamApplication('${r.id}','accepted')">قبول الفريق</button><button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">إضافة للاحتياط</button><button class="danger" onclick="reviewTeamApplication('${r.id}','rejected')">رفض الطلب</button></div>`:r.status==="reserve"?`<button onclick="reviewTeamApplication('${r.id}','accepted')">تحويل إلى مقبول</button>`:r.status==="accepted"?`<div class="row"><button class="secondary" onclick="reviewTeamApplication('${r.id}','reserve')">تحويل إلى الاحتياط</button><button class="danger" onclick="withdrawTeamApplicationAdmin('${r.id}')">سحب الفريق</button></div>`:""}</div>`;
+ };
  const rejected=rows.filter(r=>r.status==="rejected");
  const rejectedCount=$("teamRejectedCount");if(rejectedCount)rejectedCount.textContent=String(rejected.length);
  el.innerHTML=`<nav class="team-status-tabs" aria-label="تصنيفات الفرق">
@@ -2679,7 +2695,7 @@ async function loadTeamApplicationsAdmin(){
  <div class="team-status-panel hidden" data-team-panel="pending">${pending.length?pending.map(card).join(""):`<p class="small">لا توجد طلبات تنتظر المراجعة.</p>`}</div>
  <div class="team-status-panel hidden" data-team-panel="reserve">${reserve.length?reserve.map(card).join(""):`<p class="small">لا توجد فرق في الاحتياط.</p>`}</div>
  <div class="team-status-panel hidden" data-team-panel="rejected">${rejected.length?rejected.map(card).join(""):`<p class="small">لا توجد طلبات مرفوضة.</p>`}</div>
-  <div class="team-status-panel hidden" data-team-panel="withdrawn">${withdrawn.length?withdrawn.map(card).join(""):`<p class="small">لا توجد فرق منسحبة.</p>`}</div>`;
+ <div class="team-status-panel hidden" data-team-panel="withdrawn">${withdrawn.length?withdrawn.map(card).join(""):`<p class="small">لا توجد فرق منسحبة.</p>`}</div>`;
  }catch(e){el.textContent="حدث خطأ أثناء تحميل طلبات الفرق: "+(e?.message||String(e));console.error("loadTeamApplicationsAdmin:",e);}
 }
 async function withdrawTeamApplicationAdmin(id){
