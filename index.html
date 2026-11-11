@@ -2290,7 +2290,7 @@ async function submitTeamApplication(event){
  const result=Array.isArray(data)?data[0]:data,code=result?.access_code||"";
  if(!code){message.textContent="تم إرسال الطلب، لكن تعذر استرجاع كود الفريق. تواصل مع الإدارة قبل إعادة التسجيل.";message.classList.remove("hidden");return;}
  $("teamRegistrationForm").classList.add("hidden");
- message.innerHTML="<b>تم إرسال طلب الفريق بنجاح.</b><p>حالة الطلب: <b>قيد انتظار موافقة المشرفين</b></p><p>كود مركز الفريق الخاص بك:</p><div style=\"direction:ltr;font-size:26px;font-weight:900;letter-spacing:3px;margin:10px 0\">"+esc(code)+"</div><p class=\"small\">احتفظ بالكود؛ ستحتاج إليه لمتابعة حالة الطلب ومعرفة قرار المشرفين.</p><button type=\"button\" class=\"secondary\" onclick=\"openTeamCenterPage();document.getElementById('scrimCenterCode').value='"+esc(code)+"'\">فتح مركز الفريق</button>";
+ message.innerHTML="<b>تم إرسال طلب الفريق بنجاح.</b><p>حالة الطلب: <b>"+(result?.status==="reserve"?"احتياط — في انتظار مراجعة المنظم":"قيد انتظار موافقة المشرفين")+"</b></p><p>كود مركز الفريق الخاص بك:</p><div style=\"direction:ltr;font-size:26px;font-weight:900;letter-spacing:3px;margin:10px 0\">"+esc(code)+"</div><p class=\"small\">احتفظ بالكود؛ ستحتاج إليه لمتابعة حالة الطلب ومعرفة قرار المشرفين.</p><button type=\"button\" class=\"secondary\" onclick=\"openTeamCenterPage();document.getElementById('scrimCenterCode').value='"+esc(code)+"'\">فتح مركز الفريق</button>";
  message.classList.remove("hidden");
  await loadPublicScrims();
 }
@@ -2363,7 +2363,7 @@ async function loadPublicScrims(){
      <div class="accepted-team-list">${teamsHtml}</div>
     </aside>
    </div>
-   <div class="scrim-public-actions">${scrimAnyRegistrationIsOpen(s)?`<button data-scrim-register data-status="${esc(s.status)}" data-opens="${esc(s.registration_opens_at||"")}" data-closes="${esc(s.registration_closes_at||"")}" data-scheduled="${esc(s.scheduled_at||"")}" onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">${scrimRegistrationButtonText(s)}</button>`:`<button data-scrim-register class="secondary" disabled data-status="${esc(s.status)}" data-opens="${esc(s.registration_opens_at||"")}" data-closes="${esc(s.registration_closes_at||"")}" data-scheduled="${esc(s.scheduled_at||"")}">التسجيل مغلق</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button></div>
+   <div class="scrim-public-actions">${`<button data-scrim-register data-status="${esc(s.status)}" data-opens="${esc(s.registration_opens_at||"")}" data-closes="${esc(s.registration_closes_at||"")}" data-scheduled="${esc(s.scheduled_at||"")}" onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">${scrimRegistrationButtonText(s)}</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button></div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
  syncPublicScrimsPage();
@@ -2534,6 +2534,11 @@ function refreshScrimCountdowns(){
   else {phase="regular";label="التسجيل مفتوح";}
   const content=el.querySelector('[data-countdown-content]');
   if(content)content.innerHTML='<span class="scrim-countdown-status">'+label+'</span>'+(target?countdownUnitsHTML(target-now):'');
+  document.querySelectorAll("[data-scrim-register]").forEach(button=>{
+   const bs=button.dataset.status,bo=button.dataset.opens?new Date(button.dataset.opens).getTime():null,bc=button.dataset.closes?new Date(button.dataset.closes).getTime():null,bt=button.dataset.scheduled?new Date(button.dataset.scheduled).getTime():null;
+   let bp="closed";if(bs==="registration_open"&&(!bo||now>=bo)&&(!bt||now<bt))bp=bc&&now>bc?(bt?"reserve":"closed"):"regular";
+   button.disabled=bp==="closed";button.textContent=bp==="reserve"?"التسجيل كاحتياط":bp==="regular"?"تسجيل الفريق":"التسجيل مغلق";button.classList.toggle("secondary",bp==="closed");
+  });
   if(el.id==="teamRegistrationCountdown"){
    const form=$("teamRegistrationForm"),message=$("teamRegistrationMessage"),submit=$("submitTeamApplication"),open=phase!=="closed";
    if(form)form.classList.toggle("hidden",!open);
