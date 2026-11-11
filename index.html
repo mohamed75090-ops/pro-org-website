@@ -2067,8 +2067,9 @@ $("scanImages").onclick=async()=>{
   const rows=data?.groups||[];if(!rows.length)throw new Error("لم يتم استخراج مجموعات واضحة من الصور.");
   let out=`<div class="notice ok">تم استخراج ${rows.length} مجموعة. راجع كل مجموعة قبل إدخالها واعتمادها.</div>`;
   rows.forEach((g,i)=>{
+   const placement=Number(g.placement)||0,kills=Number(g.total_kills)||0,placementPoints=pointsForPlacement(placement),totalPoints=placementPoints+kills;
    const players=(g.players||[]).map(p=>`<tr><td>${esc(p.player_name)}</td><td>${Number(p.kills)||0}</td></tr>`).join("");
-   out+=`<div class="card"><h3>المركز ${Number(g.placement)||"؟"} · المجموعة ${i+1}</h3><p>إجمالي Kills المقروء: <b>${Number(g.total_kills)||0}</b></p><table><tr><th>اسم اللاعب</th><th>Kills</th></tr>${players}</table><p class="small">ملاحظة الذكاء الاصطناعي: ${esc(g.note||"لا توجد")}</p></div>`;
+   out+=`<div class="card"><h3>المركز ${placement||"؟"} · المجموعة ${i+1}</h3><p>نقاط المركز: <b>${placementPoints}</b> + نقاط Kills: <b>${kills}</b> = <b>${totalPoints} نقطة</b></p><table><tr><th>اسم اللاعب</th><th>Kills</th></tr>${players}</table><p class="small">ملاحظة الذكاء الاصطناعي: ${esc(g.note||"لا توجد")}</p></div>`;
   });
   $("aiOutput").innerHTML=out;$("aiStatus").textContent="اكتمل التحليل. هذه بيانات مقترحة وليست نتائج معتمدة. اربط كل مجموعة بالفريق الصحيح وراجع الأرقام قبل الحفظ.";
  }catch(e){$("aiStatus").innerHTML=`<span class="err">فشل التحليل: ${esc(e.message||e)}. تأكد من تسجيل الدخول وإعدادات Storage وEdge Function ومفتاح OpenAI.</span>`;}
