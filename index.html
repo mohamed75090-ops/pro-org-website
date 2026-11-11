@@ -2535,11 +2535,6 @@ function refreshScrimCountdowns(){
   else {phase="regular";label="التسجيل مفتوح";}
   const content=el.querySelector('[data-countdown-content]');
   if(content)content.innerHTML='<span class="scrim-countdown-status">'+label+'</span>'+(target?countdownUnitsHTML(target-now):'');
-  document.querySelectorAll("[data-scrim-register]").forEach(button=>{
-   const bs=button.dataset.status,bo=button.dataset.opens?new Date(button.dataset.opens).getTime():null,bc=button.dataset.closes?new Date(button.dataset.closes).getTime():null,bt=button.dataset.scheduled?new Date(button.dataset.scheduled).getTime():null;
-   let bp="closed";if(bs==="registration_open"&&(!bo||now>=bo)&&(!bt||now<bt))bp=bc&&now>bc?(bt?"reserve":"closed"):"regular";
-   button.disabled=bp==="closed";button.textContent=bp==="reserve"?"التسجيل كاحتياط":bp==="regular"?"تسجيل الفريق":"التسجيل مغلق";button.classList.toggle("secondary",bp==="closed");
-  });
   if(el.id==="teamRegistrationCountdown"){
    const form=$("teamRegistrationForm"),message=$("teamRegistrationMessage"),submit=$("submitTeamApplication"),open=phase!=="closed";
    if(form)form.classList.toggle("hidden",!open);
