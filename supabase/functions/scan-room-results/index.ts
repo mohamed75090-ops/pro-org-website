@@ -92,7 +92,7 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile || !["founder", "admin", "results_manager"].includes(profile.role)) {
+    if (profileError || !profile || !["founder", "admin", "results_manager", "tournament_manager"].includes(profile.role)) {
       return reply({ error: "Not authorized" }, 403, origin);
     }
 
@@ -108,8 +108,9 @@ serve(async (req) => {
       return reply({ error: "Invalid JSON body" }, 400, origin);
     }
 
-    if (typeof body.match_id !== "string" || !UUID_RE.test(body.match_id)) {
-      return reply({ error: "Invalid match ID" }, 400, origin);
+    // Standalone scan batches are not linked to a scrim or database match.
+    if (typeof body.batch_id !== "string" || !UUID_RE.test(body.batch_id)) {
+      return reply({ error: "Invalid batch ID" }, 400, origin);
     }
     if (!Array.isArray(body.files) || body.files.length < 1 || body.files.length > MAX_FILES) {
       return reply({ error: `Upload between 1 and ${MAX_FILES} images` }, 400, origin);
@@ -119,7 +120,7 @@ serve(async (req) => {
     if (paths.some((path: unknown) =>
       typeof path !== "string" ||
       path.length > 512 ||
-      !path.startsWith(`${body.match_id}/`) ||
+      !path.startsWith(`${body.batch_id}/`) ||
       path.split("/").length !== 2
     ) || new Set(paths).size !== paths.length) {
       return reply({ error: "Invalid image path" }, 400, origin);
