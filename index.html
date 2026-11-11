@@ -2509,7 +2509,7 @@ function scrimCountdownLabel(scrim){
  return {label:"التسجيل مفتوح",cls:"",target:null,title:"التسجيل مفتوح"};
 }
 function countdownAttrs(scrim){
- return `data-countdown="true" data-status="${esc(scrim.status||"")}" data-opens="${esc(scrim.registration_opens_at||"")}" data-closes="${esc(scrim.registration_closes_at||"")}"`;
+ return `data-countdown="true" data-status="${esc(scrim.status||"")}" data-opens="${esc(scrim.registration_opens_at||"")}" data-closes="${esc(scrim.registration_closes_at||"")}" data-scheduled="${esc(scrim.scheduled_at||"")}"`;
 }
 function countdownDisplay(scrim){
  const state=scrimCountdownLabel(scrim);
@@ -2522,31 +2522,26 @@ function countdownUnitsHTML(ms){
 }
 function refreshScrimCountdowns(){
  document.querySelectorAll('[data-countdown="true"]').forEach(el=>{
-  const status=el.dataset.status;
-  const opensAt=el.dataset.opens?new Date(el.dataset.opens).getTime():null;
-  const closesAt=el.dataset.closes?new Date(el.dataset.closes).getTime():null;
-  const now=Date.now();
-  let target=null,label="";
+  const status=el.dataset.status,opensAt=el.dataset.opens?new Date(el.dataset.opens).getTime():null,closesAt=el.dataset.closes?new Date(el.dataset.closes).getTime():null,startsAt=el.dataset.scheduled?new Date(el.dataset.scheduled).getTime():null,now=Date.now();
+  let target=null,label="",phase="closed";
   if(status==="completed")label="انتهى السكريم";
   else if(status==="cancelled")label="تم إلغاء السكريم";
   else if(opensAt&&now<opensAt){target=opensAt;label="يفتح التسجيل خلال";}
   else if(status!=="registration_open")label=status==="draft"?"الإعلان غير منشور":"التسجيل مغلق";
-  else if(closesAt&&now>=closesAt)label="انتهى التسجيل";
-  else if(closesAt){target=closesAt;label="التسجيل مفتوح — ينتهي خلال";}
-  else label="التسجيل مفتوح";
+  else if(startsAt&&now>=startsAt)label="بدأ السكريم — التسجيل مغلق";
+  else if(closesAt&&now>closesAt&&startsAt){phase="reserve";target=startsAt;label="التسجيل كاحتياط مفتوح — يغلق عند بداية السكريم خلال";}
+  else if(closesAt){phase="regular";target=closesAt;label="التسجيل مفتوح — ينتهي خلال";}
+  else {phase="regular";label="التسجيل مفتوح";}
   const content=el.querySelector('[data-countdown-content]');
-  if(content)content.innerHTML=`<span class="scrim-countdown-status">${label}</span>${target?countdownUnitsHTML(target-now):""}`;
+  if(content)content.innerHTML='<span class="scrim-countdown-status">'+label+'</span>'+(target?countdownUnitsHTML(target-now):'');
   if(el.id==="teamRegistrationCountdown"){
-   const form=$("teamRegistrationForm"),message=$("teamRegistrationMessage");
-   const isOpen=status==="registration_open"&&(!opensAt||now>=opensAt)&&(!closesAt||now<closesAt);
-   if(form)form.classList.toggle("hidden",!isOpen);
-   if(!isOpen&&message&&message.classList.contains("hidden")){
-    message.textContent=label+" — لا يمكن إرسال طلب لهذا السكريم حالياً.";
-    message.classList.remove("hidden");
-   }
-   if(isOpen&&message&&message.textContent.includes("لا يمكن إرسال طلب"))message.classList.add("hidden");
-   const submit=$("submitTeamApplication");
-   if(submit)submit.disabled=!isOpen;
+   const form=$("teamRegistrationForm"),message=$("teamRegistrationMessage"),submit=$("submitTeamApplication"),open=phase!=="closed";
+   if(form)form.classList.toggle("hidden",!open);
+   if(submit){submit.disabled=!open;submit.textContent=phase==="reserve"?"إرسال طلب الاحتياط":"إرسال طلب التسجيل";}
+   if($("teamRegistrationTitle"))$("teamRegistrationTitle").textContent=phase==="reserve"?"التسجيل كاحتياط في السكريم":"تسجيل الفريق في السكريم";
+   if(message&&phase==="reserve"){message.textContent="انتهى التسجيل الأساسي. يمكنك إرسال طلب احتياط حتى بداية السكريم.";message.classList.remove("hidden");}
+   else if(message&&phase==="regular"&&message.textContent.includes("انتهى التسجيل"))message.classList.add("hidden");
+   else if(message&&phase==="closed"&&!message.classList.contains("hidden")){message.textContent=label+" — انتهى التسجيل في هذا السكريم.";}
   }
  });
 }
