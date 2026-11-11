@@ -946,9 +946,8 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
    </div>
    <div id="aiScanner" class="card" style="border:1px solid #45647d;background:linear-gradient(145deg,#142333,#10151d);padding:22px">
     <h2>AI ROOM SCANNER — تحليل نتائج الروم</h2>
-    <p class="small">ارفع صور شاشة النتائج للمباراة، وسيستخرج النظام المراكز وأسماء اللاعبين وعدد Kills لكل لاعب. راجع البيانات المستخرجة قبل اعتمادها.</p>
-    <label>1) اختر المباراة</label><select id="aiMatch"></select>
-    <label>2) ارفع صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
+    <p class="small">ارفع صور نتائج أي روم في أي وقت، حتى لو ما في سكريم أو مباراة مسجلة. سيستخرج النظام المراكز وأسماء اللاعبين وعدد Kills لكل لاعب. راجع البيانات المستخرجة قبل اعتمادها.</p>
+    <label>ارفع صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
     <div class="notice">إرشادات الصور: كل صورة تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع جميع صور المباراة معاً وبجودة واضحة.</div>
     <button id="scanImages">بدء تحليل الصور بالذكاء الاصطناعي</button>
     <div id="aiStatus" class="notice">بانتظار الصور — ستظهر هنا حالة التحليل، ثم تظهر النتائج المستخرجة للمراجعة.</div>
@@ -1912,7 +1911,6 @@ async function refreshAdmin(){
  }
  if(canResults){
   $("resultMatch").innerHTML=matchesCache.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join("");
-  $("aiMatch").innerHTML=matchesCache.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join("");
   $("resultTeam").innerHTML=teamsCache.map(x=>'<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.tag||"")+')</option>').join("");
   const pending=rs.data||[],quickResults=$("adminPendingResults");
   if(quickResults)quickResults.textContent=String(pending.length);
@@ -2042,8 +2040,8 @@ $("addResult").onclick=async()=>{
  if(error)alert(error.message);else{alert(`تم حفظ النتيجة للمراجعة. المجموع: ${totalPoints} نقطة.`);$("placement").value="";$("kills").value="";updateScorePreview();await refreshAdmin();}
 };
 $("scanImages").onclick=async()=>{
- const files=[...($("aiImages").files||[])],matchId=$("aiMatch").value;
- if(!matchId){alert("اختار المباراة أولاً.");return;}if(!files.length){alert("اختار صورة واحدة على الأقل.");return;}
+ const files=[...($("aiImages").files||[])];
+ if(!files.length){alert("اختار صورة واحدة على الأقل.");return;}
  if(files.length>8){alert("يمكن رفع 8 صور كحد أقصى في المرة الواحدة.");return;}
  const allowedImageTypes=new Set(["image/jpeg","image/png","image/webp"]);
  if(files.some(f=>!allowedImageTypes.has(f.type))){alert("ارفع صور JPG أو PNG أو WEBP فقط.");return;}
@@ -2055,14 +2053,14 @@ $("scanImages").onclick=async()=>{
   const {data:sessionData,error:sessionError}=await client.auth.getSession();
   const session=sessionData?.session;
   if(sessionError||!session?.access_token)throw new Error("جلسة الدخول غير موجودة أو انتهت. سجّل الدخول من جديد ثم أعد المحاولة.");
-  const uploaded=[];
+  const uploaded=[],batchId=crypto.randomUUID();
   for(let i=0;i<files.length;i++){
-   const f=files[i],safe=f.name.replace(/[^a-zA-Z0-9._-]/g,"_"),path=`${matchId}/${Date.now()}_${i}_${safe}`;
+   const f=files[i],safe=f.name.replace(/[^a-zA-Z0-9._-]/g,"_"),path=`${batchId}/${Date.now()}_${i}_${safe}`;
    const {error}=await client.storage.from("room-screenshots").upload(path,f,{upsert:false,contentType:f.type});
    if(error)throw error;uploaded.push({path,name:f.name});
   }
   const {data,error}=await client.functions.invoke("scan-room-results",{
-   body:{match_id:matchId,files:uploaded},
+   body:{batch_id:batchId,files:uploaded},
    headers:{Authorization:`Bearer ${session.access_token}`}
   });
   if(error)throw new Error(error.message||"تعذر استدعاء وظيفة تحليل الصور.");
