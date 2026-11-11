@@ -781,7 +781,7 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
  </div>
 </section>
 
- <div class="card team-center-entry" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:16px 0"><div><h3 style="margin:0 0 6px">مركز الفريق</h3><p class="small" style="margin:0">تابع حالة تسجيل فريقك وبيانات المباريات باستخدام كود الفريق، حتى بعد انتهاء السكريم.</p></div><button type="button" onclick="openTeamCenterPage()">فتح مركز الفريق</button></div>
+ <div class="card team-center-entry" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:16px 0"><div><h3 style="margin:0 0 6px">مركز الفريق</h3><p class="small" style="margin:0">تابع حالة تسجيل فريقك وبيانات المباريات باستخدام كود الفريق، حتى بعد انتهاء السكريم.</p></div><div class="row" style="direction:ltr;justify-content:flex-start;margin-inline-start:auto"><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ القائمة</button><button type="button" onclick="openTeamCenterPage()">فتح مركز الفريق</button></div></div>
  <div class="section-heading" id="tournamentSection"><div><span class="pill">OFFICIAL TOURNAMENTS</span><h2>البطولات</h2><p>إعلانات البطولات الرسمية. افتح أي بطولة لمعرفة التفاصيل والتسجيل.</p></div></div>
  <div id="publicTournaments" class="grid"><div class="card">جاري تحميل البطولات...</div></div>
 
@@ -2272,8 +2272,33 @@ async function submitTeamApplication(event){
 function renderAcceptedTeamsTable(accepted,emptyText){
  if(!accepted.length)return '<p class="scrim-public-empty">'+emptyText+'</p>';
  return '<div class="accepted-team-table-head"><span>اسم الفريق</span><span>رقم الخانة</span></div>'+
- accepted.map((r,i)=>{const slot=r.slot_number??(i+3);return '<div class="accepted-team-row" dir="rtl"><span class="accepted-team-tag">'+esc(r.teams?.name||"فريق")+'</span><b class="accepted-team-slot">'+String(slot)+'</b></div>';}).join("");
+ accepted.map((r,i)=>{const slot=r.slot_number??(i+3),tag=r.teams?.tag||r.teams?.name||"فريق";return '<div class="accepted-team-row" dir="rtl"><span class="accepted-team-tag" data-team-tag="'+esc(tag)+'">'+esc(r.teams?.name||tag)+'</span><b class="accepted-team-slot">'+String(slot)+'</b></div>';}).join("");
 }
+
+async function copyAcceptedScrimTeamsList(){
+ const cards=[...document.querySelectorAll("#publicScrims .scrim-public-card")];
+ const sections=[];
+ cards.forEach(card=>{
+  const title=card.querySelector(".scrim-control-head h3")?.textContent?.trim()||"السكريم";
+  const rows=[...card.querySelectorAll(".accepted-team-row")].map(row=>{
+   const tag=row.querySelector("[data-team-tag]")?.getAttribute("data-team-tag")||row.querySelector(".accepted-team-tag")?.textContent?.trim();
+   const slot=row.querySelector(".accepted-team-slot")?.textContent?.trim();
+   return tag&&slot?tag+" — الخانة "+slot:null;
+  }).filter(Boolean);
+  if(rows.length)sections.push(title+"\\n"+rows.join("\\n"));
+ });
+ if(!sections.length){alert("لا توجد فرق مقبولة في القوائم المنشورة حالياً.");return;}
+ const text=sections.join("\\n\\n");
+ try{
+  if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(text);
+  else{
+   const area=document.createElement("textarea");area.value=text;area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();
+   const copied=document.execCommand("copy");area.remove();if(!copied)throw new Error("تعذر النسخ");
+  }
+  alert("تم نسخ قائمة الفرق المقبولة مع التاقات وأرقام الخانات.");
+ }catch(e){alert("تعذر نسخ القائمة. حاول مرة أخرى.");}
+}
+window.copyAcceptedScrimTeamsList=copyAcceptedScrimTeamsList;
 
 function syncPublicScrimsPage(){const source=$("publicScrims"),target=$("publicScrimsPage");if(source&&target)target.innerHTML=source.innerHTML;}
 async function loadPublicScrims(){
@@ -2929,7 +2954,7 @@ setInterval(()=>{if(document.visibilityState==="visible"&&navigator.onLine)loadW
  "يفتح التسجيل":"Registration Opens","لم يتم تحديد الموعد بعد":"Date not announced yet",
  "تم فتح التسجيل":"Registration is now open","لا توجد سكريمات بعد.":"No scrims yet.",
  "قائمة الفرق لم تُنشر بعد.":"The team list has not been published yet.",
- "اسم الفريق":"Team Name","رقم الخانة":"Slot","الفرق المقبولة":"Accepted Teams",
+ "اسم الفريق":"Team Name","رقم الخانة":"Slot","نسخ القائمة":"Copy List","الفرق المقبولة":"Accepted Teams",
  "عدد الفرق":"Teams","المقاعد المتبقية":"Slots Remaining","تسجيل الفريق":"Register Team",
  "التسجيل في السكريم":"Register for Scrim","تسجيل":"Register","إنشاء الحساب":"Create Account",
  "اسم المستخدم":"Username","كلمة المرور":"Password","رقم الواتساب":"WhatsApp Number",
