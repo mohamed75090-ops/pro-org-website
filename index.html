@@ -1971,7 +1971,7 @@ $("playerRegisterMenu").onclick=()=>openPlayerAuth("register");
 $("playerAuthBack").onclick=returnToPublicPages;
 $("switchPlayerAuth").onclick=()=>openPlayerAuth($("playerRegisterForm").classList.contains("hidden")?"register":"login");
 function normalizePlayerUsername(value){return String(value||"").normalize("NFC").trim().toLowerCase();}
-function isValidPlayerUsername(value){return /^[\\p{L}\\p{N}_]{3,24}$/u.test(value);}
+function isValidPlayerUsername(value){return /^[\p{L}\p{N}_]{3,24}$/u.test(value);}
 function playerAuthEmail(value){
  const username=normalizePlayerUsername(value);
  const hasNonAscii=Array.from(username).some(ch=>ch.codePointAt(0)>127);
