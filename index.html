@@ -2363,7 +2363,7 @@ async function loadPublicScrims(){
      <div class="accepted-team-list">${teamsHtml}</div>
     </aside>
    </div>
-   <div class="scrim-public-actions">${scrimAnyRegistrationIsOpen(s)?`<button onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">${scrimRegistrationButtonText(s)}</button>`:`<button class="secondary" disabled>التسجيل مغلق</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button></div>
+   <div class="scrim-public-actions">${scrimAnyRegistrationIsOpen(s)?`<button data-scrim-register data-status="${esc(s.status)}" data-opens="${esc(s.registration_opens_at||"")}" data-closes="${esc(s.registration_closes_at||"")}" data-scheduled="${esc(s.scheduled_at||"")}" onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">${scrimRegistrationButtonText(s)}</button>`:`<button data-scrim-register class="secondary" disabled data-status="${esc(s.status)}" data-opens="${esc(s.registration_opens_at||"")}" data-closes="${esc(s.registration_closes_at||"")}" data-scheduled="${esc(s.scheduled_at||"")}">التسجيل مغلق</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button></div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
  syncPublicScrimsPage();
@@ -2543,6 +2543,11 @@ function refreshScrimCountdowns(){
    else if(message&&phase==="regular"&&message.textContent.includes("انتهى التسجيل"))message.classList.add("hidden");
    else if(message&&phase==="closed"&&!message.classList.contains("hidden")){message.textContent=label+" — انتهى التسجيل في هذا السكريم.";}
   }
+ });
+ document.querySelectorAll("[data-scrim-register]").forEach(button=>{
+  const now=Date.now(),opens=button.dataset.opens?new Date(button.dataset.opens).getTime():null,closes=button.dataset.closes?new Date(button.dataset.closes).getTime():null,starts=button.dataset.scheduled?new Date(button.dataset.scheduled).getTime():null;
+  let phase="closed";if(button.dataset.status==="registration_open"&&(!opens||now>=opens)&&(!starts||now<starts))phase=closes&&now>closes?(starts?"reserve":"closed"):"regular";
+  button.disabled=phase==="closed";button.classList.toggle("secondary",phase==="closed");button.textContent=phase==="reserve"?"التسجيل كاحتياط":phase==="regular"?"تسجيل الفريق":"التسجيل مغلق";
  });
 }
 function countdownParts(ms){
