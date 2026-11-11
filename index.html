@@ -2043,57 +2043,68 @@ async function loadFreeOcrLibrary(){
  if(window.Tesseract?.createWorker)return;
  const sources=["https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js","https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js"];
  let lastError=null;
- for(const src of sources){
-  try{
-   await new Promise((resolve,reject)=>{
-    const script=document.createElement("script");script.src=src;script.async=true;
-    script.onload=resolve;script.onerror=()=>{script.remove();reject(new Error("تعذر تحميل مكتبة OCR"));};
-    document.head.appendChild(script);
-   });
-   if(window.Tesseract?.createWorker)return;
-  }catch(error){lastError=error;}
- }
+ for(const src of sources){try{await new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=src;script.async=true;script.onload=resolve;script.onerror=()=>{script.remove();reject(new Error("تعذر تحميل مكتبة OCR"));};document.head.appendChild(script);});if(window.Tesseract?.createWorker)return;}catch(error){lastError=error;}}
  throw lastError||new Error("مكتبة OCR غير متاحة حالياً. تحقق من اتصال الإنترنت.");
+}
+function roomWordsToLines(words){
+ const valid=(words||[]).filter(w=>w?.bbox&&String(w.text||"").trim());
+ valid.sort((a,b)=>((a.bbox.y0+a.bbox.y1)-(b.bbox.y0+b.bbox.y1)));
+ const lines=[];
+ for(const word of valid){const cy=(word.bbox.y0+word.bbox.y1)/2;let line=lines.find(item=>Math.abs(item.cy-cy)<=13);if(!line){line={cy,words:[]};lines.push(line);}line.words.push(word);}
+ return lines.map(line=>{line.words.sort((a,b)=>a.bbox.x0-b.bbox.x0);return line;}).sort((a,b)=>a.cy-b.cy);
+}
+function detectRoomTeamTag(names){
+ const clean=names.map(name=>String(name||"").trim()).filter(Boolean);if(clean.length<2)return "تيم البلكات";
+ const candidates=new Map();
+ for(let i=0;i<clean.length;i++)for(let j=i+1;j<clean.length;j++){const a=clean[i],b=clean[j],la=a.toLocaleLowerCase(),lb=b.toLocaleLowerCase();let n=0;while(n<Math.min(a.length,b.length)&&la[n]===lb[n])n++;if(n>=3){const tag=a.slice(0,n),key=tag.toLocaleLowerCase(),old=candidates.get(key);candidates.set(key,{tag,count:(old?.count||0)+1});}}
+ const best=[...candidates.values()].sort((a,b)=>b.count-a.count||b.tag.length-a.tag.length)[0];
+ if(!best)return "تيم البلكات";
+ return clean.filter(name=>name.toLocaleLowerCase().startsWith(best.tag.toLocaleLowerCase())).length>=2?best.tag:"تيم البلكات";
+}
+function parsePubgRoomLayout(data,imageWidth,imageHeight){
+ const words=(data?.words||[]).filter(w=>String(w.text||"").trim()&&w.bbox);if(!words.length)return [];
+ const split=imageWidth*.515,teams=[];
+ for(const column of [{start:0,end:split},{start:split,end:imageWidth}]){
+  const width=column.end-column.start,colWords=words.filter(w=>{const x=(w.bbox.x0+w.bbox.x1)/2;return x>=column.start&&x<column.end;});
+  const anchors=colWords.map(w=>{const rel=((w.bbox.x0+w.bbox.x1)/2-column.start)/width,token=String(w.text||"").trim();return {word:w,rel,place:Number(token),cy:(w.bbox.y0+w.bbox.y1)/2};}).filter(a=>a.rel>=.025&&a.rel<=.17&&/^\d{1,2}$/.test(String(a.word.text||"").trim())&&a.place>=1&&a.place<=100);
+  const unique=[];for(const a of anchors.sort((x,y)=>x.cy-y.cy)){if(!unique.some(x=>Math.abs(x.cy-a.cy)<24))unique.push(a);}
+  for(let index=0;index<unique.length;index++){
+   const anchor=unique[index],top=index===0?0:(unique[index-1].cy+anchor.cy)/2,bottom=index===unique.length-1?imageHeight:(anchor.cy+unique[index+1].cy)/2;
+   const lines=roomWordsToLines(colWords.filter(w=>{const cy=(w.bbox.y0+w.bbox.y1)/2;return cy>=top&&cy<=bottom;})),players=[];
+   for(const line of lines){if(Math.abs(line.cy-anchor.cy)<18)continue;
+    const names=line.words.filter(w=>{const x=(w.bbox.x0+w.bbox.x1)/2;const rel=(x-column.start)/width;return rel>=.17&&rel<=.77;});
+    const killsWords=line.words.filter(w=>((w.bbox.x0+w.bbox.x1)/2-column.start)/width>.77),name=names.map(w=>w.text).join(" ").trim(),km=killsWords.map(w=>w.text).join(" ").match(/\d{1,2}/);
+    if(name&&!players.some(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase()))players.push({name,kills:km?Number(km[0]):0,uncertain:!km});
+   }
+   if(players.length){const kills=players.reduce((sum,p)=>sum+p.kills,0),placementPoints=pointsForPlacement(anchor.place);teams.push({team:detectRoomTeamTag(players.map(p=>p.name)),placement:anchor.place,players,kills,placementPoints,total:placementPoints+kills,review:players.length!==4||players.some(p=>p.uncertain)});}
+  }
+ }
+ return teams.sort((a,b)=>a.placement-b.placement);
 }
 $("scanImages").onclick=async()=>{
  const files=[...($("aiImages").files||[])];
- if(!files.length){alert("اختار صورة واحدة على الأقل.");return;}
- if(files.length>8){alert("يمكن قراءة 8 صور كحد أقصى في المرة الواحدة.");return;}
- const allowedImageTypes=new Set(["image/jpeg","image/png","image/webp"]);
- if(files.some(f=>!allowedImageTypes.has(f.type))){alert("ارفع صور JPG أو PNG أو WEBP فقط.");return;}
- if(files.some(f=>f.size>8*1024*1024)){alert("حجم كل صورة يجب ألا يتجاوز 8 ميجابايت.");return;}
+ if(!files.length){alert("اختار صورة واحدة على الأقل.");return;}if(files.length>8){alert("يمكن قراءة 8 صور كحد أقصى في المرة الواحدة.");return;}
+ const allowed=new Set(["image/jpeg","image/png","image/webp"]);if(files.some(f=>!allowed.has(f.type))){alert("ارفع صور JPG أو PNG أو WEBP فقط.");return;}if(files.some(f=>f.size>8*1024*1024)){alert("حجم كل صورة يجب ألا يتجاوز 8 ميجابايت.");return;}
  $("scanImages").disabled=true;$("aiOutput").innerHTML="";$("aiStatus").textContent="جاري تجهيز محرك القراءة المجاني...";
- let worker=null,ocrImageIndex=0;
+ let worker=null,index=0;
  try{
   await loadFreeOcrLibrary();
-  worker=await window.Tesseract.createWorker("eng",1,{logger:info=>{
-   if(info.status==="recognizing text")$("aiStatus").textContent="جاري قراءة الصورة "+(ocrImageIndex+1)+" من "+files.length+" — "+Math.round((info.progress||0)*100)+"٪";
-  }});
+  worker=await window.Tesseract.createWorker("eng",1,{logger:info=>{if(info.status==="recognizing text")$("aiStatus").textContent="جاري تحليل الصورة "+(index+1)+" من "+files.length+" — "+Math.round((info.progress||0)*100)+"٪";}});
   const results=[];
-  for(let i=0;i<files.length;i++){
-   ocrImageIndex=i;$("aiStatus").textContent="جاري قراءة الصورة "+(i+1)+" من "+files.length+"...";
-   const {data}=await worker.recognize(files[i]);
-   results.push({name:files[i].name,text:String(data?.text||"").trim()});
-  }
+  for(let i=0;i<files.length;i++){index=i;$("aiStatus").textContent="جاري تحليل الصورة "+(i+1)+" من "+files.length+"...";const {data}=await worker.recognize(files[i]);const bitmap=await createImageBitmap(files[i]);const teams=parsePubgRoomLayout(data,bitmap.width,bitmap.height);bitmap.close?.();results.push({name:files[i].name,text:String(data?.text||"").trim(),teams});}
   const cards=results.map((item,i)=>{
-   const raw=item.text||"لم يتمكن OCR من قراءة نص واضح في هذه الصورة.";
-   return `<div class="card" style="margin:12px 0"><h3>الصورة ${i+1}: ${esc(item.name)}</h3><p class="small">النص الذي تم التعرف عليه — راجع الأسماء والأرقام وقارنها بالصورة الأصلية:</p><textarea readonly rows="9" style="direction:ltr;text-align:left;white-space:pre-wrap">${esc(raw)}</textarea><button type="button" class="secondary copy-ocr-text" data-ocr-index="${i}">نسخ النص المقروء</button></div>`;
+   let table='<div class="notice err">لم أتمكن من تحديد بطاقات الفرق تلقائياً في هذه الصورة. راجع النص الخام أدناه.</div>';
+   if(item.teams.length){const rows=item.teams.map((team,j)=>'<tr><td><input aria-label="اسم الفريق" class="ocr-team-name" value="'+esc(team.team)+'"></td><td><input aria-label="المركز" class="ocr-placement" type="number" min="1" value="'+team.placement+'" style="width:64px"></td><td><input aria-label="الكيلات" class="ocr-kills" type="number" min="0" value="'+team.kills+'" style="width:72px"></td><td class="ocr-placement-points">'+team.placementPoints+'</td><td class="ocr-total">'+team.total+'</td><td style="text-align:right">'+team.players.map(p=>esc(p.name)+" ("+p.kills+")").join("<br>")+(team.review?'<div class="small err">راجع البطاقة: قراءة ناقصة أو غير مؤكدة</div>':"")+'</td></tr>').join("");
+    table='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:520px"><thead><tr><th>الفريق / TAG</th><th>المركز</th><th>Kills</th><th>نقاط المركز</th><th>المجموع</th><th>اللاعبون المقروءون</th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
+   return '<div class="card" style="margin:12px 0"><h3>الصورة '+(i+1)+': '+esc(item.name)+'</h3>'+table+'<details style="margin-top:10px"><summary>عرض النص الخام للتأكد</summary><textarea readonly rows="7" style="direction:ltr;text-align:left;white-space:pre-wrap">'+esc(item.text||"لا يوجد نص واضح")+'</textarea></details></div>';
   }).join("");
-  $("aiOutput").innerHTML=`<div class="notice ok">اكتملت القراءة المجانية لـ ${results.length} صورة. لم يتم إرسال الصور إلى خادم التحليل أو OpenAI.</div>${cards}<div class="notice">مهم: OCR يقرأ النصوص فقط ولا يفهم تلقائياً توزيع الفرق أو يضمن صحة المركز والـ Kills. راجع النص مع الصورة الأصلية، ثم أدخل النتائج في نموذج الإدخال اليدوي أدناه ليحسب الموقع النقاط تلقائياً.</div>`;
-  $("aiOutput").querySelectorAll(".copy-ocr-text").forEach(button=>button.addEventListener("click",async()=>{
-   const index=Number(button.dataset.ocrIndex),value=results[index]?.text||"";
-   try{await navigator.clipboard.writeText(value);button.textContent="تم نسخ النص";}
-   catch(e){const area=button.parentElement.querySelector("textarea");area.focus();area.select();button.textContent="حدد النص وانسخه";}
-  }));
-  $("aiStatus").textContent="اكتملت القراءة. راجع النصوص ثم أدخل المراكز والـ Kills يدوياً لحساب النقاط.";
- }catch(e){
-  $("aiStatus").innerHTML=`<span class="err">تعذرت القراءة المجانية: ${esc(e.message||e)}. جرّب اتصالاً أقوى أو صورة أوضح.</span>`;
- }finally{
-  if(worker){try{await worker.terminate();}catch(e){}}
-  $("scanImages").disabled=false;
- }
+  $("aiOutput").innerHTML='<div class="notice ok">اكتمل التحليل المجاني. تم تقسيم النتائج حسب بطاقات المراكز وتجميع Kills لكل بطاقة. راجع وعدّل الخانات قبل الاعتماد؛ لم يتم حفظ النتائج تلقائياً.</div>'+cards+'<div class="notice">اسم الفريق يُستخرج من التاق المشترك بين أسماء اللاعبين، وإذا لم يظهر تاق مشترك يُكتب «تيم البلكات». المركز من رقم البطاقة، والكيلات مجموع لاعبيها. نقاط المركز وكل Kill تُحسب تلقائياً.</div>';
+  const recalc=tr=>{const place=Number(tr.querySelector(".ocr-placement")?.value)||0,kills=Number(tr.querySelector(".ocr-kills")?.value)||0,pp=pointsForPlacement(place);tr.querySelector(".ocr-placement-points").textContent=pp;tr.querySelector(".ocr-total").textContent=pp+kills;};
+  $("aiOutput").querySelectorAll(".ocr-placement,.ocr-kills").forEach(input=>input.addEventListener("input",()=>recalc(input.closest("tr"))));
+  $("aiStatus").textContent="اكتمل التحليل. راجع أسماء الفرق والمراكز والكيلات قبل اعتماد النتائج.";
+ }catch(e){$("aiStatus").innerHTML='<span class="err">تعذر تحليل الصور: '+esc(e.message||e)+'. جرّب صورة أوضح أو اتصالاً أقوى.</span>';}
+ finally{if(worker){try{await worker.terminate();}catch(e){}}$("scanImages").disabled=false;}
 };
-
 // ===== SCRIM MANAGEMENT =====
 const scrimDate=v=>v?new Date(v).toISOString():null;
 function formatScrimDate(value){
