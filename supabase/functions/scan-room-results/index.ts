@@ -19,14 +19,20 @@ function corsHeaders(origin: string | null) {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin",
   };
-  if (origin && ALLOWED_ORIGINS.has(origin)) headers["Access-Control-Allow-Origin"] = origin;
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
   return headers;
 }
 
 function reply(data: unknown, status = 200, origin: string | null = null) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders(origin), "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: {
+      ...corsHeaders(origin),
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
   });
 }
 
@@ -46,8 +52,14 @@ serve(async (req) => {
   if (origin && !ALLOWED_ORIGINS.has(origin)) {
     return new Response("Origin not allowed", { status: 403, headers: { "Vary": "Origin" } });
   }
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST") return reply({ error: "Method not allowed" }, 405, origin);
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: cors });
+  }
+
+  if (req.method !== "POST") {
+    return reply({ error: "Method not allowed" }, 405, origin);
+  }
 
   try {
     const authHeader = req.headers.get("Authorization") || "";
@@ -68,20 +80,33 @@ serve(async (req) => {
       global: { headers: { Authorization: `Bearer ${accessToken}` } },
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-    if (authError || !user) return reply({ error: "Invalid login session" }, 401, origin);
+    if (authError || !user) {
+      return reply({ error: "Invalid login session" }, 401, origin);
+    }
 
     const { data: profile, error: profileError } = await supabase
-      .from("profiles").select("role").eq("id", user.id).single();
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
     if (profileError || !profile || !["founder", "admin", "results_manager"].includes(profile.role)) {
       return reply({ error: "Not authorized" }, 403, origin);
     }
 
     const rawBody = await req.text();
-    if (rawBody.length > 64 * 1024) return reply({ error: "Request is too large" }, 413, origin);
+    if (rawBody.length > 64 * 1024) {
+      return reply({ error: "Request is too large" }, 413, origin);
+    }
+
     let body: any;
-    try { body = JSON.parse(rawBody); }
-    catch { return reply({ error: "Invalid JSON body" }, 400, origin); }
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return reply({ error: "Invalid JSON body" }, 400, origin);
+    }
 
     if (typeof body.match_id !== "string" || !UUID_RE.test(body.match_id)) {
       return reply({ error: "Invalid match ID" }, 400, origin);
@@ -92,8 +117,10 @@ serve(async (req) => {
 
     const paths = body.files.map((file: any) => file?.path);
     if (paths.some((path: unknown) =>
-      typeof path !== "string" || path.length > 512 ||
-      !path.startsWith(`${body.match_id}/`) || path.split("/").length !== 2
+      typeof path !== "string" ||
+      path.length > 512 ||
+      !path.startsWith(`${body.match_id}/`) ||
+      path.split("/").length !== 2
     ) || new Set(paths).size !== paths.length) {
       return reply({ error: "Invalid image path" }, 400, origin);
     }
@@ -139,20 +166,27 @@ Return JSON:
         console.error("Screenshot download failed");
         return reply({ error: "Could not read one of the uploaded images" }, 400, origin);
       }
+
       if (!ALLOWED_MIME.has(data.type)) {
         return reply({ error: "Only JPEG, PNG, and WebP images are allowed" }, 415, origin);
       }
+
       if (data.size > MAX_FILE_BYTES) {
         return reply({ error: "Each image must be 8 MB or smaller" }, 413, origin);
       }
+
       totalBytes += data.size;
       if (totalBytes > MAX_TOTAL_BYTES) {
         return reply({ error: "The combined image size must be 32 MB or smaller" }, 413, origin);
       }
+
       const bytes = new Uint8Array(await data.arrayBuffer());
       content.push({
         type: "image_url",
-        image_url: { url: `data:${data.type};base64,${toBase64(bytes)}`, detail: "high" },
+        image_url: {
+          url: `data:${data.type};base64,${toBase64(bytes)}`,
+          detail: "high",
+        },
       });
     }
 
@@ -161,21 +195,33 @@ Return JSON:
       messages: [{ role: "user", content }],
       response_format: { type: "json_object" },
     });
+
     const output = response.choices[0]?.message?.content;
     if (!output) throw new Error("OpenAI returned an empty response");
 
     const result = JSON.parse(output);
     const groups = Array.isArray(result.groups) ? result.groups : [];
+
     for (const group of groups) {
       group.players = Array.isArray(group.players) ? group.players : [];
       group.players = group.players.map((player: any) => ({
         player_name: String(player.player_name || ""),
         kills: Number.isInteger(player.kills) && player.kills >= 0 ? player.kills : 0,
       }));
-      group.total_kills = group.players.reduce((sum: number, player: any) => sum + player.kills, 0);
-      if (group.players.length !== 4) group.note = "تنبيه: لم يتم التعرف على أربعة لاعبين بوضوح.";
+      group.total_kills = group.players.reduce(
+        (sum: number, player: any) => sum + player.kills,
+        0,
+      );
+      if (group.players.length !== 4) {
+        group.note = "تنبيه: لم يتم التعرف على أربعة لاعبين بوضوح.";
+      }
     }
-    return reply({ success: true, groups, warning: "راجع النتائج قبل اعتمادها." }, 200, origin);
+
+    return reply({
+      success: true,
+      groups,
+      warning: "راجع النتائج قبل اعتمادها.",
+    }, 200, origin);
   } catch (error) {
     console.error("AI scanner failed:", error instanceof Error ? error.message : "Unknown error");
     return reply({ error: "AI scanner failed. Please try again." }, 500, origin);
