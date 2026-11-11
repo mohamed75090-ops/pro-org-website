@@ -2066,13 +2066,14 @@ function parsePubgRoomLayout(data,imageWidth,imageHeight){
  const split=imageWidth*.525,teams=[];
  for(const column of [{start:0,end:split},{start:split,end:imageWidth}]){
   const width=column.end-column.start,colWords=words.filter(w=>{const x=(w.bbox.x0+w.bbox.x1)/2;return x>=column.start&&x<column.end;});
-  const anchors=colWords.map(w=>{const rel=((w.bbox.x0+w.bbox.x1)/2-column.start)/width,token=String(w.text||"").trim();return {word:w,rel,place:Number(token),cy:(w.bbox.y0+w.bbox.y1)/2};}).filter(a=>a.rel>=.025&&a.rel<=.17&&/^\d{1,2}$/.test(String(a.word.text||"").trim())&&a.place>=1&&a.place<=100);
-  const unique=[];for(const a of anchors.sort((x,y)=>x.cy-y.cy)){if(!unique.some(x=>Math.abs(x.cy-a.cy)<24))unique.push(a);}\n  if(column.start===0&&unique.length&&unique[0].place===2&&unique[0].cy>imageHeight*.42){unique.unshift({word:null,rel:.26,place:1,cy:unique[0].cy-imageHeight*.31});}
+  const anchors=colWords.map(w=>{const rel=((w.bbox.x0+w.bbox.x1)/2-column.start)/width,token=String(w.text||"").trim();return {word:w,rel,place:Number(token),cy:(w.bbox.y0+w.bbox.y1)/2};}).filter(a=>(column.start===0?(a.rel>=.17&&a.rel<=.36):(a.rel>=.025&&a.rel<=.18))&&/^\d{1,2}$/.test(String(a.word.text||"").trim())&&a.place>=1&&a.place<=100);
+  const unique=[];for(const a of anchors.sort((x,y)=>x.cy-y.cy)){if(!unique.some(x=>Math.abs(x.cy-a.cy)<24))unique.push(a);}
+  if(column.start===0&&unique.length&&unique[0].place===2&&unique[0].cy>imageHeight*.42){unique.unshift({word:null,rel:.26,place:1,cy:unique[0].cy-imageHeight*.31});}
   for(let index=0;index<unique.length;index++){
    const anchor=unique[index],top=index===0?imageHeight*.14:(unique[index-1].cy+anchor.cy)/2,bottom=index===unique.length-1?imageHeight*.89:(anchor.cy+unique[index+1].cy)/2;
    const lines=roomWordsToLines(colWords.filter(w=>{const cy=(w.bbox.y0+w.bbox.y1)/2;return cy>=top&&cy<=bottom;})),players=[];
    for(const line of lines){if(Math.abs(line.cy-anchor.cy)<18)continue;
-    const names=line.words.filter(w=>{const x=(w.bbox.x0+w.bbox.x1)/2;const rel=(x-column.start)/width;return rel>=.17&&rel<=.77;});
+    const names=line.words.filter(w=>{const x=(w.bbox.x0+w.bbox.x1)/2,rel=(x-column.start)/width;return rel>=.17&&rel<=.77;});
     const killsWords=line.words.filter(w=>((w.bbox.x0+w.bbox.x1)/2-column.start)/width>.77),name=names.map(w=>w.text).join(" ").trim(),km=killsWords.map(w=>w.text).join(" ").match(/\d{1,2}/);
     if(name&&!players.some(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase()))players.push({name,kills:km?Number(km[0]):0,uncertain:!km});
    }
