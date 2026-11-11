@@ -2385,7 +2385,7 @@ async function registerTeamForScrim(scrimId){
  const {data,error}=await client.from("scrim_registrations").insert({scrim_id:scrimId,team_id:teamId,contact_phone:phone,status:"pending"}).select("id,access_code,status,slot_number").single();
  if(error){alert("تعذر إرسال طلب التسجيل: "+error.message);return;}
  const code=data?.access_code||"";
- if(code){$("scrimCenterCode").value=code;$("scrimCenterResult").innerHTML=`<b>تم إرسال طلبك بنجاح.</b><p>كود مركز الفريق الخاص بهذا التسجيل:</p><div style="direction:ltr;font-size:22px;font-weight:bold;letter-spacing:2px">${esc(code)}</div><p class="small">احتفظ بالكود ولا تشاركه. يلزم تسجيل الدخول بحساب قائد الفريق المرتبط.</p>`;}
+ if(code){$("scrimCenterCode").value=code;$("scrimCenterResult").innerHTML=`<b>تم إرسال طلبك بنجاح.</b><p>كود مركز الفريق الخاص بهذا التسجيل:</p><div style="direction:ltr;font-size:22px;font-weight:bold;letter-spacing:2px">${esc(code)}</div><p class="small">احتفظ بالكود. يمكن لأي حساب مسجل الدخول استخدامه لفتح مركز الفريق.</p>`;}
  else alert("تم التسجيل، لكن تعذر استرجاع كود الدخول. تحقق من صلاحية قراءة طلب فريقك.");
  await renderTeamScrimStatus();
 }
@@ -2395,7 +2395,7 @@ async function openScrimTeamCenter(){
  if(!out){alert("تعذر العثور على مساحة عرض مركز الفريق. حدّث الصفحة وحاول مجدداً.");return;}
  if(!code){out.textContent="أدخل كود الفريق.";return;}
  const {data:{user},error:authError}=await client.auth.getUser();
- if(authError||!user){out.textContent="يجب تسجيل الدخول بحساب اللاعب المرتبط بالفريق قبل فتح مركز الفريق.";openPlayerAuth("login");return;}
+ if(authError||!user){out.textContent="يجب تسجيل الدخول بأي حساب في الموقع. لا يشترط أن يكون الحساب هو الذي سجّل الفريق.";openPlayerAuth("login");return;}
  out.textContent="جاري التحقق من ملكية الفريق...";
  const {data:statusData,error:statusError}=await client.rpc("get_team_application_status",{team_code:code});
  if(statusError){out.textContent="تعذر التحقق من الكود: "+statusError.message;return;}
