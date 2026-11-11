@@ -941,16 +941,16 @@ body.gold-mode .notification-item.notification-open:hover{background:#59401f}
    </div>
    <div class="card"><h2>إدارة نتائج السكريم</h2><div id="scrimResultPostsAdmin" class="muted">جاري تحميل النتائج...</div></div>
    <div class="card" style="border:1px solid var(--line);margin-bottom:14px">
-    <h2 style="margin:0">إدخال النتائج بالذكاء الاصطناعي</h2>
-    <p class="small" style="margin:6px 0 0">أولاً: ارفع صور نتائج الروم لتحليلها ومراجعتها قبل الحفظ.</p>
+    <h2 style="margin:0">قراءة النتائج مجاناً من الصور</h2>
+    <p class="small" style="margin:6px 0 0">قراءة OCR مجانية داخل المتصفح؛ لا يتم إرسال الصور إلى OpenAI أو تخزينها في الموقع. راجع النص والأرقام يدوياً قبل إدخال النتائج.</p>
    </div>
    <div id="aiScanner" class="card" style="border:1px solid #45647d;background:linear-gradient(145deg,#142333,#10151d);padding:22px">
-    <h2>AI ROOM SCANNER — تحليل نتائج الروم</h2>
-    <p class="small">ارفع صور نتائج أي روم في أي وقت، حتى لو ما في سكريم أو مباراة مسجلة. سيستخرج النظام المراكز وأسماء اللاعبين وعدد Kills لكل لاعب. راجع البيانات المستخرجة قبل اعتمادها.</p>
+    <h2>FREE ROOM RESULTS OCR — قارئ النتائج المجاني</h2>
+    <p class="small">ارفع صور نتائج أي روم. سيقرأ الموقع النصوص الظاهرة في الصورة محلياً على جهازك باستخدام OCR مجاني. القراءة تساعدك في نقل أسماء اللاعبين والأرقام، لكنها قد تخطئ وتحتاج مراجعتك.</p>
     <label>ارفع صور نتائج الروم (يمكن اختيار عدة صور)</label><input id="aiImages" type="file" accept="image/*" multiple>
     <div class="notice">إرشادات الصور: كل صورة تعرض 5 مراكز، وفي كل مركز 4 لاعبين. ارفع جميع صور المباراة معاً وبجودة واضحة.</div>
-    <button id="scanImages">بدء تحليل الصور بالذكاء الاصطناعي</button>
-    <div id="aiStatus" class="notice">بانتظار الصور — ستظهر هنا حالة التحليل، ثم تظهر النتائج المستخرجة للمراجعة.</div>
+    <button id="scanImages">بدء القراءة المجانية للصور</button>
+    <div id="aiStatus" class="notice">بانتظار الصور — ستتم القراءة على جهازك، وقد يستغرق تحميل محرك OCR أول مرة بعض الوقت.</div>
     <div id="aiOutput"></div>
    </div>
    <div class="card" style="border:1px solid var(--line);margin:18px 0 14px">
@@ -2039,41 +2039,59 @@ $("addResult").onclick=async()=>{
  const {error}=await client.from("match_results").insert({match_id:$("resultMatch").value,team_id:$("resultTeam").value,placement,kills,placement_points:placementPoints,total_points:totalPoints,status:"pending"});
  if(error)alert(error.message);else{alert(`تم حفظ النتيجة للمراجعة. المجموع: ${totalPoints} نقطة.`);$("placement").value="";$("kills").value="";updateScorePreview();await refreshAdmin();}
 };
+async function loadFreeOcrLibrary(){
+ if(window.Tesseract?.createWorker)return;
+ const sources=["https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js","https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js"];
+ let lastError=null;
+ for(const src of sources){
+  try{
+   await new Promise((resolve,reject)=>{
+    const script=document.createElement("script");script.src=src;script.async=true;
+    script.onload=resolve;script.onerror=()=>{script.remove();reject(new Error("تعذر تحميل مكتبة OCR"));};
+    document.head.appendChild(script);
+   });
+   if(window.Tesseract?.createWorker)return;
+  }catch(error){lastError=error;}
+ }
+ throw lastError||new Error("مكتبة OCR غير متاحة حالياً. تحقق من اتصال الإنترنت.");
+}
 $("scanImages").onclick=async()=>{
  const files=[...($("aiImages").files||[])];
  if(!files.length){alert("اختار صورة واحدة على الأقل.");return;}
- if(files.length>8){alert("يمكن رفع 8 صور كحد أقصى في المرة الواحدة.");return;}
+ if(files.length>8){alert("يمكن قراءة 8 صور كحد أقصى في المرة الواحدة.");return;}
  const allowedImageTypes=new Set(["image/jpeg","image/png","image/webp"]);
  if(files.some(f=>!allowedImageTypes.has(f.type))){alert("ارفع صور JPG أو PNG أو WEBP فقط.");return;}
  if(files.some(f=>f.size>8*1024*1024)){alert("حجم كل صورة يجب ألا يتجاوز 8 ميجابايت.");return;}
- if(files.reduce((sum,f)=>sum+f.size,0)>32*1024*1024){alert("إجمالي حجم الصور يجب ألا يتجاوز 32 ميجابايت.");return;}
- $("scanImages").disabled=true;$("aiStatus").textContent="جاري رفع الصور وتحليلها... انتظر.";$("aiOutput").innerHTML="";
+ $("scanImages").disabled=true;$("aiOutput").innerHTML="";$("aiStatus").textContent="جاري تجهيز محرك القراءة المجاني...";
+ let worker=null,ocrImageIndex=0;
  try{
-  // إصلاح المشكلة: الحصول على جلسة المستخدم وتمرير access token صراحةً إلى Edge Function.
-  const {data:sessionData,error:sessionError}=await client.auth.getSession();
-  const session=sessionData?.session;
-  if(sessionError||!session?.access_token)throw new Error("جلسة الدخول غير موجودة أو انتهت. سجّل الدخول من جديد ثم أعد المحاولة.");
-  const uploaded=[],batchId=crypto.randomUUID();
+  await loadFreeOcrLibrary();
+  worker=await window.Tesseract.createWorker("eng",1,{logger:info=>{
+   if(info.status==="recognizing text")$("aiStatus").textContent="جاري قراءة الصورة "+(ocrImageIndex+1)+" من "+files.length+" — "+Math.round((info.progress||0)*100)+"٪";
+  }});
+  const results=[];
   for(let i=0;i<files.length;i++){
-   const f=files[i],safe=f.name.replace(/[^a-zA-Z0-9._-]/g,"_"),path=`${batchId}/${Date.now()}_${i}_${safe}`;
-   const {error}=await client.storage.from("room-screenshots").upload(path,f,{upsert:false,contentType:f.type});
-   if(error)throw error;uploaded.push({path,name:f.name});
+   ocrImageIndex=i;$("aiStatus").textContent="جاري قراءة الصورة "+(i+1)+" من "+files.length+"...";
+   const {data}=await worker.recognize(files[i]);
+   results.push({name:files[i].name,text:String(data?.text||"").trim()});
   }
-  const {data,error}=await client.functions.invoke("scan-room-results",{
-   body:{batch_id:batchId,files:uploaded},
-   headers:{Authorization:`Bearer ${session.access_token}`}
-  });
-  if(error)throw new Error(error.message||"تعذر استدعاء وظيفة تحليل الصور.");
-  const rows=data?.groups||[];if(!rows.length)throw new Error("لم يتم استخراج مجموعات واضحة من الصور.");
-  let out=`<div class="notice ok">تم استخراج ${rows.length} مجموعة. راجع كل مجموعة قبل إدخالها واعتمادها.</div>`;
-  rows.forEach((g,i)=>{
-   const placement=Number(g.placement)||0,kills=Number(g.total_kills)||0,placementPoints=pointsForPlacement(placement),totalPoints=placementPoints+kills;
-   const players=(g.players||[]).map(p=>`<tr><td>${esc(p.player_name)}</td><td>${Number(p.kills)||0}</td></tr>`).join("");
-   out+=`<div class="card"><h3>المركز ${placement||"؟"} · المجموعة ${i+1}</h3><p>نقاط المركز: <b>${placementPoints}</b> + نقاط Kills: <b>${kills}</b> = <b>${totalPoints} نقطة</b></p><table><tr><th>اسم اللاعب</th><th>Kills</th></tr>${players}</table><p class="small">ملاحظة الذكاء الاصطناعي: ${esc(g.note||"لا توجد")}</p></div>`;
-  });
-  $("aiOutput").innerHTML=out;$("aiStatus").textContent="اكتمل التحليل. هذه بيانات مقترحة وليست نتائج معتمدة. اربط كل مجموعة بالفريق الصحيح وراجع الأرقام قبل الحفظ.";
- }catch(e){$("aiStatus").innerHTML=`<span class="err">فشل التحليل: ${esc(e.message||e)}. تأكد من تسجيل الدخول وإعدادات Storage وEdge Function ومفتاح OpenAI.</span>`;}
- finally{$("scanImages").disabled=false;}
+  const cards=results.map((item,i)=>{
+   const raw=item.text||"لم يتمكن OCR من قراءة نص واضح في هذه الصورة.";
+   return `<div class="card" style="margin:12px 0"><h3>الصورة ${i+1}: ${esc(item.name)}</h3><p class="small">النص الذي تم التعرف عليه — راجع الأسماء والأرقام وقارنها بالصورة الأصلية:</p><textarea readonly rows="9" style="direction:ltr;text-align:left;white-space:pre-wrap">${esc(raw)}</textarea><button type="button" class="secondary copy-ocr-text" data-ocr-index="${i}">نسخ النص المقروء</button></div>`;
+  }).join("");
+  $("aiOutput").innerHTML=`<div class="notice ok">اكتملت القراءة المجانية لـ ${results.length} صورة. لم يتم إرسال الصور إلى خادم التحليل أو OpenAI.</div>${cards}<div class="notice">مهم: OCR يقرأ النصوص فقط ولا يفهم تلقائياً توزيع الفرق أو يضمن صحة المركز والـ Kills. راجع النص مع الصورة الأصلية، ثم أدخل النتائج في نموذج الإدخال اليدوي أدناه ليحسب الموقع النقاط تلقائياً.</div>`;
+  $("aiOutput").querySelectorAll(".copy-ocr-text").forEach(button=>button.addEventListener("click",async()=>{
+   const index=Number(button.dataset.ocrIndex),value=results[index]?.text||"";
+   try{await navigator.clipboard.writeText(value);button.textContent="تم نسخ النص";}
+   catch(e){const area=button.parentElement.querySelector("textarea");area.focus();area.select();button.textContent="حدد النص وانسخه";}
+  }));
+  $("aiStatus").textContent="اكتملت القراءة. راجع النصوص ثم أدخل المراكز والـ Kills يدوياً لحساب النقاط.";
+ }catch(e){
+  $("aiStatus").innerHTML=`<span class="err">تعذرت القراءة المجانية: ${esc(e.message||e)}. جرّب اتصالاً أقوى أو صورة أوضح.</span>`;
+ }finally{
+  if(worker){try{await worker.terminate();}catch(e){}}
+  $("scanImages").disabled=false;
+ }
 };
 
 // ===== SCRIM MANAGEMENT =====
