@@ -1420,7 +1420,6 @@ function openTournamentTeamCenter(id){activeTournamentId=id;$("tournamentCenterC
 window.openTournamentTeamCenter=openTournamentTeamCenter;
 async function submitTournamentApplication(event){
  event.preventDefault();const button=$("submitTournamentApplication"),message=$("tournamentRegistrationMessage");
- const wasReserve=button.textContent.includes("الاحتياط");
  button.disabled=true;button.textContent="جارٍ إرسال الطلب...";
  const {data,error}=await client.rpc("submit_tournament_team_application",{p_tournament_id:activeTournamentId,p_team_name:$("tAppTeamName").value.trim(),p_team_tag:$("tAppTeamTag").value.trim(),p_team_representative:$("tAppRepresentative").value.trim()});
  button.disabled=false;button.textContent="إرسال طلب التسجيل";
@@ -2284,11 +2283,12 @@ async function submitTeamApplication(event){
  const teamName=$("applicationTeamName").value.trim(),tag=$("applicationTeamTag").value.trim(),scrimId=$("applicationScrimId").value,button=$("submitTeamApplication"),message=$("teamRegistrationMessage");
  if(teamName.length<2||tag.length<2){alert("أكمل اسم الفريق واختصاره.");return;}
  if(!scrimId){alert("لم يتم تحديد السكريم.");return;}
+ const countdown=$("teamRegistrationCountdown"),wasReserve=scrimRegistrationPhase({status:countdown.dataset.status,registration_opens_at:countdown.dataset.opens,registration_closes_at:countdown.dataset.closes,scheduled_at:countdown.dataset.scheduled})==="reserve";
  button.disabled=true;button.textContent="جارٍ إرسال الطلب...";
  const {data,error}=await client.rpc("submit_team_application",{p_scrim_id:scrimId,p_team_name:teamName,p_team_tag:tag});
  button.disabled=false;button.textContent=wasReserve?"إرسال طلب الاحتياط":"إرسال طلب التسجيل";
  if(error){const duplicate=String(error.message||"").includes("لقد أرسلت طلب تسجيل لهذا السكريم من قبل");message.textContent=duplicate?"سبق وأرسلت طلب تسجيل لهذا السكريم. مسموح بطلب واحد فقط لكل مستخدم في السكريم الواحد. يمكنك متابعة طلبك من مركز الفريق.":"تعذر إرسال الطلب: "+error.message;message.classList.remove("hidden");return;}
- const result=Array.isArray(data)?data[0]:data,code=result?.access_code||"",countdown=$("teamRegistrationCountdown"),submittedAsReserve=scrimRegistrationPhase({status:countdown.dataset.status,registration_opens_at:countdown.dataset.opens,registration_closes_at:countdown.dataset.closes,scheduled_at:countdown.dataset.scheduled})==="reserve";
+ const result=Array.isArray(data)?data[0]:data,code=result?.access_code||"",submittedAsReserve=wasReserve;
  if(!code){message.textContent="تم إرسال الطلب، لكن تعذر استرجاع كود الفريق. تواصل مع الإدارة قبل إعادة التسجيل.";message.classList.remove("hidden");return;}
  $("teamRegistrationForm").classList.add("hidden");
  message.innerHTML="<b>تم إرسال طلب الفريق بنجاح.</b><p>حالة الطلب: <b>"+(submittedAsReserve?"احتياط — في انتظار مراجعة المنظم":"قيد انتظار موافقة المشرفين")+"</b></p><p>كود مركز الفريق الخاص بك:</p><div style=\"direction:ltr;font-size:26px;font-weight:900;letter-spacing:3px;margin:10px 0\">"+esc(code)+"</div><p class=\"small\">احتفظ بالكود؛ ستحتاج إليه لمتابعة حالة الطلب ومعرفة قرار المشرفين.</p><button type=\"button\" class=\"secondary\" onclick=\"openTeamCenterPage();document.getElementById('scrimCenterCode').value='"+esc(code)+"'\">فتح مركز الفريق</button>";
