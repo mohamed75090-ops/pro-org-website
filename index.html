@@ -2089,10 +2089,16 @@ function formatScrimTimeKSA(value){
  const d=new Date(value);
  return Number.isNaN(d.getTime())?"لم يحدد":d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true,timeZone:"Asia/Riyadh"})+" KSA";
 }
-function scrimRegistrationIsOpen(scrim){
- const now=Date.now(),opens=scrim.registration_opens_at?new Date(scrim.registration_opens_at).getTime():null,closes=scrim.registration_closes_at?new Date(scrim.registration_closes_at).getTime():null;
- return scrim.status==="registration_open"&&(!opens||now>=opens)&&(!closes||now<=closes);
+function scrimRegistrationPhase(scrim){
+ const now=Date.now(),opens=scrim.registration_opens_at?new Date(scrim.registration_opens_at).getTime():null,closes=scrim.registration_closes_at?new Date(scrim.registration_closes_at).getTime():null,starts=scrim.scheduled_at?new Date(scrim.scheduled_at).getTime():null;
+ if(scrim.status!=="registration_open"||(opens&&now<opens)||(starts&&now>=starts))return "closed";
+ if(closes&&now>closes)return starts?"reserve":"closed";
+ return "regular";
 }
+function scrimRegistrationIsOpen(scrim){return scrimRegistrationPhase(scrim)==="regular";}
+function scrimReserveRegistrationIsOpen(scrim){return scrimRegistrationPhase(scrim)==="reserve";}
+function scrimAnyRegistrationIsOpen(scrim){const phase=scrimRegistrationPhase(scrim);return phase==="regular"||phase==="reserve";}
+function scrimRegistrationButtonText(scrim){return scrimReserveRegistrationIsOpen(scrim)?"التسجيل كاحتياط":"تسجيل الفريق";}
 function showStandalonePage(pageId){
  ["public","scrimPublic","scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage","founderAuditPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
@@ -2241,15 +2247,21 @@ async function openTeamRegistration(scrimId,title){
  $("teamRegistrationCountdown").innerHTML='<span class="scrim-countdown-status">جاري تحميل حالة التسجيل...</span>';
  showStandalonePage("registrationPage");
  try{
-  const {data,error}=await client.from("scrims").select("id,title,status,registration_opens_at,registration_closes_at").eq("id",scrimId).maybeSingle();
+  const {data,error}=await client.from("scrims").select("id,title,status,registration_opens_at,registration_closes_at,scheduled_at").eq("id",scrimId).maybeSingle();
   if(error||!data)throw new Error(error?.message||"تعذر العثور على بيانات السكريم.");
   const box=$("teamRegistrationCountdown");
-  box.dataset.countdown="true";box.dataset.status=data.status||"";box.dataset.opens=data.registration_opens_at||"";box.dataset.closes=data.registration_closes_at||"";
+  box.dataset.countdown="true";box.dataset.status=data.status||"";box.dataset.opens=data.registration_opens_at||"";box.dataset.closes=data.registration_closes_at||"";box.dataset.scheduled=data.scheduled_at||"";
   box.innerHTML='<span class="scrim-countdown-title">حالة التسجيل</span><div class="scrim-countdown-content" data-countdown-content></div>';
   refreshScrimCountdowns();
-  if(scrimRegistrationIsOpen(data))$("teamRegistrationForm").classList.remove("hidden");
-  else $("teamRegistrationMessage").textContent=scrimCountdownLabel(data).label+" — لا يمكن إرسال طلب لهذا السكريم حالياً.";
-  if(!scrimRegistrationIsOpen(data))$("teamRegistrationMessage").classList.remove("hidden");
+  const phase=scrimRegistrationPhase(data);
+  if(phase!=="closed"){
+   $("teamRegistrationForm").classList.remove("hidden");
+   const reserve=phase==="reserve";
+   $("teamRegistrationTitle").textContent=reserve?"التسجيل كاحتياط في السكريم":"تسجيل الفريق في السكريم";
+   $("submitTeamApplication").textContent=reserve?"إرسال طلب الاحتياط":"إرسال طلب التسجيل";
+   $("teamRegistrationMessage").textContent=reserve?"انتهى التسجيل الأساسي. يمكنك الآن إرسال طلب احتياط حتى بداية السكريم.":"";
+  }else $("teamRegistrationMessage").textContent=scrimCountdownLabel(data).label+" — انتهى التسجيل في هذا السكريم.";
+  if(phase==="closed")$("teamRegistrationMessage").classList.remove("hidden");
   else $("applicationTeamName").focus();
  }catch(e){
   $("teamRegistrationCountdown").innerHTML='<span class="scrim-countdown-status">تعذر تحميل حالة التسجيل.</span>';
@@ -2351,7 +2363,7 @@ async function loadPublicScrims(){
      <div class="accepted-team-list">${teamsHtml}</div>
     </aside>
    </div>
-   <div class="scrim-public-actions">${scrimRegistrationIsOpen(s)?`<button onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">تسجيل الفريق</button>`:`<button class="secondary" disabled>التسجيل غير متاح حالياً</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button></div>
+   <div class="scrim-public-actions">${scrimAnyRegistrationIsOpen(s)?`<button onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">${scrimRegistrationButtonText(s)}</button>`:`<button class="secondary" disabled>التسجيل مغلق</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button></div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
  syncPublicScrimsPage();
