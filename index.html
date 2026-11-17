@@ -1936,19 +1936,25 @@ $("siteDropdown").querySelectorAll("a").forEach(link=>link.addEventListener("cli
 $("loginToggle").onclick=()=>{closeSiteMenu();showStandalonePage("login");$("email").focus();};
 let playerProfileCompletionBusy=false;
 async function ensureCompletePlayerProfile(user){
- if(!user||playerProfileCompletionBusy)return;
- const {data:roleRow,error:roleError}=await client.from("profiles").select("role").eq("id",user.id).maybeSingle();
- if(roleError||roleRow?.role!=="player")return;
- const [account,contact]=await Promise.all([
-  client.from("player_account_profiles").select("username").eq("user_id",user.id).maybeSingle(),
-  client.from("user_contact_details").select("whatsapp_number").eq("user_id",user.id).maybeSingle()
- ]);
- if(account.error||contact.error)return;
- const username=String(account.data?.username||"").trim();
- const phone=String(contact.data?.whatsapp_number||"").replace(/[^0-9]/g,"");
- if(username&&phone.length>=8&&phone.length<=15)return;
+ if(!user||playerProfileCompletionBusy||user.user_metadata?.profile_completion_notice_seen===true)return;
+ const localKey="proorg_profile_notice_seen_"+user.id;
+ try{if(localStorage.getItem(localKey)==="1")return;}catch(_){}
  playerProfileCompletionBusy=true;
  try{
+  const {data:roleRow,error:roleError}=await client.from("profiles").select("role").eq("id",user.id).maybeSingle();
+  if(roleError||roleRow?.role!=="player")return;
+  const [account,contact]=await Promise.all([
+   client.from("player_account_profiles").select("username").eq("user_id",user.id).maybeSingle(),
+   client.from("user_contact_details").select("whatsapp_number").eq("user_id",user.id).maybeSingle()
+  ]);
+  if(account.error||contact.error)return;
+  const username=String(account.data?.username||"").trim();
+  const phone=String(contact.data?.whatsapp_number||"").replace(/[^0-9]/g,"");
+  if(username&&phone.length>=8&&phone.length<=15)return;
+  // Save the one-time notice on the account, not only in this browser.
+  const {error:noticeError}=await client.auth.updateUser({data:{profile_completion_notice_seen:true}});
+  if(noticeError){console.warn("Profile notice state:",noticeError.message);return;}
+  try{localStorage.setItem(localKey,"1");}catch(_){}
   alert("لاستكمال استخدام حسابك، يرجى إكمال اسم المستخدم ورقم الواتساب. لن يتم حذف حسابك.");
   const inputName=prompt("اسم المستخدم (3 إلى 24 حرفاً):",username||user.user_metadata?.username||"");
   if(inputName===null)return;
