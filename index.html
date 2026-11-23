@@ -1783,9 +1783,35 @@ async function loadRoleManagement(){
  }catch(error){status.textContent="تعذر تحميل الرولات: "+(error.message||error);host.innerHTML="";}
 }
 function openRoleManagementPage(){if(currentRole!=="founder"){alert("إدارة الرولات متاحة للمالك فقط.");return;}showStandalonePage("roleManagementPage");loadRoleManagement();loadCommunitySupportAdmin();}
-const AUDIT_TABLE_LABELS={site_login_events:"دخول المشرفين",community_support_links:"روابط الدعم والتواصل",scrims:"السكريمات",scrim_team_applications:"طلبات فرق السكريم",scrim_rooms:"رومات السكريم",scrim_matches:"مواجهات السكريم",scrim_result_posts:"نتائج السكريم",scrim_registrations:"تسجيلات السكريم",scrim_invitations:"دعوات السكريم",scrim_team_access:"صلاحيات فرق السكريم",match_results:"نتائج المباريات",matches:"المباريات",tournaments:"البطولات",tournament_team_applications:"طلبات فرق البطولات",weekly_mvp_players:"لاعبو MVP الأسبوعي",public_messages:"الرسائل العامة",teams:"الفرق",role_change_audit:"تغييرات الرولات"};
-const AUDIT_FIELD_LABELS={name:"الاسم",title:"العنوان",status:"الحالة",team_name:"اسم الفريق",team_tag:"اختصار الفريق",slot_number:"رقم المقعد",room_id:"معرّف الروم",scrim_id:"السكريم",tournament_id:"البطولة",description:"الوصف",registration_opens_at:"بداية التسجيل",registration_closes_at:"نهاية التسجيل",is_published:"حالة النشر",published:"منشور",old_role:"الرول السابق",new_role:"الرول الجديد",target_user_id:"الحساب المستهدف",body:"نص الرسالة",placement:"المركز",kills:"الإقصاءات",points:"النقاط",match_number:"رقم المباراة",result_id:"النتيجة"};
-function auditValue(value){if(value===null||value===undefined||value==="")return "—";if(typeof value==="object")return JSON.stringify(value);return String(value);}
+const AUDIT_TABLE_LABELS={site_login_events:"دخول المشرفين",community_support_links:"روابط الدعم والتواصل",scrims:"السكريمات",scrim_team_applications:"طلبات فرق السكريم",scrim_rooms:"رومات السكريم",scrim_matches:"مواجهات السكريم",scrim_result_posts:"نتائج السكريم",scrim_registrations:"تسجيلات السكريم",scrim_invitations:"دعوات السكريم",scrim_team_access:"صلاحيات فرق السكريم",match_results:"نتائج المباريات",matches:"المباريات",tournaments:"البطولات",tournament_team_applications:"طلبات فرق البطولات",weekly_mvp_players:"لاعبو MVP الأسبوعي",public_messages:"الرسائل العامة",teams:"الفرق",role_change_audit:"تغييرات الرولات",team_bans:"لستة الباند"};
+const AUDIT_FIELD_LABELS={name:"الاسم",title:"العنوان",status:"الحالة",team_name:"اسم الفريق",team_tag:"تاق الفريق",team_short_name:"اختصار الفريق",slot_number:"رقم الخانة",room_id:"معرّف الروم",scrim_id:"السكريم",tournament_id:"البطولة",description:"الوصف",reason:"سبب الباند",ends_at:"ينتهي الباند في",registration_opens_at:"بداية التسجيل",registration_closes_at:"نهاية التسجيل",is_published:"حالة النشر",published:"حالة النشر",old_role:"الرول السابق",new_role:"الرول الجديد",target_user_id:"الحساب المستهدف",body:"نص الرسالة",placement:"المركز",kills:"الإقصاءات",points:"النقاط",match_number:"رقم المباراة",result_id:"النتيجة",team_code:"كود الفريق"};
+const AUDIT_HIDDEN_FIELDS=new Set(["id","created_at","updated_at","actor_user_id","actor_name","actor_role","user_id","reviewed_by","reviewed_at","created_by","scrim_id","tournament_id","room_id","access_code","whatsapp_number","password","token","secret","email","logo_url","status_changed_at"]);
+function auditValue(value,key){
+ if(value===null||value===undefined||value==="")return "—";
+ if(key==="published"||key==="is_published")return value===true?"منشور":"غير منشور";
+ if(key==="status"){return {accepted:"مقبول",pending:"قيد المراجعة",reserve:"احتياط",rejected:"مرفوض",active:"نشط",cancelled:"ملغي",registration_open:"التسجيل مفتوح",registration_closed:"التسجيل مغلق",live:"جارٍ" }[value]||String(value);}
+ if(key==="ends_at"||key==="registration_opens_at"||key==="registration_closes_at")return new Date(value).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"});
+ if(typeof value==="object")return JSON.stringify(value);
+ return String(value);
+}
+function auditActionTitle(row){
+ const obj=row.new_data||row.old_data||{};
+ const verb={insert:"أضاف",update:"عدّل",delete:"حذف"}[row.action]||"نفّذ عملية على";
+ if(row.table_name==="scrim_team_applications"){
+  if(row.action==="insert"&&obj.status==="accepted")return "أضاف فريقاً مباشرة إلى لستة السكريم";
+  if(row.action==="update"&&row.new_data?.status!==row.old_data?.status)return "غيّر حالة طلب فريق";
+  return verb+" طلب فريق في السكريم";
+ }
+ if(row.table_name==="teams")return verb+" فريقاً";
+ if(row.table_name==="team_bans")return row.action==="insert"?"أضاف فريقاً إلى لستة الباند":row.action==="delete"?"حذف فريقاً من لستة الباند":row.new_data?.published!==row.old_data?.published?(row.new_data?.published?"نشر باند فريق":"أخفى باند فريق"):"عدّل بيانات باند فريق";
+ if(row.table_name==="scrims")return verb+" سكريماً";
+ if(row.table_name==="scrim_rooms")return verb+" بيانات روم";
+ if(row.table_name==="tournaments")return verb+" بطولة";
+ if(row.table_name==="weekly_mvp_players")return verb+" بيانات MVP";
+ if(row.table_name==="match_results"||row.table_name==="scrim_result_posts")return verb+" نتائج مباراة";
+ if(row.table_name==="role_change_audit")return "غيّر صلاحية حساب";
+ return ({insert:"إضافة",update:"تعديل",delete:"حذف"}[row.action]||row.action)+" · "+(AUDIT_TABLE_LABELS[row.table_name]||row.table_name);
+}
 async function loadFounderAuditLog(){
  const status=$("founderAuditStatus"),host=$("founderAuditList");
  if(!status||!host)return;
@@ -1798,21 +1824,22 @@ async function loadFounderAuditLog(){
   status.textContent="عدد العمليات المعروضة: "+rows.length+" · يتم الاحتفاظ بالسجل داخل قاعدة البيانات.";
   if(!rows.length){host.innerHTML='<div class="card"><p class="small">لا توجد عمليات مسجلة بعد. ستظهر هنا العمليات الإدارية الجديدة من الآن فصاعداً.</p></div>';return;}
   host.innerHTML=rows.map(row=>{
-   const action={insert:"إضافة",update:"تعديل",delete:"حذف"}[row.action]||row.action;
-   const table=AUDIT_TABLE_LABELS[row.table_name]||row.table_name;
    const details=[],oldData=row.old_data||{},newData=row.new_data||{};
-   const keys=[...new Set([...Object.keys(oldData),...Object.keys(newData)])].filter(k=>!["id","created_at","updated_at","actor_user_id","actor_name","actor_role"].includes(k));
+   const keys=[...new Set([...Object.keys(oldData),...Object.keys(newData)])].filter(k=>!AUDIT_HIDDEN_FIELDS.has(k));
+   const priority=["team_name","name","team_tag","team_short_name","slot_number","reason","ends_at","status","published","title"];
+   keys.sort((a,b)=>(priority.indexOf(a)<0?100:priority.indexOf(a))-(priority.indexOf(b)<0?100:priority.indexOf(b)));
    for(const key of keys){
     const before=oldData[key],after=newData[key];
     if(row.action==="update"&&JSON.stringify(before)===JSON.stringify(after))continue;
     const label=AUDIT_FIELD_LABELS[key]||key;
-    const value=row.action==="insert"?auditValue(after):row.action==="delete"?auditValue(before):auditValue(before)+" ← "+auditValue(after);
+    const value=row.action==="insert"?auditValue(after,key):row.action==="delete"?auditValue(before,key):auditValue(before,key)+" ← "+auditValue(after,key);
     details.push('<div class="audit-detail"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>');
-    if(details.length>=7)break;
+    if(details.length>=6)break;
    }
-   const when=row.created_at?new Date(row.created_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}):"";
+   const when=row.created_at?new Date(row.created_at).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"}):"";
    const roleNames={founder:"المؤسس",admin:"المشرف العام",organizer:"المنظّم",results_manager:"مدير النتائج",tournament_manager:"مدير البطولات"};
-   return '<article class="card founder-audit-card"><div class="row" style="justify-content:space-between"><b>'+esc(row.actor_name||"مشرف")+'</b><span class="pill">'+esc(roleNames[row.actor_role]||row.actor_role||"")+'</span></div><h3>'+esc(action)+' · '+esc(table)+'</h3><div class="small">'+esc(when)+(row.record_id?' · سجل #'+esc(row.record_id.slice(0,8)):"")+'</div>'+(details.length?'<div class="audit-details">'+details.join("")+'</div>':'<p class="small">تم تنفيذ العملية.</p>')+'</article>';
+   const actor=row.actor_name&&row.actor_name!==row.actor_user_id?row.actor_name:"حساب إداري";
+   return '<article class="card founder-audit-card"><div class="row" style="justify-content:space-between"><b>'+esc(actor)+'</b><span class="pill">'+esc(roleNames[row.actor_role]||row.actor_role||"")+'</span></div><h3>'+esc(auditActionTitle(row))+'</h3><div class="small">'+esc(when)+'</div>'+(details.length?'<div class="audit-details">'+details.join("")+'</div>':'<p class="small">تم تنفيذ العملية.</p>')+'</article>';
   }).join("");
  }catch(error){status.textContent="تعذر تحميل سجل العمليات: "+(error.message||error);host.innerHTML="";}
 }
