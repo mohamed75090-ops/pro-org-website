@@ -2555,7 +2555,7 @@ async function loadPublicScrims(){
  el.innerHTML=rows.length?rows.map(s=>{
   const accepted=acceptedByScrim.get(s.id)||[],max=Math.max(1,Number(s.max_teams)||0),remaining=Math.max(0,max-accepted.length),pct=Math.min(100,accepted.length/max*100),state=scrimCountdownLabel(s);
   accepted.sort((a,b)=>(a.slot_number||9999)-(b.slot_number||9999));
-  const teamsHtml=renderAcceptedTeamsTable(accepted,"قائمة الفرق لم تُنشر بعد.");
+  const teamsHtml=renderAcceptedTeamsTable(accepted,"قائمة الفرق المقبولة مخفية حالياً. يمكن للفريق المقبول فتح مركز الفريق بكوده الخاص.");
   return `<article class="scrim-public-card" id="scrim-card-${esc(s.id)}">
    <div class="scrim-public-layout">
     <div>
@@ -2574,7 +2574,7 @@ async function loadPublicScrims(){
      <div class="accepted-team-list">${teamsHtml}</div>
     </aside>
    </div>
-   <div class="scrim-public-actions">${`<button data-scrim-register data-status="${esc(s.status)}" data-opens="${esc(s.registration_opens_at||"")}" data-closes="${esc(s.registration_closes_at||"")}" data-scheduled="${esc(s.scheduled_at||"")}" onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">${scrimRegistrationButtonText(s)}</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button><button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button></div>
+   <div class="scrim-public-actions">${`<button data-scrim-register data-status="${esc(s.status)}" data-opens="${esc(s.registration_opens_at||"")}" data-closes="${esc(s.registration_closes_at||"")}" data-scheduled="${esc(s.scheduled_at||"")}" onclick="openTeamRegistration('${s.id}','${esc(s.title)}')">${scrimRegistrationButtonText(s)}</button>`}<button type="button" class="secondary" onclick="openTeamCenterPage()">مركز الفريق</button>${accepted.length?`<button type="button" class="secondary" onclick="copyAcceptedScrimTeamsList()">نسخ اللسته</button>`:""}</div>
   </article>`;
  }).join(""):'<div class="card">لا توجد سكريمات منشورة حالياً.</div>';
  syncPublicScrimsPage();
@@ -2848,7 +2848,7 @@ async function loadScrimAdmin(){
    <div class="scrim-capacity"><div class="scrim-control-head"><b>الفرق المقبولة</b><b>${accepted.length} / ${max}</b></div><div class="bar"><i style="width:${pct}%"></i></div><span class="small">${Math.max(0,max-accepted.length)} مقعد متبقٍ</span></div>
    <h4>الفرق المقبولة</h4><div class="accepted-team-list">${teamsHtml}</div>
    <p class="small">الحالة: ${esc(s.status)} · آخر تحديث: ${formatScrimDate(s.updated_at||s.created_at)}</p>
-   <div class="row"><button class="secondary" onclick="toggleAcceptedTeamsVisibility('${s.id}',true)">إظهار الفرق للمستخدمين</button><button class="secondary" onclick="toggleAcceptedTeamsVisibility('${s.id}',false)">إخفاء الفرق</button></div><p class="small">ظهور قائمة الفرق للعامة: <b>${s.accepted_teams_visible?"مفعّل":"مخفي"}</b></p><div class="row">${s.status==="draft"?`<button onclick="publishScrim('${s.id}')">نشر الإعلان</button>`:""}<button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
+   <div class="row"><button class="${s.accepted_teams_visible?"secondary":""}" onclick="toggleAcceptedTeamsVisibility('${s.id}',true)">إظهار الفرق للمستخدمين</button><button class="${s.accepted_teams_visible?"":"secondary"}" onclick="toggleAcceptedTeamsVisibility('${s.id}',false)">إخفاء الفرق</button></div><p class="small">ظهور قائمة الفرق للعامة: <b>${s.accepted_teams_visible?"مفعّل":"مخفي"}</b></p><div class="row">${s.status==="draft"?`<button onclick="publishScrim('${s.id}')">نشر الإعلان</button>`:""}<button onclick="scrimStatus('${s.id}','registration_open')">فتح التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','registration_closed')">إغلاق التسجيل</button><button class="secondary" onclick="scrimStatus('${s.id}','live')">بدء</button><button class="secondary" onclick="scrimStatus('${s.id}','completed')">مكتمل</button><button class="danger" onclick="scrimStatus('${s.id}','cancelled')">إلغاء</button><button class="danger" onclick="scrimDelete('${s.id}','${esc(s.title)}')">حذف</button></div>
   </div>`;
  }).join(""):"لا توجد سكريمات بعد.";
  await loadScrimRequests();await loadScrimMatchAdmin();
