@@ -708,6 +708,7 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
     <button type="button" onclick="openTournamentsPage();closeSiteMenu()"><span>🏆</span> البطولات</button>
     <button type="button" onclick="openMessagesPage();closeSiteMenu()"><span>✉</span> الرسائل</button>
     <button type="button" onclick="openResultsPage();closeSiteMenu()"><span>▤</span> النتائج</button>
+    <button type="button" onclick="openBanListPage();closeSiteMenu()"><span>🚫</span> لستة الباند</button>
     <button type="button" class="admin-menu-link hidden" id="siteMonitoringMenu"><span>◷</span> متابعة الموقع</button>
     <button type="button" class="admin-menu-link hidden" id="roleManagementMenu"><span>♙</span> إدارة الرولات والصلاحيات</button>
     <button type="button" class="admin-menu-link hidden" id="founderAuditMenu"><span>▤</span> سجل عمليات المشرفين</button>
@@ -727,6 +728,11 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
 </section>
 <section id="tournamentsPage" class="section hidden"><button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button><div class="section-heading"><div><span class="pill">OFFICIAL TOURNAMENTS</span><h2>البطولات</h2><p>جميع إعلانات البطولات المنشورة. اختر بطولة لعرض تفاصيلها والتسجيل فيها.</p></div></div><div id="tournamentsPageList" class="grid"></div><div id="tournamentsPageDetail" class="hidden"></div></section>
  <section id="resultsPage" class="section hidden"><button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button><div class="section-heading"><div><span class="pill">OFFICIAL RESULTS</span><h2>النتائج المنشورة</h2><p>جميع النتائج التي تم نشرها واعتمادها من إدارة Professional eSports.</p></div></div><div class="card"><div id="resultsPageContent"><p class="muted">جاري تحميل النتائج...</p></div></div></section>
+<section id="banListPage" class="section hidden">
+ <button type="button" class="secondary" onclick="returnToPublicPages()">العودة إلى الرئيسية</button>
+ <div class="section-heading"><div><span class="pill">🚫 TEAM BAN LIST</span><h2>لستة الباند</h2><p>الفرق المحظورة المنشورة من إدارة PROFESSIONAL ESPORTS.</p></div></div>
+ <div id="publicBanList" class="grid"><p class="muted">جاري تحميل القائمة...</p></div>
+</section>
 <section id="registrationPage" class="card hidden">
  <button type="button" class="secondary" onclick="returnToPublicPages()">العودة للموقع</button>
  <h2 id="teamRegistrationTitle">تسجيل الفريق في السكريم</h2>
@@ -890,6 +896,7 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
   <button type="button" class="admin-tab" data-admin-main-tab="tournaments">البطولات</button>
   <button type="button" class="admin-tab" data-admin-main-tab="results">النتائج</button>
   <button type="button" class="admin-tab" data-admin-main-tab="mvp">MVP</button>
+  <button type="button" class="admin-tab" data-admin-main-tab="bans">🚫 الباند</button>
   
  </nav>
  <div id="adminMainScrims" class="admin-main-panel">
@@ -982,7 +989,21 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
    </div>
    <div class="card"><h2>مراجعة النتائج المعلّقة</h2><div id="pendingResults" class="muted">لا توجد نتائج محمّلة.</div></div>
   </div>
- <div id="adminMainMvp" class="admin-main-panel hidden">
+ <div id="adminMainBans" class="admin-main-panel hidden">
+ <div class="card">
+  <h2>🚫 إدارة لستة الباند</h2><p class="small">أضف الفريق وسبب الباند وتاريخ ووقت انتهائه، ثم اختر نشر الباند أو حفظه كمسودة.</p>
+  <form id="teamBanForm">
+   <input type="hidden" id="teamBanEditId">
+   <label for="teamBanName">اسم التيم</label><input id="teamBanName" maxlength="120" required>
+   <label for="teamBanReason">سبب الباند</label><textarea id="teamBanReason" maxlength="1500" rows="3" required></textarea>
+   <label for="teamBanEnds">ينتهي الباند في</label><input id="teamBanEnds" type="datetime-local" required>
+   <div class="row"><button type="submit" id="teamBanPublish">نشر الباند</button><button type="button" class="secondary" id="teamBanDraft">حفظ كمسودة</button><button type="button" class="secondary" id="teamBanCancel">إلغاء التعديل</button></div>
+  </form>
+  <p id="teamBanAdminStatus" class="small" role="status"></p>
+ </div>
+ <div class="card"><h3>الفرق المضافة</h3><div id="teamBanAdminList">جاري تحميل القائمة...</div></div>
+</div>
+<div id="adminMainMvp" class="admin-main-panel hidden">
  <div id="weeklyMvpAdmin" class="card hidden">
   <h2>إدارة MVP الأسبوعي</h2>
   <div id="mvpAdminStatus" class="notice">جاري تحميل بيانات MVP الأسبوعي...</div>
@@ -1875,13 +1896,14 @@ async function refreshAdmin(){
  const canTournaments=["founder","admin","tournament_manager"].includes(currentRole);
  const canResults=["founder","admin","results_manager","tournament_manager"].includes(currentRole);
  const canMvp=["founder","admin","tournament_manager"].includes(currentRole);
+ const canBans=["founder","admin","organizer"].includes(currentRole);
  showStandalonePage("admin");
  show("siteMonitoringMenu",["founder","admin"].includes(currentRole));
  show("roleManagementMenu",currentRole==="founder");
  show("founderAuditMenu",currentRole==="founder");
  $("who").innerHTML=esc(profile.display_name||user.email)+" <span class=\"role-badge "+activeRole[1]+"\">"+esc(activeRole[0])+"</span>";
  $("roleNote").innerHTML="الصلاحية الحالية: <span class=\"role-badge "+activeRole[1]+"\">"+esc(activeRole[0])+"</span>";
- const tabAccess={scrims:canScrims,rooms:canRooms,tournaments:canTournaments,results:canResults,mvp:canMvp};
+ const tabAccess={scrims:canScrims,rooms:canRooms,tournaments:canTournaments,results:canResults,mvp:canMvp,bans:canBans};
  document.querySelectorAll("[data-admin-main-tab]").forEach(tab=>tab.classList.toggle("hidden",!tabAccess[tab.dataset.adminMainTab]));
  show("teamForm",["founder","admin"].includes(currentRole));
  show("tournamentForm",canTournaments);
@@ -1904,7 +1926,7 @@ async function refreshAdmin(){
  }
  if(canScrims){loadTeamApplicationsAdmin().catch(e=>console.error("تعذر تحميل طلبات الفرق:",e));startTeamApplicationNotifications();}
  if(currentRole==="founder")await loadRoleManagement();
- const firstTab=canScrims?"scrims":canRooms?"rooms":canTournaments?"tournaments":canResults?"results":"mvp";
+ const firstTab=canScrims?"scrims":canRooms?"rooms":canTournaments?"tournaments":canResults?"results":canMvp?"mvp":"bans";
  if(typeof window.activateAdminMainTab==="function")window.activateAdminMainTab(firstTab);
 
  const [ts,ms,tm,rs]=await Promise.all([
@@ -2200,7 +2222,7 @@ function scrimAnyRegistrationIsOpen(scrim){const phase=scrimRegistrationPhase(sc
 function scrimRegistrationButtonText(scrim){return scrimReserveRegistrationIsOpen(scrim)?"التسجيل كاحتياط":"تسجيل الفريق";}
 function showStandalonePage(pageId){
  if(document.body.classList.contains("auth-required")&&!["playerAuthPage","login"].includes(pageId)){openPlayerAuth("login");return;}
- ["public","scrimPublic","scrimsPage","tournamentsPage","resultsPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage","founderAuditPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
+ ["public","scrimPublic","scrimsPage","tournamentsPage","resultsPage","banListPage","messagesPage","registrationPage","teamCenterPage","tournamentDetailsPage","tournamentRegistrationPage","tournamentTeamCenterPage","login","playerAuthPage","playerProfilePage","admin","siteMonitoringPage","roleManagementPage","founderAuditPage"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",id!==pageId);});
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function returnToPublicPages(){
@@ -2310,7 +2332,61 @@ $("publicMessageForm").addEventListener("submit",async event=>{
 });
 
 function openScrimsPage(){closeSiteMenu();showStandalonePage("scrimsPage");syncPublicScrimsPage();}
-async function openResultsPage(){closeSiteMenu();showStandalonePage("resultsPage");const host=$("resultsPageContent");if(host)host.innerHTML='<p class="muted">جاري تحميل النتائج المنشورة...</p>';await loadPublic();if(host){const source=$("results");host.innerHTML=source?.innerHTML||'<p class="muted">لا توجد نتائج منشورة حالياً.</p>';if(!host.textContent.trim())host.innerHTML='<p class="muted">لا توجد نتائج منشورة حالياً.</p>';}}
+async async function openBanListPage(){
+ closeSiteMenu();showStandalonePage("banListPage");
+ const host=$("publicBanList");host.textContent="جاري تحميل لستة الباند...";
+ const {data,error}=await client.from("team_bans").select("id,team_name,reason,ends_at").eq("published",true).order("created_at",{ascending:false});
+ if(error){host.textContent="تعذر تحميل لستة الباند: "+error.message;return;}
+ const rows=(data||[]).filter(x=>new Date(x.ends_at).getTime()>Date.now());
+ host.innerHTML=rows.length?rows.map(x=>'<div class="card"><h3>🚫 '+esc(x.team_name)+'</h3><p><b>سبب الباند:</b> '+esc(x.reason)+'</p><p><b>ينتهي الباند في:</b> '+esc(new Date(x.ends_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Riyadh"}))+' (بتوقيت السعودية)</p></div>').join(""):'<div class="card">لا توجد فرق عليها باند نشط حالياً.</div>';
+}
+window.openBanListPage=openBanListPage;
+function clearTeamBanForm(){
+ $("teamBanForm").reset();$("teamBanEditId").value="";$("teamBanAdminStatus").textContent="";
+}
+async function saveTeamBan(publish){
+ const name=$("teamBanName").value.trim(),reason=$("teamBanReason").value.trim(),end=$("teamBanEnds").value;
+ if(name.length<2||reason.length<3||!end){$("teamBanAdminStatus").textContent="أكمل اسم التيم وسبب الباند وتاريخ الانتهاء.";return;}
+ const endsAt=new Date(end);
+ if(!Number.isFinite(endsAt.getTime())||endsAt.getTime()<=Date.now()){$("teamBanAdminStatus").textContent="اختر تاريخ انتهاء مستقبلي.";return;}
+ const {data:{user}}=await client.auth.getUser();
+ if(!user)return;
+ const record={team_name:name,reason,ends_at:endsAt.toISOString(),published:publish,updated_at:new Date().toISOString()};
+ const id=$("teamBanEditId").value;
+ const query=id?client.from("team_bans").update(record).eq("id",id):client.from("team_bans").insert({...record,created_by:user.id});
+ const {error}=await query;
+ if(error){$("teamBanAdminStatus").textContent="تعذر الحفظ: "+error.message;return;}
+ clearTeamBanForm();$("teamBanAdminStatus").textContent=publish?"تم نشر الباند بنجاح.":"تم حفظ الباند كمسودة.";
+ await loadAdminBans();
+}
+async function loadAdminBans(){
+ const host=$("teamBanAdminList");if(!host)return;
+ const {data,error}=await client.from("team_bans").select("id,team_name,reason,ends_at,published").order("created_at",{ascending:false});
+ if(error){host.textContent="تعذر تحميل الباندات: "+error.message;return;}
+ window.__teamBanRows=data||[];
+ host.innerHTML=window.__teamBanRows.length?window.__teamBanRows.map(x=>'<div class="card"><h3>'+esc(x.team_name)+'</h3><p>السبب: '+esc(x.reason)+'</p><p>ينتهي: '+esc(new Date(x.ends_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}))+'</p><p>'+(x.published?"منشور":"مسودة")+'</p><div class="row"><button type="button" class="secondary" onclick="editTeamBan(\''+x.id+'\')">تعديل</button><button type="button" class="secondary" onclick="toggleTeamBan(\''+x.id+'\','+(!x.published)+')">'+(x.published?"إخفاء":"نشر")+'</button><button type="button" class="danger" onclick="deleteTeamBan(\''+x.id+'\')">حذف</button></div></div>').join(""):"لا توجد فرق مضافة.";
+}
+function editTeamBan(id){
+ const x=(window.__teamBanRows||[]).find(r=>r.id===id);if(!x)return;
+ $("teamBanEditId").value=x.id;$("teamBanName").value=x.team_name;$("teamBanReason").value=x.reason;
+ const date=new Date(x.ends_at);$("teamBanEnds").value=new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+window.editTeamBan=editTeamBan;
+async function toggleTeamBan(id,published){
+ const {error}=await client.from("team_bans").update({published,updated_at:new Date().toISOString()}).eq("id",id);
+ if(error)alert(error.message);else await loadAdminBans();
+}
+window.toggleTeamBan=toggleTeamBan;
+async function deleteTeamBan(id){
+ if(!confirm("حذف باند هذا الفريق نهائياً؟"))return;
+ const {error}=await client.from("team_bans").delete().eq("id",id);
+ if(error)alert(error.message);else await loadAdminBans();
+}
+window.deleteTeamBan=deleteTeamBan;
+$("teamBanForm").addEventListener("submit",e=>{e.preventDefault();saveTeamBan(true);});
+$("teamBanDraft").addEventListener("click",()=>saveTeamBan(false));
+$("teamBanCancel").addEventListener("click",clearTeamBanForm);
+function openResultsPage(){closeSiteMenu();showStandalonePage("resultsPage");const host=$("resultsPageContent");if(host)host.innerHTML='<p class="muted">جاري تحميل النتائج المنشورة...</p>';await loadPublic();if(host){const source=$("results");host.innerHTML=source?.innerHTML||'<p class="muted">لا توجد نتائج منشورة حالياً.</p>';if(!host.textContent.trim())host.innerHTML='<p class="muted">لا توجد نتائج منشورة حالياً.</p>';}}
 window.openResultsPage=openResultsPage;
 function openTournamentsPage(){closeSiteMenu();showStandalonePage("tournamentsPage");$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");renderTournamentPageList(tournamentsCache||[]);}
 window.openTournamentsPage=openTournamentsPage;
@@ -2670,7 +2746,7 @@ function setupAdminScrimTabs(){
 setupAdminScrimTabs();
 function setupAdminMainTabs(){
  const buttons=document.querySelectorAll("[data-admin-main-tab]");
- const panels={scrims:$("adminMainScrims"),rooms:$("adminMainRooms"),tournaments:$("adminMainTournaments"),results:$("adminMainResults"),mvp:$("adminMainMvp")};
+ const panels={scrims:$("adminMainScrims"),rooms:$("adminMainRooms"),tournaments:$("adminMainTournaments"),results:$("adminMainResults"),mvp:$("adminMainMvp"),bans:$("adminMainBans")};
  const roomPanel=$("adminTabRooms");
  const roomHost=$("adminRoomsContent");
  if(roomPanel&&roomHost&&roomPanel.parentElement!==roomHost){roomHost.appendChild(roomPanel);roomPanel.classList.remove("hidden");}
@@ -2679,6 +2755,7 @@ function setupAdminMainTabs(){
  function activate(name){
   buttons.forEach(b=>b.classList.toggle("active",b.dataset.adminMainTab===name));
   Object.entries(panels).forEach(([key,panel])=>{if(panel)panel.classList.toggle("hidden",key!==name);});
+  if(name==="bans")loadAdminBans();
   if(name==="rooms"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();if(roomPanel)roomPanel.classList.remove("hidden");}
   if(name==="scrims"){const b=document.querySelector('[data-admin-tab="scrims"]');if(b)b.click();}
   if(name==="tournaments"&&["founder","admin","tournament_manager"].includes(currentRole))loadAdminTournamentManagement();
