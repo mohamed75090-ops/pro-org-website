@@ -1010,7 +1010,7 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
   <h2>🚫 إدارة لستة الباند</h2><p class="small">أضف الفريق وسبب الباند وتاريخ ووقت انتهائه، ثم اختر نشر الباند أو حفظه كمسودة.</p>
   <form id="teamBanForm">
    <input type="hidden" id="teamBanEditId">
-   <label for="teamBanName">اسم التيم</label><input id="teamBanName" maxlength="120" required>
+   <label for="teamBanName">اسم التيم</label><input id="teamBanName" maxlength="120" required><label for="teamBanTag">تاق الفريق الكامل (TAG) — للمطابقة عند التسجيل</label><input id="teamBanTag" maxlength="80" required placeholder="مثلاً PRO"><p class="small">يُرفض التسجيل عند تطابق التاق كاملاً فقط، بدون حساسية للأحرف الكبيرة والصغيرة.</p>
    <label for="teamBanReason">سبب الباند</label><textarea id="teamBanReason" maxlength="1500" rows="3" required></textarea>
    <label for="teamBanEnds">ينتهي الباند في</label><input id="teamBanEnds" type="datetime-local" required>
    <div class="row"><button type="submit" id="teamBanPublish">نشر الباند</button><button type="button" class="secondary" id="teamBanDraft">حفظ كمسودة</button><button type="button" class="secondary" id="teamBanCancel">إلغاء التعديل</button></div>
@@ -2405,13 +2405,13 @@ function clearTeamBanForm(){
  $("teamBanForm").reset();$("teamBanEditId").value="";$("teamBanAdminStatus").textContent="";
 }
 async function saveTeamBan(publish){
- const name=$("teamBanName").value.trim(),reason=$("teamBanReason").value.trim(),end=$("teamBanEnds").value;
- if(name.length<2||reason.length<3||!end){$("teamBanAdminStatus").textContent="أكمل اسم التيم وسبب الباند وتاريخ الانتهاء.";return;}
+ const name=$("teamBanName").value.trim(),tag=$("teamBanTag").value.trim(),reason=$("teamBanReason").value.trim(),end=$("teamBanEnds").value;
+ if(name.length<2||tag.length<2||reason.length<3||!end){$("teamBanAdminStatus").textContent="أكمل اسم التيم والتاق الكامل وسبب الباند وتاريخ الانتهاء.";return;}
  const endsAt=new Date(end);
  if(!Number.isFinite(endsAt.getTime())||endsAt.getTime()<=Date.now()){$("teamBanAdminStatus").textContent="اختر تاريخ انتهاء مستقبلي.";return;}
  const {data:{user}}=await client.auth.getUser();
  if(!user)return;
- const record={team_name:name,reason,ends_at:endsAt.toISOString(),published:publish,updated_at:new Date().toISOString()};
+ const record={team_name:name,team_tag:tag,reason,ends_at:endsAt.toISOString(),published:publish,updated_at:new Date().toISOString()};
  const id=$("teamBanEditId").value;
  const query=id?client.from("team_bans").update(record).eq("id",id):client.from("team_bans").insert({...record,created_by:user.id});
  const {error}=await query;
@@ -2421,14 +2421,14 @@ async function saveTeamBan(publish){
 }
 async function loadAdminBans(){
  const host=$("teamBanAdminList");if(!host)return;
- const {data,error}=await client.from("team_bans").select("id,team_name,reason,ends_at,published").order("created_at",{ascending:false});
+ const {data,error}=await client.from("team_bans").select("id,team_name,team_tag,reason,ends_at,published").order("created_at",{ascending:false});
  if(error){host.textContent="تعذر تحميل الباندات: "+error.message;return;}
  window.__teamBanRows=data||[];
- host.innerHTML=window.__teamBanRows.length?window.__teamBanRows.map(x=>'<div class="card"><h3>'+esc(x.team_name)+'</h3><p>السبب: '+esc(x.reason)+'</p><p>ينتهي: '+esc(new Date(x.ends_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}))+'</p><p>'+(x.published?"منشور":"مسودة")+'</p><div class="row"><button type="button" class="secondary" onclick="editTeamBan(\''+x.id+'\')">تعديل</button><button type="button" class="secondary" onclick="toggleTeamBan(\''+x.id+'\','+(!x.published)+')">'+(x.published?"إخفاء":"نشر")+'</button><button type="button" class="danger" onclick="deleteTeamBan(\''+x.id+'\')">حذف</button></div></div>').join(""):"لا توجد فرق مضافة.";
+ host.innerHTML=window.__teamBanRows.length?window.__teamBanRows.map(x=>'<div class="card"><h3>'+esc(x.team_name)+'</h3><p>التاق المحظور: '+esc(x.team_tag||'غير محدد — لا يمنع التسجيل')+'</p><p>السبب: '+esc(x.reason)+'</p><p>ينتهي: '+esc(new Date(x.ends_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}))+'</p><p>'+(x.published?"منشور":"مسودة")+'</p><div class="row"><button type="button" class="secondary" onclick="editTeamBan(\''+x.id+'\')">تعديل</button><button type="button" class="secondary" onclick="toggleTeamBan(\''+x.id+'\','+(!x.published)+')">'+(x.published?"إخفاء":"نشر")+'</button><button type="button" class="danger" onclick="deleteTeamBan(\''+x.id+'\')">حذف</button></div></div>').join(""):"لا توجد فرق مضافة.";
 }
 function editTeamBan(id){
  const x=(window.__teamBanRows||[]).find(r=>r.id===id);if(!x)return;
- $("teamBanEditId").value=x.id;$("teamBanName").value=x.team_name;$("teamBanReason").value=x.reason;
+ $("teamBanEditId").value=x.id;$("teamBanName").value=x.team_name;$("teamBanTag").value=x.team_tag||"";$("teamBanReason").value=x.reason;
  const date=new Date(x.ends_at);$("teamBanEnds").value=new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
 }
 window.editTeamBan=editTeamBan;
