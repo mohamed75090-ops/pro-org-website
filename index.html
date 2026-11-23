@@ -2338,7 +2338,7 @@ async function openBanListPage(){
  const {data,error}=await client.from("team_bans").select("id,team_name,reason,ends_at").eq("published",true).order("created_at",{ascending:false});
  if(error){host.textContent="تعذر تحميل لستة الباند: "+error.message;return;}
  const rows=(data||[]).filter(x=>new Date(x.ends_at).getTime()>Date.now());
- host.innerHTML=rows.length?rows.map(x=>'<div class="card"><h3>🚫 '+esc(x.team_name)+'</h3><p><b>سبب الباند:</b> '+esc(x.reason)+'</p><p><b>ينتهي الباند في:</b> '+esc(new Date(x.ends_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Riyadh"}))+' (بتوقيت السعودية)</p></div>').join(""):'<div class="card">لا توجد فرق عليها باند نشط حالياً.</div>';
+ host.innerHTML=rows.length?rows.map(x=>'<div class="card"><h3>🚫 '+esc(x.team_name)+'</h3><p><b>سبب الباند:</b> '+esc(x.reason)+'</p><p><b>ينتهي الباند في:</b> '+esc(new Intl.DateTimeFormat("en-GB",{year:"numeric",month:"2-digit",day:"2-digit",timeZone:"Asia/Riyadh"}).format(new Date(x.ends_at)))+'</p><p><b>المدة المتبقية:</b> '+String(Math.ceil((new Date(x.ends_at).getTime()-Date.now())/86400000))+' يوم</p></div>').join(""):'<div class="card">لا توجد فرق عليها باند نشط حالياً.</div>';
 }
 window.openBanListPage=openBanListPage;
 function clearTeamBanForm(){
