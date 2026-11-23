@@ -829,7 +829,7 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
    <button type="button" id="playerLoginButton">تسجيل الدخول</button>
   </div>
   <form id="playerRegisterForm" class="hidden">
-   <label for="playerRegisterUsername">اسم المستخدم</label><input id="playerRegisterUsername" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_ء-يٱ-ۓݐ-ݿࢠ-ࣿﭐ-﷽ﹰ-ﻼ]+" placeholder="اسم عربي أو إنجليزي (3 إلى 24 حرفاً)" required>
+   <label for="playerRegisterUsername">اسم المستخدم</label><input id="playerRegisterUsername" autocomplete="username" minlength="3" placeholder="اسم عربي أو إنجليزي، ويمكن كتابة الاسم كاملاً" required>
    <label for="playerRegisterPassword">كلمة المرور</label><input id="playerRegisterPassword" type="password" autocomplete="new-password" minlength="8" placeholder="8 أحرف على الأقل" required>
    <label for="playerRegisterWhatsapp">رقم الواتساب</label><div class="phone-country-wrap" id="phoneCountryWrap"><button type="button" class="phone-country-trigger" id="phoneCountryTrigger" aria-expanded="false" aria-controls="phoneCountryPicker"><span id="phoneCountryFlag">🇸🇩</span><b id="phoneCountryDial">+249</b><span>⌄</span></button><input id="playerRegisterWhatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="أدخل الرقم بدون مفتاح الدولة" required><div class="phone-country-picker hidden" id="phoneCountryPicker"><div class="phone-country-search-wrap"><span>⌕</span><input id="phoneCountrySearch" type="search" placeholder="ابحث عن الدولة أو رمز الاتصال..." autocomplete="off"></div><div class="phone-country-options" id="phoneCountryOptions" role="listbox" aria-label="اختيار الدولة"></div></div></div><p class="small">اختر الدولة ثم اكتب رقمك بدون مفتاح الدولة.</p>
    <button type="submit" id="playerRegisterButton">إنشاء الحساب</button>
@@ -845,7 +845,7 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
   <div class="card profile-account-card"><p>اسم المستخدم: <b id="playerProfileUsername">—</b></p><div class="profile-rank-row"><span class="profile-rank-label">رتبة الحساب</span><span id="playerProfileRole" class="role-badge role-player role-profile-rank">لاعب محترف</span></div><p>رقم الواتساب: <b id="playerProfileWhatsapp">—</b></p><p>حالة التحقق: <span class="small">غير موثّق حالياً</span></p></div>
   <form id="playerProfileContactForm" class="card" style="margin:14px 0">
    <h3>تأكيد بيانات الحساب</h3><p class="small">أدخل رقم الواتساب الدولي مع مفتاح الدولة واضغط حفظ. سيتم حفظ الرقم في ملفك الشخصي.</p>
-   <label for="playerProfileEditUsername">اسم المستخدم</label><input id="playerProfileEditUsername" required maxlength="24" autocomplete="username">
+   <label for="playerProfileEditUsername">اسم المستخدم</label><input id="playerProfileEditUsername" required minlength="3" autocomplete="username">
    <label for="playerProfileEditWhatsapp">رقم الواتساب مع مفتاح الدولة</label><input id="playerProfileEditWhatsapp" required inputmode="tel" autocomplete="tel" placeholder="249xxxxxxxxx">
    <button type="submit" id="playerProfileSaveContact">تأكيد وحفظ البيانات</button>
    <p id="playerProfileContactMessage" class="small" role="status"></p>
@@ -1958,7 +1958,7 @@ async function openPlayerProfile(){
  $("playerProfileWhatsapp").textContent="جاري تحميل الرقم...";
  const {data:contact,error:contactError}=await client.rpc("get_my_player_contact");
  const saved=Array.isArray(contact)?contact[0]:contact;
- const savedName=String(saved?.username||username);
+ const savedName=String(saved?.username||user.user_metadata?.username||username);
  const savedPhone=String(saved?.whatsapp_number||"");
  $("playerProfileUsername").textContent=savedName;
  $("playerProfileWhatsapp").textContent=contactError?"تعذر تحميل الرقم":(savedPhone||"غير مسجل");
@@ -2031,18 +2031,24 @@ function openPlayerAuth(mode){
 $("playerRegisterMenu").onclick=()=>openPlayerAuth("register");
 $("playerAuthBack").onclick=returnToPublicPages;
 $("switchPlayerAuth").onclick=()=>openPlayerAuth($("playerRegisterForm").classList.contains("hidden")?"register":"login");
-function normalizePlayerUsername(value){return String(value||"").normalize("NFC").trim().toLowerCase();}
-function isValidPlayerUsername(value){return /^[\p{L}\p{N}_]{3,24}$/u.test(value);}
-function playerAuthEmail(value){
+function normalizePlayerUsername(value){return String(value||"").normalize("NFC").trim().replace(/\\s+/g," ").toLowerCase();}
+function isValidPlayerUsername(value){return /^[\\p{L}\\p{M}\\p{N}_ -]+$/u.test(value)&&Array.from(value.replace(/\\s/g,"")).length>=3;}
+async function playerAuthEmail(value){
  const username=normalizePlayerUsername(value);
+ const oldSafe=/^[a-z0-9_]{3,24}$/.test(username);
+ if(oldSafe)return username+"@players.professionalesports.com";
  const hasNonAscii=Array.from(username).some(ch=>ch.codePointAt(0)>127);
- const localPart=hasNonAscii?"u-"+Array.from(username).map(ch=>ch.codePointAt(0).toString(16)).join("-"):username;
- return localPart+"@players.professionalesports.com";
+ const encoded=hasNonAscii||username.includes(" ")||username.includes("-")?"u-"+Array.from(username).map(ch=>ch.codePointAt(0).toString(16)).join("-"):username;
+ if(encoded.length<=64)return encoded+"@players.professionalesports.com";
+ const bytes=new TextEncoder().encode(username);
+ const digest=await crypto.subtle.digest("SHA-256",bytes);
+ const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+ return "u-h"+hash+"@players.professionalesports.com";
 }
 $("playerLoginButton").onclick=async()=>{
  const username=normalizePlayerUsername($("playerLoginUsername").value),password=$("playerLoginPassword").value;
- if(!isValidPlayerUsername(username)){alert("اسم المستخدم يجب أن يكون من 3 إلى 24 حرفاً عربياً أو إنجليزياً أو رقماً أو _");return;}
- const {error}=await client.auth.signInWithPassword({email:playerAuthEmail(username),password});
+ if(!isValidPlayerUsername(username)){alert("اسم المستخدم يجب أن يحتوي على 3 أحرف على الأقل، ويمكن كتابة اسم عربي أو إنجليزي كامل");return;}
+ const {error}=await client.auth.signInWithPassword({email:await playerAuthEmail(username),password});
  if(error){$("playerAuthMessage").textContent="تعذر الدخول: "+error.message;$("playerAuthMessage").classList.remove("hidden");return;}
  const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);
  $("playerAuthMessage").textContent="تم تسجيل الدخول بنجاح.";$("playerAuthMessage").classList.remove("hidden");
@@ -2051,7 +2057,7 @@ $("playerLoginButton").onclick=async()=>{
 $("playerRegisterForm").onsubmit=async(event)=>{
  event.preventDefault();
  const username=normalizePlayerUsername($("playerRegisterUsername").value),password=$("playerRegisterPassword").value,localWhatsapp=$("playerRegisterWhatsapp").value.replace(/[^0-9]/g,""),whatsapp=selectedPlayerPhoneCountry[3]+localWhatsapp;
- if(!isValidPlayerUsername(username)){alert("اسم المستخدم يجب أن يكون من 3 إلى 24 حرفاً عربياً أو إنجليزياً أو رقماً أو _");return;}
+ if(!isValidPlayerUsername(username)){alert("اسم المستخدم يجب أن يحتوي على 3 أحرف على الأقل، ويمكن كتابة اسم عربي أو إنجليزي كامل");return;}
  if(!/^\d{6,14}$/.test(localWhatsapp)){alert("أدخل رقم واتساب صحيحاً بدون رمز الدولة (من 6 إلى 14 رقماً).");return;}
  const button=$("playerRegisterButton");button.disabled=true;button.textContent="جاري إنشاء الحساب...";
  try{
@@ -2770,7 +2776,7 @@ async function loadTeamApplicationsAdmin(){
  if(pendingCountEl)pendingCountEl.textContent=String(pending.length);
  if(reserveCountEl)reserveCountEl.textContent=String(reserve.length);
  const card=r=>{
-  const username=usernames.get(r.submitted_by)||"غير متوفر";
+  const username=usernames.get(r.submitted_by)||"الحساب لم يُكمل اسم المستخدم";
   const phone=String(whatsappNumbers.get(r.submitted_by)||"");
   const digits=phone.replace(/[^0-9]/g,"");
   const whatsapp=digits?'<a href="https://wa.me/'+esc(digits)+'" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:7px;color:#7ee0a5;font-weight:800;text-decoration:underline" aria-label="فتح واتساب مع '+esc(username)+'">فتح محادثة واتساب ↗</a>':'<span class="small">لا يوجد رقم واتساب محفوظ في الملف الشخصي</span>';
