@@ -2031,8 +2031,8 @@ function openPlayerAuth(mode){
 $("playerRegisterMenu").onclick=()=>openPlayerAuth("register");
 $("playerAuthBack").onclick=returnToPublicPages;
 $("switchPlayerAuth").onclick=()=>openPlayerAuth($("playerRegisterForm").classList.contains("hidden")?"register":"login");
-function normalizePlayerUsername(value){return String(value||"").normalize("NFC").trim().replace(/\\s+/g," ").toLowerCase();}
-function isValidPlayerUsername(value){return /^[\\p{L}\\p{M}\\p{N}_ -]+$/u.test(value)&&Array.from(value.replace(/\\s/g,"")).length>=3;}
+function normalizePlayerUsername(value){return String(value||"").normalize("NFC").trim().replace(/\s+/g," ").toLowerCase();}
+function isValidPlayerUsername(value){return /^[\p{L}\p{M}\p{N}_ -]+$/u.test(value)&&Array.from(value.replace(/\s/g,"")).length>=3;}
 async function playerAuthEmail(value){
  const username=normalizePlayerUsername(value);
  const oldSafe=/^[a-z0-9_]{3,24}$/.test(username);
@@ -2061,7 +2061,7 @@ $("playerRegisterForm").onsubmit=async(event)=>{
  if(!/^\d{6,14}$/.test(localWhatsapp)){alert("أدخل رقم واتساب صحيحاً بدون رمز الدولة (من 6 إلى 14 رقماً).");return;}
  const button=$("playerRegisterButton");button.disabled=true;button.textContent="جاري إنشاء الحساب...";
  try{
-  const {data,error}=await client.auth.signUp({email:playerAuthEmail(username),password,options:{data:{username,display_name:username,account_type:"player"}}});
+  const {data,error}=await client.auth.signUp({email:await playerAuthEmail(username),password,options:{data:{username,display_name:username,account_type:"player"}}});
   if(error)throw error;
   if(!data.user)throw new Error("لم يتم إنشاء الحساب.");
   if(!data.session)throw new Error("تم إنشاء الحساب لكن تأكيد البريد مفعّل في Supabase. عطّل تأكيد البريد الإلكتروني في إعدادات Auth ثم أعد المحاولة؛ اللاعب لا يحتاج بريداً.");
