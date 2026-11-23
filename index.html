@@ -2139,7 +2139,7 @@ $("addTeam").onclick=async()=>{
   out.innerHTML='<b>تم قبول الفريق في الخانة '+esc(result.slot_number)+'</b><p>كود مركز الفريق: <strong style="font-size:24px;letter-spacing:3px">'+esc(code)+'</strong></p><button type="button" class="secondary" id="copyNewTeamCode">نسخ كود الفريق</button>';
   $("copyNewTeamCode").onclick=async()=>{try{await navigator.clipboard.writeText(code);$("copyNewTeamCode").textContent="تم النسخ";}catch(e){prompt("انسخ كود الفريق:",code);}};
   $("teamName").value="";$("teamTag").value="";$("teamShortName").value="";$("teamSlotNumber").value="";
-  await loadScrimAdmin();await loadAdminScrimTeamApplications();
+  await loadScrimAdmin();await loadTeamApplications();
  }catch(e){out.textContent="تعذر إضافة الفريق: "+(e.message||e);}
  finally{button.disabled=false;}
 };
