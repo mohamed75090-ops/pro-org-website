@@ -2035,11 +2035,12 @@ function normalizePlayerUsername(value){return String(value||"").normalize("NFC"
 function isValidPlayerUsername(value){return /^[\p{L}\p{M}\p{N}_ -]+$/u.test(value)&&Array.from(value.replace(/\s/g,"")).length>=3;}
 async function playerAuthEmail(value){
  const username=normalizePlayerUsername(value);
+ const legacyName=/^[\p{L}\p{N}_]{3,24}$/u.test(username);
  const oldSafe=/^[a-z0-9_]{3,24}$/.test(username);
  if(oldSafe)return username+"@players.professionalesports.com";
  const hasNonAscii=Array.from(username).some(ch=>ch.codePointAt(0)>127);
  const encoded=hasNonAscii||username.includes(" ")||username.includes("-")?"u-"+Array.from(username).map(ch=>ch.codePointAt(0).toString(16)).join("-"):username;
- if(encoded.length<=64)return encoded+"@players.professionalesports.com";
+ if(legacyName||encoded.length<=64)return encoded+"@players.professionalesports.com";
  const bytes=new TextEncoder().encode(username);
  const digest=await crypto.subtle.digest("SHA-256",bytes);
  const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
