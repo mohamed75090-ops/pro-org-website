@@ -900,7 +900,16 @@ body.auth-required #playerAuthPage,body.auth-required #login{display:block!impor
   
  </nav>
  <div id="adminMainScrims" class="admin-main-panel">
- <div id="teamForm" class="card hidden"><h2>إضافة فريق</h2><label>اسم الفريق</label><input id="teamName"><label>اختصار الفريق (TAG)</label><input id="teamTag"><button id="addTeam">حفظ الفريق</button></div>
+ <div id="teamForm" class="card"><h2>إضافة فريق مباشرة إلى لستة السكريم</h2>
+ <p class="small">اختر السكريم والخانة، ثم أضف الفريق. سيتولد كود من 3 أرقام يمكن مشاركته لفتح مركز الفريق.</p>
+ <label for="teamScrimSelect">السكريم</label><select id="teamScrimSelect"><option value="">جاري تحميل السكريمات...</option></select>
+ <label for="teamName">اسم الفريق</label><input id="teamName" maxlength="120">
+ <label for="teamTag">تاق الفريق (TAG)</label><input id="teamTag" maxlength="80">
+ <label for="teamShortName">اختصار الفريق</label><input id="teamShortName" maxlength="30">
+ <label for="teamSlotNumber">رقم الخانة (Slot)</label><input id="teamSlotNumber" type="number" min="3" max="1000" placeholder="مثلاً 5">
+ <button type="button" id="addTeam">إضافة الفريق إلى اللستة وتوليد الكود</button>
+ <div id="adminAddedTeamCode" class="notice" role="status"></div>
+ </div>
 <div id="scrimAdmin" class="card hidden">
  <h2>لوحة إدارة السكريمات</h2>
  <p class="small">إدارة السكريمات والفرق والرومات من مكان واحد.</p>
@@ -2116,7 +2125,24 @@ $("closeLogin").onclick=returnToPublicPages;
 $("adminLoginForm").addEventListener("submit",async(event)=>{event.preventDefault();const button=$("signIn");button.disabled=true;button.textContent="جاري تسجيل الدخول...";try{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){alert(error.message);return;}const tracked=await client.rpc("record_site_login");if(tracked.error)console.warn("Login tracking:",tracked.error.message);await refreshAdmin();msg("تم تسجيل الدخول.","ok");}finally{button.disabled=false;button.textContent="تسجيل الدخول";}});
 $("signOut").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);show("founderAuditMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();msg("تم تسجيل الخروج.");};
 $("playerSignOutButton").onclick=async()=>{await client.auth.signOut();currentRole=null;show("siteMonitoringMenu",false);show("roleManagementMenu",false);show("founderAuditMenu",false);await syncPlayerMenu(null);recordAnonymousSiteVisit();returnToPublicPages();};
-$("addTeam").onclick=async()=>{const {error}=await client.from("teams").insert({name:$("teamName").value.trim(),tag:$("teamTag").value.trim().toUpperCase()});if(error)alert(error.message);else{$("teamName").value="";$("teamTag").value="";await refreshAdmin();await loadPublic();}};
+$("addTeam").onclick=async()=>{
+ const button=$("addTeam"),out=$("adminAddedTeamCode");
+ const scrimId=$("teamScrimSelect").value,name=$("teamName").value.trim(),tag=$("teamTag").value.trim(),shortName=$("teamShortName").value.trim(),slot=Number($("teamSlotNumber").value);
+ if(!scrimId||name.length<2||tag.length<2||!shortName||!Number.isInteger(slot)||slot<3){out.textContent="اختر السكريم وأكمل بيانات الفريق وحدد خانة تبدأ من 3.";return;}
+ button.disabled=true;out.textContent="جاري إضافة الفريق...";
+ try{
+  const {data,error}=await client.rpc("admin_add_scrim_team",{p_scrim_id:scrimId,p_team_name:name,p_team_tag:tag,p_team_short_name:shortName,p_slot_number:slot});
+  if(error)throw error;
+  const result=Array.isArray(data)?data[0]:data;
+  if(!result?.access_code)throw new Error("تمت الإضافة لكن لم يصل كود الفريق. تواصل مع الإدارة.");
+  const code=result.access_code;
+  out.innerHTML='<b>تم قبول الفريق في الخانة '+esc(result.slot_number)+'</b><p>كود مركز الفريق: <strong style="font-size:24px;letter-spacing:3px">'+esc(code)+'</strong></p><button type="button" class="secondary" id="copyNewTeamCode">نسخ كود الفريق</button>';
+  $("copyNewTeamCode").onclick=async()=>{try{await navigator.clipboard.writeText(code);$("copyNewTeamCode").textContent="تم النسخ";}catch(e){prompt("انسخ كود الفريق:",code);}};
+  $("teamName").value="";$("teamTag").value="";$("teamShortName").value="";$("teamSlotNumber").value="";
+  await loadScrimAdmin();await loadAdminScrimTeamApplications();
+ }catch(e){out.textContent="تعذر إضافة الفريق: "+(e.message||e);}
+ finally{button.disabled=false;}
+};
 $("addTournament").onclick=createTournamentAnnouncement;
 $("tournamentRegistrationForm").addEventListener("submit",submitTournamentApplication);
 $("lookupTournamentCode").onclick=lookupTournamentApplication;
@@ -2775,6 +2801,14 @@ async function loadScrimAdmin(){
  ]);
  const el=$("scrimAdminList");if(a.error){el.textContent="تعذر التحميل: "+a.error.message;return;}
  const ss=a.data||[],tt=b.data||[],acceptedRows=c.data||[],roomRows=d.data||[];
+ const select=$("teamScrimSelect");
+ if(select){
+  const previous=select.value;
+  const available=ss.filter(s=>["live","registration_open","registration_closed"].includes(s.status));
+  select.innerHTML='<option value="">اختر السكريم</option>'+available.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.title)+'</option>').join("");
+  if(available.some(s=>s.id===previous))select.value=previous;
+ }
+
  const activeScrim=ss.find(item=>["live","registration_open","registration_closed"].includes(item.status));
  const activeAccepted=activeScrim?(acceptedRows.filter(row=>row.scrim_id===activeScrim.id).length):0;
  const activeMax=activeScrim?Math.max(1,Number(activeScrim.max_teams)||0):0;
