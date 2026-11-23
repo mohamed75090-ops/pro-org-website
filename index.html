@@ -2332,7 +2332,7 @@ $("publicMessageForm").addEventListener("submit",async event=>{
 });
 
 function openScrimsPage(){closeSiteMenu();showStandalonePage("scrimsPage");syncPublicScrimsPage();}
-async async function openBanListPage(){
+async function openBanListPage(){
  closeSiteMenu();showStandalonePage("banListPage");
  const host=$("publicBanList");host.textContent="جاري تحميل لستة الباند...";
  const {data,error}=await client.from("team_bans").select("id,team_name,reason,ends_at").eq("published",true).order("created_at",{ascending:false});
@@ -2386,7 +2386,7 @@ window.deleteTeamBan=deleteTeamBan;
 $("teamBanForm").addEventListener("submit",e=>{e.preventDefault();saveTeamBan(true);});
 $("teamBanDraft").addEventListener("click",()=>saveTeamBan(false));
 $("teamBanCancel").addEventListener("click",clearTeamBanForm);
-function openResultsPage(){closeSiteMenu();showStandalonePage("resultsPage");const host=$("resultsPageContent");if(host)host.innerHTML='<p class="muted">جاري تحميل النتائج المنشورة...</p>';await loadPublic();if(host){const source=$("results");host.innerHTML=source?.innerHTML||'<p class="muted">لا توجد نتائج منشورة حالياً.</p>';if(!host.textContent.trim())host.innerHTML='<p class="muted">لا توجد نتائج منشورة حالياً.</p>';}}
+async function openResultsPage(){closeSiteMenu();showStandalonePage("resultsPage");const host=$("resultsPageContent");if(host)host.innerHTML='<p class="muted">جاري تحميل النتائج المنشورة...</p>';await loadPublic();if(host){const source=$("results");host.innerHTML=source?.innerHTML||'<p class="muted">لا توجد نتائج منشورة حالياً.</p>';if(!host.textContent.trim())host.innerHTML='<p class="muted">لا توجد نتائج منشورة حالياً.</p>';}}
 window.openResultsPage=openResultsPage;
 function openTournamentsPage(){closeSiteMenu();showStandalonePage("tournamentsPage");$("tournamentsPageDetail").classList.add("hidden");$("tournamentsPageList").classList.remove("hidden");renderTournamentPageList(tournamentsCache||[]);}
 window.openTournamentsPage=openTournamentsPage;
